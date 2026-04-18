@@ -16,19 +16,24 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
         input, select { color-scheme: dark; }
     </style>
+    <link rel="shortcut icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
-    <div id="auth-screen" class="fixed inset-0 bg-slate-950 z-[200] flex items-center justify-center p-6">
+   <div id="auth-screen" class="fixed inset-0 bg-slate-950 z-[200] flex items-center justify-center p-6">
         <div class="w-full max-w-sm glass p-8 rounded-[2rem] border border-slate-700 shadow-2xl">
             <div class="text-center mb-8">
-                <div class="bg-indigo-600 w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-4"><i class="fa-solid fa-bolt-lightning text-2xl text-white"></i></div>
-                <h2 class="text-2xl font-black italic tracking-tighter uppercase text-white">ENVOLVIA</h2>
+                <div class="w-24 h-24 mx-auto mb-4 p-1 bg-indigo-600/20 rounded-full border-2 border-indigo-500/50 shadow-lg shadow-indigo-500/10 overflow-hidden">
+                    <img src="icon.png" alt="Envolvia Logo" class="w-full h-full object-cover rounded-full">
+                </div>
+                <h2 class="text-2xl font-black italic tracking-tighter uppercase text-white">PROVEEDURIA CHELA</h2>
+                <p class="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Plataforma Retail PRO</p>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-4">
-                <input type="email" id="login-email" placeholder="Usuario" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 text-sm outline-none text-white focus:border-indigo-500">
-                <input type="password" id="login-pass" placeholder="••••••••" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 text-sm outline-none text-white focus:border-indigo-500">
-                <button type="submit" id="btn-login" class="w-full bg-indigo-600 p-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg active:scale-95 transition-all">Entrar</button>
+                <input type="email" id="login-email" placeholder="Usuario" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 text-sm outline-none text-white focus:border-indigo-500 transition-all">
+                <input type="password" id="login-pass" placeholder="••••••••" required class="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 text-sm outline-none text-white focus:border-indigo-500 transition-all">
+                <button type="submit" id="btn-login" class="w-full bg-indigo-600 p-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg active:scale-95 transition-all">Iniciar Sesión</button>
             </form>
         </div>
     </div>

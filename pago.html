@@ -38,12 +38,17 @@
 
         <form id="form-pago" class="p-6 space-y-4" onsubmit="enviarPago(event)">
             
-            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700 mb-6">
-                <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-700 pb-2 mb-2">Datos para Pago Móvil</p>
-                <div class="grid grid-cols-2 gap-2 text-xs font-mono">
-                    <div class="text-slate-400">Banco:</div><div class="font-bold text-white text-right">0102 - BDV</div>
-                    <div class="text-slate-400">Teléfono:</div><div class="font-bold text-white text-right">0412-0000000</div>
-                    <div class="text-slate-400">Cédula/RIF:</div><div class="font-bold text-white text-right">V-00000000</div>
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-700 mb-6 flex flex-col items-center shadow-inner">
+                <p class="text-[10px] font-black uppercase text-emerald-400 tracking-widest border-b border-slate-700 pb-2 mb-4 w-full text-center">Banesco Pago Móvil</p>
+                
+                <div class="bg-white p-2 rounded-xl mb-4 shadow-lg">
+                    <img src="qr.jpg" alt="QR Banesco" class="w-32 h-32 object-contain" onerror="this.style.display='none'">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-xs font-mono w-full">
+                    <div class="text-slate-400">Banco:</div><div class="font-bold text-white text-right">0134 - Banesco</div>
+                    <div class="text-slate-400">Teléfono:</div><div class="font-bold text-white text-right">0412-2969255</div>
+                    <div class="text-slate-400">Identificación:</div><div class="font-bold text-white text-right">V-10383082</div>
                 </div>
             </div>
 
@@ -51,8 +56,8 @@
                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Banco de Origen</label>
                 <select id="f-banco" required class="w-full mt-1 bg-slate-900 border border-slate-700 text-white text-sm rounded-xl p-3 outline-none focus:border-indigo-500">
                     <option value="" disabled selected>Selecciona tu banco...</option>
+                    <option value="Banesco">Banesco (0134)</option>
                     <option value="BDV">Banco de Venezuela</option>
-                    <option value="Banesco">Banesco</option>
                     <option value="Mercantil">Mercantil</option>
                     <option value="Provincial">Provincial</option>
                     <option value="Otro">Otro Banco</option>
@@ -62,6 +67,11 @@
             <div>
                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Número de Referencia</label>
                 <input type="text" id="f-ref" placeholder="Ej: 123456" required pattern="[0-9]{4,8}" title="Últimos 4 a 8 dígitos" class="w-full mt-1 bg-slate-900 border border-slate-700 text-white text-sm rounded-xl p-3 outline-none focus:border-indigo-500 font-mono">
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Captura (Comprobante)</label>
+                <input type="file" id="f-comprobante" accept="image/*" required class="w-full mt-1 bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-xl p-2 outline-none focus:border-indigo-500 font-mono file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
             </div>
 
             <button type="submit" id="btn-submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs transition-transform active:scale-95 shadow-lg mt-4">
@@ -80,10 +90,10 @@
         const NUMERO_WHATSAPP = '584120000000'; 
 
         // Variables Globales
-        let contexto = ''; // 'ORDEN' o 'DEUDA'
+        let contexto = ''; 
         let montoUSD = 0;
         let identificador = '';
-        let tasaBCV = 0;
+        let tasaBCV = 45.30; 
         let nombreCliente = '';
 
         // --- 2. INICIALIZACIÓN ---
@@ -93,42 +103,34 @@
             const estudianteId = urlParams.get('estudiante');
 
             try {
-                // Obtener tasa BCV
-                const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://www.bcv.org.ve/'));
-                const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
-                tasaBCV = parseFloat(doc.querySelector('#dolar strong').innerText.trim().replace(',', '.'));
+                // INTENTO DE CONEXIÓN A API ESTABLE (DOLARAPI)
+                try {
+                    const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+                    const data = await res.json();
+                    if (data && data.promedio) { 
+                        tasaBCV = parseFloat(data.promedio); 
+                    }
+                } catch (e) { 
+                    console.warn("Usando tasa de emergencia."); 
+                }
                 
                 if (ordenId) {
-                    // MODO: Pago de Orden Pendiente
                     const { data, error } = await _sb.from('ventas').select('*').eq('id_orden', ordenId).single();
                     if(error || !data) throw new Error("Orden no encontrada");
                     
-                    contexto = 'ORDEN';
-                    montoUSD = parseFloat(data.total_usd);
-                    identificador = data.id_orden;
-                    nombreCliente = 'Cliente';
+                    contexto = 'ORDEN'; montoUSD = parseFloat(data.total_usd); identificador = data.id_orden; nombreCliente = 'Cliente';
                     document.getElementById('ui-subtitle').innerText = `Pedido: ${identificador}`;
                     
                 } else if (estudianteId) {
-                    // MODO: Pago de Deuda
                     const { data, error } = await _sb.from('estudiantes').select('*').eq('id', estudianteId).single();
                     if(error || !data) throw new Error("Estudiante no encontrado");
                     
-                    contexto = 'DEUDA';
-                    montoUSD = parseFloat(data.debt); // Cobra la deuda total actual
-                    identificador = data.name;
-                    nombreCliente = data.representante || 'Representante';
+                    contexto = 'DEUDA'; montoUSD = parseFloat(data.debt); identificador = data.name; nombreCliente = data.representante || 'Representante';
                     document.getElementById('ui-subtitle').innerText = `Deuda Estudiante: ${identificador}`;
                     
-                    if (montoUSD <= 0) {
-                        alert("Este estudiante no tiene deudas pendientes.");
-                        return;
-                    }
-                } else {
-                    throw new Error("Enlace inválido. Falta información.");
-                }
+                    if (montoUSD <= 0) { alert("Este estudiante no tiene deudas pendientes."); return; }
+                } else { throw new Error("Enlace inválido. Falta información."); }
 
-                // Actualizar Interfaz
                 document.getElementById('ui-usd').innerText = `$${montoUSD.toFixed(2)}`;
                 document.getElementById('ui-vef').innerText = `Bs. ${(montoUSD * tasaBCV).toLocaleString('es-VE')}`;
                 document.getElementById('ui-bcv').innerText = `Tasa BCV Calculada: ${tasaBCV.toFixed(2)}`;
@@ -137,50 +139,59 @@
                 document.getElementById('payment-card').classList.remove('hidden');
 
             } catch (error) {
-                document.getElementById('loading-screen').innerHTML = `
-                    <i class="fa-solid fa-triangle-exclamation text-4xl text-red-500 mb-4"></i>
-                    <p class="text-white font-bold text-center px-6">${error.message}</p>
-                `;
+                document.getElementById('loading-screen').innerHTML = `<i class="fa-solid fa-triangle-exclamation text-4xl text-red-500 mb-4"></i><p class="text-white font-bold text-center px-6">${error.message}</p>`;
             }
         };
 
-        // --- 3. PROCESAR PAGO ---
+        // --- 3. PROCESAR PAGO CON IMAGEN ---
         async function enviarPago(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-submit');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo comprobante...';
             btn.disabled = true;
 
             const banco = document.getElementById('f-banco').value;
             const ref = document.getElementById('f-ref').value;
+            const file = document.getElementById('f-comprobante').files[0];
             const montoBs = (montoUSD * tasaBCV).toFixed(2);
+            
+            let comprobanteUrl = null;
 
             try {
-                // 1. Guardar en Base de Datos para tu auditoría
+                // A. Subir Imagen a Supabase Storage
+                if (file) {
+                    const fileName = `pago_${Date.now()}.${file.name.split('.').pop()}`;
+                    const { data, error: upErr } = await _sb.storage.from('comprobantes').upload(fileName, file);
+                    if (upErr) throw new Error("Error subiendo captura: " + upErr.message);
+                    comprobanteUrl = _sb.storage.from('comprobantes').getPublicUrl(fileName).data.publicUrl;
+                }
+
+                // B. Guardar en Base de Datos
                 await _sb.from('pagos_banco').insert([{
                     banco: banco,
                     referencia: ref,
-                    monto: montoUSD
+                    monto: montoUSD,
+                    comprobante_url: comprobanteUrl
                 }]);
 
-                // 2. Armar el mensaje de WhatsApp perfecto para tu conciliación
+                // C. Generar Mensaje de WhatsApp
                 let mensaje = `*REPORTE DE PAGO - ENVOLVIA* 🏦\n\n`;
                 mensaje += `*Motivo:* Pago de ${contexto === 'ORDEN' ? 'Pedido' : 'Deuda'}\n`;
                 mensaje += `*Detalle:* ${identificador}\n`;
                 mensaje += `*Enviado por:* ${nombreCliente}\n`;
                 mensaje += `*Monto:* $${montoUSD.toFixed(2)} (Bs. ${montoBs})\n`;
                 mensaje += `*Banco:* ${banco}\n`;
-                mensaje += `*Referencia:* ${ref}\n\n`;
+                mensaje += `*Referencia:* ${ref}\n`;
+                if (comprobanteUrl) mensaje += `*Ver Comprobante:* ${comprobanteUrl}\n\n`;
                 mensaje += `_Por favor verificar y procesar en el sistema._`;
 
                 const linkWa = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensaje)}`;
                 
-                // 3. Redirigir al cliente
-                alert("¡Datos guardados! Se abrirá tu WhatsApp para enviar el comprobante.");
+                alert("¡Comprobante subido! Se abrirá tu WhatsApp para enviar el reporte.");
                 window.location.href = linkWa;
 
             } catch (err) {
-                alert("Hubo un error guardando el reporte. Por favor contacta soporte.");
+                alert(err.message);
                 btn.innerHTML = 'Intentar de Nuevo';
                 btn.disabled = false;
             }

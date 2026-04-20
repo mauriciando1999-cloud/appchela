@@ -257,8 +257,11 @@
             
             try {
                 await getBCV(); // Refresca la tasa
-                
-                const { data: ventas } = await _sb.from('ventas').select('total_usd, metodo_pago');
+                // Dentro de actualizarSaldosSistema():
+const { data: ventas } = await _sb
+    .from('ventas')
+    .select('total_usd, metodo_pago')
+    .eq('status', 'completada'); // <-- SOLO SUMAMOS LO VERIFICADOconst { data: ventas } = await _sb.from('ventas').select('total_usd, metodo_pago');
                 
                 let tCash = 0, tBanescoUsd = 0, tExteriorUsd = 0;
 

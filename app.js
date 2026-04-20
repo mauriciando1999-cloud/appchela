@@ -154,10 +154,39 @@ function removeFromCart(id) { state.cart = state.cart.filter(x => x.id !== id); 
 function clearCart() { state.cart = []; updateUI(); }
 
 // --- 3. MOTOR DE PAGOS (CON +10% CRÉDITO) ---
-async function pay(method) {
-    if(state.cart.length === 0) return;
-    if(method === 'CREDITO') return abrirModalCredito();
-    procesarTransaccion(method, null);
+async function pay(metodo) {
+    const total = parseFloat(document.getElementById('total-usd').innerText.replace('$', ''));
+    if (total <= 0) return;
+
+    // Ahora incluimos CREDITO en la lista de espera
+    const requiereVerificacion = ['BS', 'PUNTO', 'CREDITO'].includes(metodo);
+    const statusInicial = requiereVerificacion ? 'pendiente_verificacion' : 'completada';
+
+    const nuevaVenta = {
+        total_usd: total,
+        metodo_pago: metodo,
+        items: state.cart,
+        status: statusInicial,
+        // Si es crédito, aquí deberías tener guardado el ID del estudiante del modal
+        estudiante_id: metodo === 'CREDITO' ? state.selectedStudent.id : null, 
+        fecha: new Date().toISOString()
+    };
+
+    const { error } = await _sb.from('ventas').insert([nuevaVenta]);
+    
+    if (!error) {
+        if (statusInicial === 'pendiente_verificacion') {
+            const msj = metodo === 'CREDITO' ? 
+                "Crédito enviado a revisión. El administrador debe autorizarlo. 🛡️" : 
+                "Pago enviado a verificación. ⏳";
+            alert(msj);
+        } else {
+            alert("Venta completada ✅");
+        }
+        state.cart = [];
+        renderCart();
+        initApp();
+    }
 }
 
 async function procesarTransaccion(method, estudianteId) {

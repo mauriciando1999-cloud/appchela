@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Envolvia | Contador PRO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #1e293b; }
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+        .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        <header id="pago-alerta" class="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col md:flex-row justify-between items-center shadow-2xl transition-colors duration-500">
+            <div class="text-center md:text-left">
+                <div class="flex items-center justify-center md:justify-start space-x-3 mb-2">
+                    <i class="fa-solid fa-brain text-xl"></i>
+                    <h1 class="text-2xl font-black uppercase italic tracking-tighter">Cerebro Contable</h1>
+                </div>
+                <p id="recomendacion-texto" class="text-sm font-bold uppercase opacity-90 tracking-wide">Analizando mercado...</p>
+            </div>
+            <div class="mt-6 md:mt-0 flex items-center space-x-6">
+                <div class="text-center">
+                    <p class="text-[10px] font-black uppercase opacity-60">Tendencia BCV</p>
+                    <div id="tendencia-icono" class="text-3xl mt-1">--</div>
+                </div>
+                <div class="h-12 w-[1px] bg-white/20"></div>
+                <div class="text-center">
+                    <p class="text-[10px] font-black uppercase opacity-60">Tasa Actual</p>
+                    <div id="tasa-actual" class="text-xl font-mono font-bold mt-1">Bs. --</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="bg-white p-8 rounded-[2.5rem] card-shadow border border-slate-100">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h3 class="text-[11px] font-black uppercase text-slate-400 tracking-widest">Disponibilidad y Conciliación</h3>
+                    <p class="text-[10px] font-bold text-slate-300 uppercase">Verifica tus cuentas reales antes de pagar</p>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="actualizarSaldosSistema()" id="btn-sync-saldos" class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                    <button onclick="abrirAsistentePago()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/30">
+                        <i class="fa-solid fa-money-check-dollar mr-2"></i>Pagar Facturas
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="p-6 rounded-[2rem] bg-slate-50 border border-slate-100 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><i class="fa-solid fa-money-bill-1-wave"></i></div>
+                            <span class="text-[10px] font-black uppercase text-slate-400">Efectivo Físico ($)</span>
+                        </div>
+                        <div class="space-y-2 mb-4">
+                            <div class="flex justify-between text-xs"><span class="text-slate-400">Sistema:</span> <span id="sys-cash" class="font-bold text-lg">$0.00</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <input type="number" step="0.01" id="real-cash" oninput="checkDiferencia('cash')" placeholder="Monto real en caja" class="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500 transition-colors">
+                        <div id="diff-cash" class="text-[9px] font-black uppercase text-center py-1 rounded-lg hidden mt-2"></div>
+                    </div>
+                </div>
+
+                <div class="p-6 rounded-[2rem] bg-slate-50 border border-slate-100 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center font-black">B</div>
+                            <span class="text-[10px] font-black uppercase text-slate-400">Banesco (Pago Móvil)</span>
+                        </div>
+                        <div class="space-y-1 mb-4">
+                            <div class="flex justify-between text-xs items-center"><span class="text-slate-400">Sistema (Bs):</span> <span id="sys-banesco-bs" class="font-bold text-lg text-slate-600">0.00 Bs</span></div>
+                            <div class="flex justify-between text-xs items-center"><span class="text-slate-400">Equivalente:</span> <span id="sys-banesco-usd" class="font-bold text-emerald-500">0.00 USD</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <input type="number" step="0.01" id="real-banesco" oninput="checkDiferencia('banesco')" placeholder="Saldo real en App" class="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-600 transition-colors">
+                        <div id="real-banesco-usd-preview" class="text-[11px] font-black text-emerald-500 text-right mt-1 hidden"></div>
+                        <div id="diff-banesco" class="text-[9px] font-black uppercase text-center py-1 rounded-lg hidden mt-2"></div>
+                    </div>
+                </div>
+
+                <div class="p-6 rounded-[2rem] bg-slate-50 border border-slate-100 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 bg-slate-800 text-white rounded-full flex items-center justify-center font-black">E</div>
+                            <span class="text-[10px] font-black uppercase text-slate-400">Exterior (Punto)</span>
+                        </div>
+                        <div class="space-y-1 mb-4">
+                            <div class="flex justify-between text-xs items-center"><span class="text-slate-400">Sistema (Bs):</span> <span id="sys-exterior-bs" class="font-bold text-lg text-slate-600">0.00 Bs</span></div>
+                            <div class="flex justify-between text-xs items-center"><span class="text-slate-400">Equivalente:</span> <span id="sys-exterior-usd" class="font-bold text-emerald-500">0.00 USD</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <input type="number" step="0.01" id="real-exterior" oninput="checkDiferencia('exterior')" placeholder="Saldo real en Punto" class="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-slate-800 transition-colors">
+                        <div id="real-exterior-usd-preview" class="text-[11px] font-black text-emerald-500 text-right mt-1 hidden"></div>
+                        <div id="diff-exterior" class="text-[9px] font-black uppercase text-center py-1 rounded-lg hidden mt-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-8 rounded-[2.5rem] card-shadow border border-slate-100 flex flex-col">
+                <h3 class="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-6"><i class="fa-solid fa-chart-pie mr-2"></i>Utilidad Neta (Mensual)</h3>
+                <div class="space-y-6 flex-1">
+                    <div>
+                        <span class="text-[10px] font-black text-slate-400 uppercase block mb-1">Ventas Brutas</span>
+                        <div id="ventas-brutas" class="text-3xl font-black text-slate-800 tracking-tight">$0.00</div>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-black text-slate-400 uppercase block mb-1">Costo de Ventas</span>
+                        <div id="costo-insumos" class="text-xl font-bold text-red-500">-$0.00</div>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-black text-slate-400 uppercase block mb-1">Gastos Operativos (Fijos)</span>
+                        <div id="gastos-fijos" class="text-xl font-bold text-slate-400">-$855.00</div>
+                    </div>
+                    <div class="pt-6 border-t border-dashed border-slate-200 mt-auto">
+                        <span class="text-[11px] font-black text-emerald-600 uppercase block mb-1">Utilidad Final</span>
+                        <div id="utilidad-neta" class="text-4xl font-black text-emerald-500 tracking-tighter">$0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-[2.5rem] card-shadow border border-slate-100 lg:col-span-2">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h3 class="text-[11px] font-black uppercase text-slate-400 tracking-widest">Facturas y Compromisos</h3>
+                    </div>
+                    <button onclick="mostrarModalFactura()" class="bg-slate-900 hover:bg-indigo-600 text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                        <i class="fa-solid fa-file-invoice-dollar mr-2"></i>Nueva Factura
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-[10px] font-black text-slate-300 uppercase text-left border-b border-slate-50">
+                                <th class="pb-4">Proveedor</th>
+                                <th class="pb-4">Monto</th>
+                                <th class="pb-4">Vencimiento</th>
+                                <th class="pb-4 text-right">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-facturas" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                    <div id="empty-state" class="hidden py-12 text-center text-slate-300 uppercase text-xs font-bold">Sin facturas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-factura" class="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-6 hidden">
+        <div class="bg-white w-full max-w-lg rounded-[3rem] overflow-hidden shadow-2xl">
+            <div class="bg-slate-900 p-8 text-white flex justify-between items-center">
+                <h2 class="text-xl font-black uppercase italic">Registrar Factura</h2>
+                <button onclick="cerrarModalFactura()" class="text-slate-500 hover:text-white text-3xl">&times;</button>
+            </div>
+            <form id="form-factura" onsubmit="guardarFactura(event)" class="p-8 space-y-4">
+                <input type="text" id="f-proveedor" placeholder="Proveedor" required class="w-full bg-slate-50 p-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-indigo-500 font-bold">
+                <input type="number" step="0.01" id="f-monto" placeholder="Monto USD" required class="w-full bg-slate-50 p-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-indigo-500 font-bold">
+                <input type="text" id="f-concepto" placeholder="Concepto" required class="w-full bg-slate-50 p-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-indigo-500 font-bold">
+                <input type="date" id="f-vence" required class="w-full bg-slate-50 p-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-indigo-500 font-bold">
+                <select id="f-moneda" class="w-full bg-slate-50 p-4 rounded-2xl border-2 border-slate-100 font-bold outline-none">
+                    <option value="USD">Dólares ($)</option>
+                    <option value="BS">Bolívares (Bs.)</option>
+                </select>
+                <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all">Registrar Obligación</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-asistente-pago" class="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="bg-indigo-600 p-8 text-white flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-black uppercase italic tracking-tighter">Liquidación</h2>
+                    <p class="text-xs font-bold text-indigo-200 mt-1 flex items-baseline">
+                        Fondos declarados: 
+                        <span id="pago-fondos" class="text-emerald-300 font-black text-lg mx-2">$0.00</span>
+                        <span id="pago-fondos-bs" class="text-indigo-300 font-bold text-xs opacity-80">(0.00 Bs)</span>
+                    </p>
+                </div>
+                <button onclick="cerrarAsistentePago()" class="text-indigo-200 hover:text-white text-4xl">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1 bg-slate-50 custom-scrollbar">
+                <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Selecciona facturas a pagar:</h3>
+                <div id="lista-pago-facturas" class="space-y-3">
+                    </div>
+            </div>
+            
+            <div class="bg-white p-6 border-t border-slate-200 flex justify-between items-center">
+                <div>
+                    <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Total Seleccionado</p>
+                    <div class="flex items-baseline space-x-2">
+                        <p id="pago-total-sel" class="text-3xl font-black text-slate-800 tracking-tighter">$0.00</p>
+                        <p id="pago-total-sel-bs" class="text-sm font-bold text-slate-400 mb-1">(0.00 Bs)</p>
+                    </div>
+                </div>
+                <button onclick="procesarPagoSeleccionadas()" id="btn-procesar-pago" class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl hover:bg-emerald-500 active:scale-95 transition-all disabled:opacity-50">
+                    Abonar
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // ==========================================
+        // 1. CONFIGURACIÓN Y ESTADO GLOBAL
+        // ==========================================
+        const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
+        const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
+        const _sb = supabase.createClient(SB_URL, SB_KEY);
+
+        const state = { tasa: 45.50 }; 
+        window.saldosSys = { cash: 0, banesco: 0, exterior: 0 }; 
+
+        async function getBCV() {
+            try {
+                const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+                const data = await res.json();
+                if (data && data.promedio) {
+                    state.tasa = parseFloat(data.promedio);
+                }
+            } catch (e) { 
+                console.warn("Fallo DolarAPI en contador, usando tasa local de respaldo."); 
+            }
+        }
+
+        // ==========================================
+        // 2. INICIALIZACIÓN (ARRANQUE)
+        // ==========================================
+        window.onload = async () => {
+            await getBCV(); 
+            await detectarTendenciaDolar(); 
+            await actualizarSaldosSistema(); 
+            await renderContador(); 
+        };
+
+        // ==========================================
+        // 3. MÓDULO: CONCILIACIÓN BANCARIA Y DIVISAS
+        // ==========================================
+        async function actualizarSaldosSistema() {
+            const btn = document.getElementById('btn-sync-saldos');
+            if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Calculando...';
+            
+            try {
+                await getBCV(); // Refresca la tasa
+                
+                const { data: ventas } = await _sb.from('ventas').select('total_usd, metodo_pago');
+                
+                let tCash = 0, tBanescoUsd = 0, tExteriorUsd = 0;
+
+                if (ventas) {
+                    ventas.forEach(v => {
+                        const monto = parseFloat(v.total_usd) || 0;
+                        if(v.metodo_pago === 'USD') tCash += monto;
+                        if(v.metodo_pago === 'BS') tBanescoUsd += monto;
+                        if(v.metodo_pago === 'PUNTO') tExteriorUsd += monto;
+                    });
+                }
+
+                // Inyectamos en el HTML
+                document.getElementById('sys-cash').innerText = `$${tCash.toFixed(2)}`;
+                document.getElementById('sys-banesco-bs').innerText = `${(tBanescoUsd * state.tasa).toLocaleString('es-VE')} Bs`;
+                document.getElementById('sys-banesco-usd').innerText = `${tBanescoUsd.toFixed(2)} USD`;
+                document.getElementById('sys-exterior-bs').innerText = `${(tExteriorUsd * state.tasa).toLocaleString('es-VE')} Bs`;
+                document.getElementById('sys-exterior-usd').innerText = `${tExteriorUsd.toFixed(2)} USD`;
+
+                // Guardamos en memoria
+                window.saldosSys = { 
+                    cash: tCash, 
+                    banesco: tBanescoUsd * state.tasa, 
+                    exterior: tExteriorUsd * state.tasa 
+                };
+
+                // Actualizamos las diferencias si ya había números
+                checkDiferencia('cash');
+                checkDiferencia('banesco');
+                checkDiferencia('exterior');
+
+                if(btn) btn.innerHTML = '<i class="fa-solid fa-rotate"></i>';
+            } catch (err) {
+                console.error(err);
+                if(btn) btn.innerHTML = '<i class="fa-solid fa-rotate mr-2"></i>Error (Reintentar)';
+            }
+        }
+
+        function checkDiferencia(cuenta) {
+            const input = document.getElementById(`real-${cuenta}`);
+            const diffEl = document.getElementById(`diff-${cuenta}`);
+            const previewEl = document.getElementById(`real-${cuenta}-usd-preview`); 
+            
+            if(!input || !diffEl) return;
+
+            const realText = input.value;
+            
+            if (realText === "") {
+                diffEl.classList.add('hidden');
+                if(previewEl) previewEl.classList.add('hidden');
+                return;
+            }
+
+            const real = parseFloat(realText) || 0;
+            const sys = window.saldosSys[cuenta] || 0;
+            const diferencia = real - sys;
+
+            // Mostrar Dólares Reales de lo que escribe el usuario
+            if(cuenta === 'banesco' || cuenta === 'exterior') {
+                if(previewEl) {
+                    const equivUsd = real / state.tasa;
+                    previewEl.innerText = `= ${equivUsd.toFixed(2)} USD Reales`;
+                    previewEl.classList.remove('hidden');
+                }
+            }
+            
+            // Mostrar Diferencia de Cuadre
+            diffEl.classList.remove('hidden');
+            if (Math.abs(diferencia) < 0.10) {
+                diffEl.innerText = "CUADRADO ✅";
+                diffEl.className = "text-[9px] font-black uppercase text-center py-2 rounded-lg bg-emerald-100 text-emerald-600 mt-2 block";
+            } else {
+                const sign = diferencia > 0 ? "+" : "";
+                diffEl.innerText = `Diferencia: ${sign}${diferencia.toFixed(2)}`;
+                diffEl.className = `text-[9px] font-black uppercase text-center py-2 rounded-lg mt-2 block ${diferencia > 0 ? 'bg-blue-100 text-blue-600' : 'bg-red-100 text-red-600'}`;
+            }
+        }
+
+        // ==========================================
+        // 4. MÓDULO: REGISTRO FACTURAS SIMPLES
+        // ==========================================
+        function mostrarModalFactura() { document.getElementById('modal-factura').classList.remove('hidden'); }
+        function cerrarModalFactura() { document.getElementById('modal-factura').classList.add('hidden'); }
+
+        async function guardarFactura(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.innerText = "REGISTRANDO...";
+            btn.disabled = true;
+
+            const factura = {
+                proveedor: document.getElementById('f-proveedor').value,
+                monto_usd: parseFloat(document.getElementById('f-monto').value),
+                concepto: document.getElementById('f-concepto').value,
+                fecha_vencimiento: document.getElementById('f-vence').value,
+                moneda_pago: document.getElementById('f-moneda').value,
+                status: 'pendiente'
+            };
+
+            const { error } = await _sb.from('facturas').insert([factura]);
+            if (error) {
+                alert("Error: " + error.message);
+            } else {
+                alert("Factura registrada ✅");
+                e.target.reset();
+                cerrarModalFactura();
+                renderContador();
+            }
+            btn.innerText = "Registrar Obligación";
+            btn.disabled = false;
+        }
+
+        async function renderContador() {
+            const { data: facturas } = await _sb.from('facturas').select('*').order('fecha_vencimiento', { ascending: true });
+            const tabla = document.getElementById('lista-facturas');
+            const emptyState = document.getElementById('empty-state');
+
+            if (!facturas || facturas.length === 0) {
+                tabla.innerHTML = "";
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                tabla.innerHTML = facturas.map(f => `
+                    <tr class="text-[11px] border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                        <td class="py-4 font-black uppercase text-slate-800">${f.proveedor}<br><span class="text-[9px] text-slate-400 font-normal">${f.concepto}</span></td>
+                        <td class="py-4 font-mono font-bold">$${parseFloat(f.monto_usd).toFixed(2)}</td>
+                        <td class="py-4 text-slate-400">${f.fecha_vencimiento}</td>
+                        <td class="py-4 text-right">
+                            <button onclick="cambiarEstadoFactura(${f.id}, '${f.status}')" class="px-3 py-1 rounded-full text-[9px] font-black uppercase active:scale-95 transition-all ${f.status === 'pagado' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}">
+                                ${f.status}
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            actualizarCalculosContables(facturas || []);
+        }
+
+        async function cambiarEstadoFactura(id, statusActual) {
+            const nuevoEstado = statusActual === 'pendiente' ? 'pagado' : 'pendiente';
+            await _sb.from('facturas').update({ status: nuevoEstado }).eq('id', id);
+            renderContador(); 
+        }
+
+        /// ==========================================
+        // 5. ASISTENTE DE LIQUIDACIÓN DE PAGOS
+        // ==========================================
+        async function abrirAsistentePago() {
+            const rCash = parseFloat(document.getElementById('real-cash').value) || 0;
+            const rBan = parseFloat(document.getElementById('real-banesco').value) || 0;
+            const rExt = parseFloat(document.getElementById('real-exterior').value) || 0;
+
+            const fondosUsdTotales = rCash + (rBan / state.tasa) + (rExt / state.tasa);
+
+            if(fondosUsdTotales <= 0) {
+                alert("⚠️ Primero escribe tus saldos reales en las tarjetas de bancos para saber con cuánto dinero cuentas.");
+                return;
+            }
+
+            // Inyectamos dólares y su equivalente en Bs en el encabezado
+            document.getElementById('pago-fondos').innerText = `$${fondosUsdTotales.toFixed(2)}`;
+            document.getElementById('pago-fondos-bs').innerText = `(${(fondosUsdTotales * state.tasa).toLocaleString('es-VE')} Bs)`;
+            
+            document.getElementById('modal-asistente-pago').classList.remove('hidden');
+
+            const lista = document.getElementById('lista-pago-facturas');
+            lista.innerHTML = '<p class="text-center text-slate-400 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></p>';
+
+            const { data: pendientes } = await _sb.from('facturas').select('*').eq('status', 'pendiente').order('fecha_vencimiento', { ascending: true });
+
+            if(!pendientes || pendientes.length === 0) {
+                lista.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-glass-cheers text-4xl text-emerald-300 mb-2"></i><p class="text-slate-500 font-black uppercase text-xs">No hay deudas pendientes</p></div>';
+                document.getElementById('btn-procesar-pago').disabled = true;
+                return;
+            }
+
+            document.getElementById('btn-procesar-pago').disabled = false;
+
+            lista.innerHTML = pendientes.map(f => `
+                <label class="flex items-center justify-between p-5 bg-white border-2 border-transparent shadow-sm rounded-[1.5rem] cursor-pointer hover:border-indigo-500 transition-all group">
+                    <div class="flex items-center space-x-4">
+                        <input type="checkbox" value="${f.id}" data-monto="${f.monto_usd}" onchange="recalcularPagoFacturas()" class="w-6 h-6 text-indigo-600 rounded-xl border-slate-300 focus:ring-indigo-500">
+                        <div>
+                            <p class="font-black text-slate-800 uppercase text-sm group-hover:text-indigo-600 transition-colors">${f.proveedor}</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">${f.concepto} &bull; Vence: ${f.fecha_vencimiento}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-black text-slate-800 text-lg block">$${parseFloat(f.monto_usd).toFixed(2)}</span>
+                        <span class="text-[10px] font-bold text-slate-400">${(parseFloat(f.monto_usd) * state.tasa).toLocaleString('es-VE')} Bs</span>
+                    </div>
+                </label>
+            `).join('');
+
+            recalcularPagoFacturas();
+        }
+
+        function cerrarAsistentePago() { document.getElementById('modal-asistente-pago').classList.add('hidden'); }
+
+        function recalcularPagoFacturas() {
+            const checkboxes = document.querySelectorAll('#lista-pago-facturas input[type="checkbox"]:checked');
+            let totalSelec = 0;
+            
+            checkboxes.forEach(cb => { totalSelec += parseFloat(cb.getAttribute('data-monto')); });
+            
+            const btn = document.getElementById('btn-procesar-pago');
+            const totalTxt = document.getElementById('pago-total-sel');
+            const totalTxtBs = document.getElementById('pago-total-sel-bs'); // Nuevo elemento para Bs
+            const fondos = parseFloat(document.getElementById('pago-fondos').innerText.replace('$',''));
+            
+            // Calculamos e inyectamos USD y Bs
+            totalTxt.innerText = `$${totalSelec.toFixed(2)}`;
+            totalTxtBs.innerText = `(${(totalSelec * state.tasa).toLocaleString('es-VE')} Bs)`;
+            
+            if(totalSelec > fondos) {
+                totalTxt.classList.replace('text-slate-800', 'text-red-500');
+                totalTxtBs.classList.replace('text-slate-400', 'text-red-400');
+                btn.innerHTML = 'FONDOS INSUFICIENTES ❌';
+                btn.classList.replace('bg-slate-900', 'bg-red-500');
+                btn.disabled = true;
+            } else {
+                totalTxt.classList.replace('text-red-500', 'text-slate-800');
+                totalTxtBs.classList.replace('text-red-400', 'text-slate-400');
+                btn.innerHTML = `Liquidar $${totalSelec.toFixed(2)} ✅`;
+                btn.classList.replace('bg-red-500', 'bg-slate-900');
+                btn.disabled = totalSelec === 0;
+            }
+        }
+
+        async function procesarPagoSeleccionadas() {
+            const checkboxes = document.querySelectorAll('#lista-pago-facturas input[type="checkbox"]:checked');
+            const idsPagados = Array.from(checkboxes).map(cb => cb.value);
+            
+            if(idsPagados.length === 0) return;
+
+            const btn = document.getElementById('btn-procesar-pago');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> PROCESANDO...';
+            btn.disabled = true;
+
+            try {
+                const { error } = await _sb.from('facturas').update({ status: 'pagado' }).in('id', idsPagados);
+                if(error) throw error;
+
+                alert(`¡Excelente! Se liquidaron ${idsPagados.length} facturas. 🎉`);
+                cerrarAsistentePago();
+                
+                document.getElementById('real-cash').value = "";
+                document.getElementById('real-banesco').value = "";
+                document.getElementById('real-exterior').value = "";
+                ['cash', 'banesco', 'exterior'].forEach(checkDiferencia); 
+                
+                renderContador(); 
+            } catch (err) {
+                alert("Error al pagar: " + err.message);
+                btn.innerHTML = 'Reintentar Pago';
+                btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // 6. MÓDULO: UTILIDAD Y ANÁLISIS BCV
+        // ==========================================
+        async function actualizarCalculosContables(facturas) {
+            const { data: ventas } = await _sb.from('ventas').select('total_usd, ganancia_total');
+            const ingresoBruto = ventas?.reduce((s, v) => s + parseFloat(v.total_usd), 0) || 0;
+            const utilidadBruta = ventas?.reduce((s, v) => s + parseFloat(v.ganancia_total || 0), 0) || 0;
+            const gastosFacturas = facturas.filter(f => f.status === 'pagado').reduce((s, f) => s + parseFloat(f.monto_usd), 0);
+            
+            const costosFijos = 855; 
+
+            document.getElementById('ventas-brutas').innerText = `$${ingresoBruto.toFixed(2)}`;
+            document.getElementById('costo-insumos').innerText = `-$${(ingresoBruto - utilidadBruta).toFixed(2)}`;
+            document.getElementById('utilidad-neta').innerText = `$${(utilidadBruta - costosFijos - gastosFacturas).toFixed(2)}`;
+        }
+
+        async function detectarTendenciaDolar() {
+            const actual = state.tasa; 
+            const header = document.getElementById('pago-alerta');
+            const texto = document.getElementById('recomendacion-texto');
+            const icono = document.getElementById('tendencia-icono');
+            const tasaTxt = document.getElementById('tasa-actual');
+
+            tasaTxt.innerText = `Bs. ${actual.toFixed(2)}`;
+
+            try {
+                const { data: historial } = await _sb.from('historial_tasas').select('*').order('fecha', { ascending: false }).limit(1);
+                
+                if (historial && historial.length > 0) {
+                    const anterior = parseFloat(historial[0].valor_bcv);
+                    if (actual > anterior) {
+                        header.classList.replace('bg-indigo-600', 'bg-orange-600');
+                        texto.innerText = "Dólar al alza: Liquida facturas en Bs ahora.";
+                        icono.innerHTML = '<i class="fa-solid fa-arrow-trend-up"></i>';
+                    } else {
+                        header.classList.replace('bg-orange-600', 'bg-indigo-600');
+                        texto.innerText = "Tasa estable: Procede con pagos programados.";
+                        icono.innerHTML = '<i class="fa-solid fa-check-double"></i>';
+                    }
+                }
+
+                await _sb.from('historial_tasas').upsert(
+                    { fecha: new Date().toISOString().split('T')[0], valor_bcv: actual },
+                    { onConflict: 'fecha' }
+                );
+            } catch (error) {
+                console.warn("Aviso Historial Tasas:", error.message);
+            }
+        }
+    </script>
+</body>
+</html>

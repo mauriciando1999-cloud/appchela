@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin | Carga Forzada Envolvia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 p-6 font-sans">
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-8 border-b border-slate-700 pb-4">
+            <h1 class="text-2xl font-black italic text-indigo-400">CARGA ULTRA-MASIVA</h1>
+            <p class="text-xs text-slate-400 uppercase font-bold tracking-widest">Inyección directa a Supabase</p>
+        </header>
+
+        <div class="bg-slate-800 p-6 rounded-3xl shadow-2xl border border-slate-700">
+            <label class="block text-[10px] font-black uppercase text-slate-500 mb-2">Instrucciones (Formato: Nombre, Categoría, Packs, UnidadesPorPack, CostoPack)</label>
+            <textarea id="input-lote" rows="10" 
+                placeholder="Ejemplo:&#10;Coca Cola 1.5L, Bebidas, 2, 6, 12.50&#10;Galletas Oreo, Snacks, 1, 36, 15.00"
+                class="w-full bg-slate-950 border border-slate-700 rounded-2xl p-4 text-sm font-mono outline-none focus:border-indigo-500 transition-all mb-4"></textarea>
+
+            <div class="flex justify-between items-center">
+                <div id="stats" class="text-[10px] font-bold text-slate-500 uppercase">
+                    Esperando datos...
+                </div>
+                <button onclick="procesarLote()" id="btn-procesar" 
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest transition-all">
+                    Inyectar Inventario
+                </button>
+            </div>
+        </div>
+
+        <div id="resultado" class="mt-6 space-y-2"></div>
+    </div>
+
+    <script>
+    // 1. PRIMERO DEFINIMOS LAS LLAVES Y EL CLIENTE
+     const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
+        const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
+    
+    // Inicializamos el cliente globalmente de inmediato
+    const _sb = supabase.createClient(SB_URL, SB_KEY);
+
+    // 2. LUEGO DEFINIMOS LAS FUNCIONES QUE USAN ESE CLIENTE
+    async function procesarLote() {
+        const btn = document.getElementById('btn-procesar');
+        const area = document.getElementById('input-lote');
+        const res = document.getElementById('resultado');
+        
+        if(!area.value.trim()) return alert("El campo está vacío");
+
+        btn.disabled = true;
+        btn.innerText = "PROCESANDO...";
+        res.innerHTML = "";
+
+        const lineas = area.value.split('\n');
+        const loteParaSubir = [];
+
+        lineas.forEach((linea, index) => {
+            if(!linea.trim()) return;
+
+            const partes = linea.split(',');
+            if(partes.length < 5) return;
+
+            const nombre = partes[0].trim();
+            const categoria = partes[1].trim();
+            const packs = parseFloat(partes[2].trim());
+            const uPack = parseFloat(partes[3].trim());
+            const costoPack = parseFloat(partes[4].trim());
+
+            const stockTotal = packs * uPack;
+            const costoUnitario = (costoPack * packs) / stockTotal;
+            // Margen 30% + Redondeo hacia arriba
+            const precioVenta = Math.ceil(costoUnitario * 1.30);
+
+            loteParaSubir.push({
+                name: nombre,
+                categoria: categoria,
+                price: precioVenta,
+                cost: costoUnitario,
+                stock: stockTotal,
+                image_url: null 
+            });
+        });
+
+        try {
+            // Aquí ya _sb está inicializado correctamente
+            const { error } = await _sb.from('productos').insert(loteParaSubir);
+            if(error) throw error;
+
+            res.innerHTML = `<div class="bg-emerald-500/20 border border-emerald-500 p-4 rounded-2xl text-emerald-400 text-xs font-bold uppercase text-center">
+                ✅ Inyectados ${loteParaSubir.length} productos con éxito.
+            </div>`;
+            area.value = "";
+        } catch (err) {
+            res.innerHTML = `<div class="bg-red-500/20 border border-red-500 p-4 rounded-2xl text-red-400 text-xs font-bold uppercase text-center">
+                ❌ ERROR: ${err.message}
+            </div>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Inyectar Inventario";
+        }
+    }
+</script>
+</body>
+</html>

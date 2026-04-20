@@ -17,18 +17,34 @@ async function initApp() {
 
 async function checkUser() {
     const { data: { user } } = await _sb.auth.getUser();
+    
     if(user) {
-        state.userRole = user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'vendedor';
+        console.log("Usuario detectado:", user.email);
+        
+        // Comparamos correos en minúsculas para evitar errores de dedo
+        const esAdmin = user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        state.userRole = esAdmin ? 'admin' : 'vendedor';
+        
+        console.log("Rol asignado:", state.userRole);
+
         document.getElementById('auth-screen')?.classList.add('view-hidden');
         document.getElementById('app-content')?.classList.remove('view-hidden');
+
         if(state.userRole === 'admin') {
+            // Usamos Optional Chaining (?.) por si el elemento no existe en el DOM aún
             document.getElementById('btn-gestion')?.classList.remove('view-hidden');
             document.getElementById('btn-dashboard')?.classList.remove('view-hidden');
+            document.getElementById('btn-contador')?.classList.remove('view-hidden');
+            
+            console.log("Botones de Admin activados ✅");
         }
+        
         initApp();
+    } else {
+        document.getElementById('auth-screen')?.classList.remove('view-hidden');
+        document.getElementById('app-content')?.classList.add('view-hidden');
     }
 }
-
 async function sync() {
     const [p, e] = await Promise.all([
         _sb.from('productos').select('*').order('name'),
@@ -54,21 +70,57 @@ async function getBCV() {
 }
 
 // --- 2. VENTA (POS) ---
+let categoriaActual = 'Todos';
+
+function filtrar(categoria) {
+    categoriaActual = categoria;
+    renderProducts();
+}
+
 function renderProducts() {
     const grid = document.getElementById('grid-productos');
-    if(!grid) return;
+    if (!grid) return;
+    
     const search = document.getElementById('search').value.toLowerCase();
-    grid.innerHTML = state.products.filter(p => p.name.toLowerCase().includes(search)).map(p => `
-        <div onclick="addToCart(${p.id})" class="bg-slate-800 rounded-3xl overflow-hidden border border-slate-700 active:scale-95 transition-all cursor-pointer shadow-lg">
-            <div class="h-24 w-full bg-slate-700 relative">
-                ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : `<div class="flex h-full items-center justify-center text-slate-500"><i class="fa-solid fa-box text-2xl"></i></div>`}
+    
+    // Filtramos primero por categoría y luego por búsqueda
+    let productosFiltrados = state.products;
+    
+    if (categoriaActual !== 'Todos') {
+        // Asumiendo que guardaste la categoría en Supabase como 'Uniformes' o 'Chucherias'
+        productosFiltrados = productosFiltrados.filter(p => p.categoria === categoriaActual);
+    }
+    
+    productosFiltrados = productosFiltrados.filter(p => p.name.toLowerCase().includes(search));
+
+    grid.innerHTML = productosFiltrados.map(p => {
+        const foto = p.image_url ? p.image_url : 'https://placehold.co/400x400/1e293b/4f46e5?text=Sin+Foto';
+        const categoriaLabel = p.categoria || 'General';
+        
+        return `
+        <div onclick="addToCart(${p.id})" class="bg-slate-800 rounded-[2.5rem] p-4 border border-slate-700 shadow-xl flex flex-col items-center text-center cursor-pointer active:scale-95 transition-transform hover:border-indigo-500">
+            <div class="w-full aspect-square rounded-[2rem] overflow-hidden mb-3 bg-slate-900 border border-slate-700/50">
+                <img src="${foto}" alt="${p.name}" class="w-full h-full object-cover">
             </div>
-            <div class="p-3">
-                <p class="text-[9px] font-black uppercase text-slate-300 truncate">${p.name}</p>
-                <span class="text-emerald-400 font-mono font-bold text-xs">$${parseFloat(p.price).toFixed(2)}</span>
+            
+            <span class="text-[9px] uppercase tracking-widest text-indigo-400 font-black mb-1 px-2 py-0.5 bg-indigo-900/30 rounded-full">
+                ${categoriaLabel}
+            </span>
+            
+            <h3 class="text-[11px] font-bold text-slate-200 leading-tight h-8 overflow-hidden mb-3 w-full px-1">
+                ${p.name}
+            </h3>
+            
+            <div class="bg-slate-900 border border-slate-700 w-full py-2 rounded-[1.5rem] mt-auto">
+                <span class="text-emerald-400 font-mono font-black text-sm">$${parseFloat(p.price).toFixed(2)}</span>
+            </div>
+            
+            <div class="absolute top-2 right-2 ${p.stock < 5 ? 'bg-red-500' : 'bg-slate-900/80 backdrop-blur-sm'} text-white text-[8px] font-black px-2 py-1 rounded-full border border-slate-700">
+                Stock: ${p.stock}
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function addToCart(id) {
@@ -253,18 +305,148 @@ async function guardarReposicionMasiva(e) {
 }
 
 // --- 6. LOGÍSTICA, DASHBOARD Y OTROS ---
+// --- LOGÍSTICA Y FOTOS ---
+// --- LOGÍSTICA Y FOTOS (CON DRAG & DROP) ---
+// --- LOGÍSTICA Y FOTOS (CON DRAG & DROP Y MODO ADMIN) ---
 function renderStock() {
     const table = document.getElementById('stock-table');
     if(!table) return;
-    table.innerHTML = state.products.map(p => `
-        <tr class="text-[11px] font-bold text-slate-700 border-b border-slate-100">
-            <td class="p-4 uppercase">${p.name}</td>
-            <td class="p-4 text-center font-mono ${p.stock < 10 ? 'text-red-500' : 'text-slate-800'}">${p.stock}</td>
-            <td class="p-4 text-center"><button onclick="borrarProducto(${p.id})" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button></td>
+    
+    table.innerHTML = state.products.map(p => {
+        // Validación: El botón de editar solo se inyecta si el usuario es Admin
+        const btnEditarAdmin = state.userRole === 'admin' 
+            ? `<button onclick="editarProductoAdmin(${p.id})" class="text-blue-500 hover:bg-blue-100 p-2 rounded-lg transition-all mr-1" title="Editar Nombre y Stock">
+                  <i class="fa-solid fa-pen-to-square"></i>
+               </button>` 
+            : '';
+
+        return `
+        <tr class="text-[11px] font-bold text-slate-700 border-b border-slate-100 hover:bg-slate-50 transition-colors">
+            <td class="p-4">
+                <div class="uppercase text-slate-800">${p.name}</div>
+                <div class="text-[9px] text-slate-400">${p.categoria || 'General'}</div>
+            </td>
+            <td class="p-4 text-center font-mono text-sm ${p.stock < 10 ? 'text-red-500' : 'text-slate-800'}">
+                ${p.stock}
+            </td>
+            <td class="p-4 text-right whitespace-nowrap">
+                <label 
+                    id="drop-zone-${p.id}"
+                    ondragover="allowDrop(event, ${p.id})"
+                    ondragleave="leaveDrop(event, ${p.id})"
+                    ondrop="dropFoto(event, ${p.id})"
+                    class="cursor-pointer border-2 border-transparent bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-2 rounded-xl inline-block mr-2 transition-all">
+                    <i class="fa-solid fa-camera"></i> ${p.image_url ? 'Cambiar' : 'Foto'}
+                    <input type="file" accept="image/*" class="hidden" onchange="seleccionarFotoProducto(${p.id}, event)">
+                </label>
+                
+                ${btnEditarAdmin}
+                
+                <button onclick="borrarProducto(${p.id})" class="text-red-400 hover:bg-red-50 p-2 rounded-lg transition-all">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 }
 
+// Función de Edición Rápida
+async function editarProductoAdmin(id) {
+    // Buscamos los datos actuales del producto
+    const p = state.products.find(x => x.id === id);
+    if (!p) return;
+
+    // 1. Pedir nuevo nombre
+    const nuevoNombre = prompt("✏️ Editar Nombre del Producto:", p.name);
+    if (nuevoNombre === null || nuevoNombre.trim() === "") return; // Si cancela o deja vacío
+
+    // 2. Pedir nueva cantidad (stock real)
+    const nuevoStock = prompt(`📦 Editar Cantidad (Stock) actual de ${nuevoNombre}:`, p.stock);
+    if (nuevoStock === null || nuevoStock.trim() === "") return; // Si cancela
+
+    const stockFinal = parseInt(nuevoStock);
+    if (isNaN(stockFinal)) return alert("❌ Error: La cantidad debe ser un número válido.");
+
+    // 3. Enviar a Supabase
+    try {
+        const { error } = await _sb.from('productos').update({ 
+            name: nuevoNombre.trim(), 
+            stock: stockFinal 
+        }).eq('id', id);
+
+        if (error) throw error;
+        
+        alert("✅ Producto actualizado correctamente.");
+        await sync(); // Recargamos todo el sistema
+    } catch (err) {
+        alert("Error al actualizar: " + err.message);
+    }
+}
+// Eventos de arrastrar (Cambio visual al pasar por encima)
+function allowDrop(ev, id) {
+    ev.preventDefault();
+    const el = document.getElementById(`drop-zone-${id}`);
+    el.classList.add('border-indigo-500', 'border-dashed', 'bg-indigo-200');
+    el.classList.remove('border-transparent');
+}
+
+function leaveDrop(ev, id) {
+    ev.preventDefault();
+    const el = document.getElementById(`drop-zone-${id}`);
+    el.classList.remove('border-indigo-500', 'border-dashed', 'bg-indigo-200');
+    el.classList.add('border-transparent');
+}
+
+// Función cuando sueltas la imagen arrastrada
+async function dropFoto(ev, id) {
+    ev.preventDefault();
+    leaveDrop(ev, id); // Quitamos el estilo punteado
+    
+    const file = ev.dataTransfer.files[0];
+    if(!file) return;
+    
+    const label = document.getElementById(`drop-zone-${id}`);
+    await procesarSubida(id, file, label);
+}
+
+// Función cuando haces clic y seleccionas tradicionalmente
+async function seleccionarFotoProducto(id, event) {
+    const file = event.target.files[0];
+    if(!file) return;
+    
+    const label = event.target.parentElement;
+    await procesarSubida(id, file, label);
+}
+
+// El motor real que sube a Supabase
+async function procesarSubida(id, file, labelElement) {
+    const originalHtml = labelElement.innerHTML;
+    labelElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
+    labelElement.classList.add('opacity-50', 'pointer-events-none');
+
+    try {
+        const name = `prod_${Date.now()}_${id}.jpg`;
+        
+        // 1. Subir a Storage
+        const { error: uploadError } = await _sb.storage.from('fotos-productos').upload(name, file);
+        if (uploadError) throw uploadError;
+
+        // 2. Obtener URL
+        const url = _sb.storage.from('fotos-productos').getPublicUrl(name).data.publicUrl;
+
+        // 3. Actualizar tabla
+        const { error: updateError } = await _sb.from('productos').update({ image_url: url }).eq('id', id);
+        if (updateError) throw updateError;
+
+        alert("Foto actualizada ✅");
+        await sync(); // Recarga la tabla y la vista de ventas
+    } catch (error) {
+        alert("Error al subir foto: " + error.message);
+        labelElement.innerHTML = originalHtml;
+        labelElement.classList.remove('opacity-50', 'pointer-events-none');
+    }
+}
 async function borrarProducto(id) {
     if(!confirm("¿Borrar permanentemente?")) return;
     await _sb.from('productos').delete().eq('id', id);
@@ -383,6 +565,129 @@ async function cobranzaMasiva() {
     }
     
     alert("Se están abriendo las ventanas de chat. Por favor, dales a 'Enviar' en cada una.");
+}
+// --- MOTOR CONTABLE Y PREDICCIÓN ---
+async function analizarTendenciaPago() {
+    const historicalTasa = 45.30; // Aquí podrías jalar de una tabla 'historico_tasas'
+    const actualTasa = state.tasa;
+    const alerta = document.getElementById('pago-alerta');
+    const texto = document.getElementById('recomendacion-texto');
+    const icono = document.getElementById('tendencia-icono');
+
+    // Lógica simple de fluctuación:
+    if (actualTasa > historicalTasa) {
+        // El Bolívar se devalúa: Conviene pagar facturas en Bs YA antes de que suba más.
+        alerta.className = "bg-orange-600 p-6 rounded-[2rem] text-white flex justify-between items-center shadow-xl";
+        texto.innerText = "Dólar al alza: Se recomienda liquidar facturas en Bs hoy.";
+        icono.innerHTML = '<i class="fa-solid fa-arrow-trend-up"></i>';
+    } else {
+        alerta.className = "bg-emerald-600 p-6 rounded-[2rem] text-white flex justify-between items-center shadow-xl";
+        texto.innerText = "Tasa estable: Momento óptimo para pagos programados.";
+        icono.innerHTML = '<i class="fa-solid fa-check-double"></i>';
+    }
+}
+
+async function calcularContabilidadTotal() {
+    // 1. Obtener ventas del mes
+    const { data: ventas } = await _sb.from('ventas').select('total_usd, ganancia_total');
+    const totalVentas = ventas.reduce((s, v) => s + parseFloat(v.total_usd), 0);
+    const utilidadBruta = ventas.reduce((s, v) => s + parseFloat(v.ganancia_total), 0);
+
+    // 2. Obtener gastos fijos (Plan de Negocios Chela Sport: Alquiler, Servicios, Sueldos) 
+    const costosFijos = 855; // Monto base según tu plan de negocios 
+    
+    document.getElementById('cont-ventas-brutas').innerText = `$${totalVentas.toFixed(2)}`;
+    document.getElementById('cont-costos-var').innerText = `-$${(totalVentas - utilidadBruta).toFixed(2)}`;
+    document.getElementById('cont-utilidad').innerText = `$${(utilidadBruta - costosFijos).toFixed(2)}`;
+}
+// ==========================================
+// 7. ALGORITMO: LISTA DE COMPRAS INTELIGENTE (AGRUPADA)
+// ==========================================
+async function generarListaComprasWA() {
+    const btn = document.getElementById('btn-wa-compras');
+    if(btn) { 
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Procesando...'; 
+        btn.disabled = true; 
+    }
+
+    try {
+        // 1. Filtrar URGENTES (Stock <= 5)
+        const bajoStock = state.products.filter(p => p.stock <= 5);
+        
+        // 1.5 AGRUPAR POR CATEGORÍA
+        const faltantesPorCategoria = {};
+        bajoStock.forEach(p => {
+            const cat = p.categoria || 'Otros';
+            if (!faltantesPorCategoria[cat]) faltantesPorCategoria[cat] = [];
+            faltantesPorCategoria[cat].push(p);
+        });
+
+        // 2. Extraer historial completo de ventas
+        const { data: ventas } = await _sb.from('ventas').select('items');
+        let conteoVentas = {};
+        
+        if (ventas) {
+            ventas.forEach(v => {
+                const itemsVendidos = typeof v.items === 'string' ? JSON.parse(v.items) : v.items;
+                if (itemsVendidos && itemsVendidos.length > 0) {
+                    itemsVendidos.forEach(item => {
+                        conteoVentas[item.name] = (conteoVentas[item.name] || 0) + item.qty;
+                    });
+                }
+            });
+        }
+
+        // 3. Obtener el Top 5
+        const topVentas = Object.entries(conteoVentas)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+
+        // 4. Armar el mensaje para WhatsApp
+        let mensaje = `*🛒 REPORTE DE COMPRAS INTELIGENTE - CHELA SPORT* 🚀\n\n`;
+        mensaje += `*🔴 URGENTE: Bajo Stock*\n`;
+        
+        // Iterar sobre cada categoría y sus productos
+        if (Object.keys(faltantesPorCategoria).length > 0) {
+            for (const [categoria, productos] of Object.entries(faltantesPorCategoria)) {
+                mensaje += `\n📁 *${categoria.toUpperCase()}*\n`;
+                productos.forEach(p => {
+                    mensaje += `  • ${p.name} _(Quedan: ${p.stock})_\n`;
+                });
+            }
+        } else {
+            mensaje += `\n• Todo el inventario está por encima del nivel crítico.\n`;
+        }
+
+        mensaje += `\n➖➖➖➖➖➖➖➖\n`;
+        mensaje += `*🔥 TOP 5 MÁS VENDIDOS*\n\n`;
+        
+        if (topVentas.length > 0) {
+            topVentas.forEach((v, index) => {
+                // Buscar de qué categoría es el producto más vendido
+                const prodInfo = state.products.find(p => p.name === v[0]);
+                const catLabel = prodInfo && prodInfo.categoria ? `[${prodInfo.categoria}]` : '';
+                
+                mensaje += `${index + 1}. ${v[0]} ${catLabel} _(${v[1]} unid.)_\n`;
+            });
+        } else {
+            mensaje += `• Aún no hay suficientes datos de ventas.\n`;
+        }
+
+        mensaje += `\n_Generado por Envolvia_ 🧠`;
+
+        // 5. Disparar WhatsApp
+        const urlWA = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`;
+        window.open(urlWA, '_blank');
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al generar el reporte de compras.");
+    } finally {
+        if(btn) { 
+            btn.innerHTML = '<i class="fa-brands fa-whatsapp text-sm mr-2"></i> Generar Lista'; 
+            btn.disabled = false; 
+        }
+    }
 }
 function handleLogout() { _sb.auth.signOut(); location.reload(); }
 function abrirModalCredito() { document.getElementById('modal-credito').classList.remove('view-hidden'); renderModalEstudiantes(); }

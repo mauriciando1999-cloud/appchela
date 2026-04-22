@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chela Sport | ERP Gerencial</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .active-tab { color: #6366f1; border-top: 2px solid #6366f1; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="overflow-x-hidden pb-24 selection:bg-indigo-500/30">
+
+    <div id="app-content" class="transition-opacity duration-300">
+        
+        <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 p-4 sticky top-0 z-40 flex justify-between items-center shadow-sm">
+            <h1 class="font-black text-white text-sm uppercase tracking-widest flex items-center gap-2">
+                <i class="fa-solid fa-chart-line text-indigo-500"></i> ERP Gerencial
+            </h1>
+            <div class="flex items-center gap-3">
+                <button onclick="handleLogout()" class="text-slate-400 hover:text-red-400 bg-slate-800 hover:bg-red-900/20 w-8 h-8 rounded-full flex justify-center items-center transition-all border border-slate-700">
+                    <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="p-4 space-y-6">
+            
+            <div class="bg-slate-900 rounded-[2rem] border border-slate-800 p-5 shadow-lg relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                <h3 class="font-black uppercase tracking-widest text-[10px] text-slate-400 mb-4">Utilidad Neta (Mes Actual)</h3>
+                
+                <div class="flex justify-between items-end mb-4">
+                    <p id="stat-utilidad" class="text-4xl font-black text-white">$0.00</p>
+                    <div id="tendencia-badge" class="bg-emerald-900/40 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black border border-emerald-500/30 flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-up"></i> Rentable
+                    </div>
+                </div>
+
+                <div class="space-y-2 mt-4 border-t border-slate-800 pt-4">
+                    <div class="flex justify-between text-xs font-bold">
+                        <span class="text-slate-500">Ingresos Brutos</span>
+                        <span id="stat-ingresos" class="text-emerald-400">+$0.00</span>
+                    </div>
+                    <div class="flex justify-between text-xs font-bold">
+                        <span class="text-slate-500">Gastos / Cuentas x Pagar</span>
+                        <span id="stat-egresos" class="text-red-400">-$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tendencia-card" class="bg-slate-900 p-5 rounded-[1.5rem] border border-slate-800 flex items-center justify-between shadow-sm">
+                <div>
+                    <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1">Indicador BCV</p>
+                    <p id="bcv-val-admin" class="text-xl font-black text-white">Bs. 0.00</p>
+                    <p id="tendencia-texto" class="text-[9px] font-bold text-slate-500 mt-1">Sincronizando DolarAPI...</p>
+                </div>
+                <div id="tendencia-icono" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-lg text-slate-400">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="font-black uppercase tracking-widest text-xs text-slate-400 ml-2 mb-3">Tesorería (Ingresos Hoy)</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-900 p-4 rounded-[1.5rem] border-l-2 border-slate-800 hover:border-cyan-500 transition-colors">
+                        <div class="flex justify-between items-start mb-2">
+                            <i class="fa-solid fa-mobile-screen-button text-cyan-500 text-lg"></i>
+                            <span class="text-[8px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md font-bold">0134</span>
+                        </div>
+                        <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest">Banesco PM</p>
+                        <p id="caja-pm" class="text-lg font-black text-white mt-1">$0.00</p>
+                        <p id="caja-pm-bs" class="text-[9px] text-slate-500 font-bold">Bs. 0.00</p>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 rounded-[1.5rem] border-l-2 border-slate-800 hover:border-blue-500 transition-colors">
+                        <div class="flex justify-between items-start mb-2">
+                            <i class="fa-solid fa-credit-card text-blue-500 text-lg"></i>
+                            <span class="text-[8px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md font-bold">0115</span>
+                        </div>
+                        <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest">Exterior Punto</p>
+                        <p id="caja-punto" class="text-lg font-black text-white mt-1">$0.00</p>
+                        <p id="caja-punto-bs" class="text-[9px] text-slate-500 font-bold">Bs. 0.00</p>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 rounded-[1.5rem] border-l-2 border-slate-800 hover:border-emerald-500 transition-colors col-span-2 flex justify-between items-center">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <i class="fa-solid fa-money-bill-wave text-emerald-500 text-lg"></i>
+                                <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Caja Chica</p>
+                            </div>
+                            <p class="text-[9px] text-slate-500 font-bold">Efectivo en tienda</p>
+                        </div>
+                        <div class="text-right">
+                            <p id="caja-efectivo" class="text-2xl font-black text-white">$0.00</p>
+                            <p id="caja-efectivo-bs" class="text-[10px] text-slate-500 font-bold">Bs. 0.00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8">
+                <div class="flex justify-between items-end mb-3 ml-2 mr-2">
+                    <h3 class="font-black uppercase tracking-widest text-xs text-slate-400">Deudas Empresa</h3>
+                    <button onclick="abrirModalGasto()" class="text-[10px] bg-indigo-600/20 text-indigo-400 font-black px-3 py-1 rounded-full uppercase tracking-widest active:scale-95 border border-indigo-500/30">
+                        + Nueva Factura
+                    </button>
+                </div>
+                
+                <div id="lista-gastos" class="bg-slate-900 rounded-[2rem] border border-slate-800 overflow-hidden divide-y divide-slate-800/50">
+                    <div class="p-6 text-center text-slate-500 text-xs font-bold">Cargando obligaciones...</div>
+                </div>
+            </div>
+
+            <div class="mt-8 pb-6">
+                <button onclick="cobranzaMasiva()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-[1.5rem] flex items-center justify-center gap-3 active:scale-95 transition-transform shadow-lg shadow-emerald-900/30">
+                    <i class="fa-brands fa-whatsapp text-xl"></i>
+                    <span class="font-black text-xs uppercase tracking-widest">Disparar Cobranza Masiva (Clientes)</span>
+                </button>
+            </div>
+
+        </main>
+
+        <div id="modal-gasto" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col justify-end p-4 pb-10 hidden transition-all">
+            <div class="bg-slate-900 w-full max-w-md mx-auto rounded-[2.5rem] border border-slate-800 p-6 shadow-2xl relative">
+                <button onclick="document.getElementById('modal-gasto').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2 active:scale-90"><i class="fa-solid fa-xmark text-xl"></i></button>
+                
+                <h3 class="text-white font-black uppercase tracking-widest text-sm mb-6 mt-2 flex items-center gap-2">
+                    <i class="fa-solid fa-file-invoice text-red-400"></i> Registrar Gasto
+                </h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[10px] text-slate-400 uppercase font-black tracking-widest ml-2 mb-1 block">Concepto / Proveedor</label>
+                        <input type="text" id="gasto-concepto" placeholder="Ej: Pago de Tela, Alquiler, Sueldo..." class="w-full bg-slate-950 border border-slate-800 text-white p-4 rounded-xl font-bold text-sm outline-none focus:border-indigo-500">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] text-slate-400 uppercase font-black tracking-widest ml-2 mb-1 block">Categoría</label>
+                            <select id="gasto-categoria" class="w-full bg-slate-950 border border-slate-800 text-slate-300 p-4 rounded-xl outline-none font-bold text-xs">
+                                <option value="Proveedor">Proveedor</option>
+                                <option value="Servicios">Servicios Generales</option>
+                                <option value="Nómina">Nómina</option>
+                                <option value="Impuestos">Impuestos</option>
+                                <option value="Otros">Otros</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400 uppercase font-black tracking-widest ml-2 mb-1 block">Monto a Pagar ($)</label>
+                            <input type="number" id="gasto-monto" step="0.01" inputmode="decimal" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 text-red-400 p-4 rounded-xl font-black text-xl outline-none focus:border-red-500 text-center">
+                        </div>
+                    </div>
+
+                    <button onclick="guardarGasto()" id="btn-save-gasto" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-[11px] mt-2 active:scale-95 shadow-lg shadow-red-900/30 flex justify-center items-center gap-2 transition-transform">
+                        <i class="fa-solid fa-plus"></i> Añadir a Cuentas x Pagar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 z-40 flex justify-around p-2 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
+            <a href="index.html" class="nav-btn flex-1 flex flex-col items-center py-2 text-slate-400 hover:text-slate-300">
+                <i class="fa-solid fa-cash-register text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Venta</span>
+            </a>
+            <a href="stock.html" class="nav-btn flex-1 flex flex-col items-center py-2 text-slate-400 hover:text-slate-300">
+                <i class="fa-solid fa-boxes-stacked text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Stock</span>
+            </a>
+            <a href="cobranza.html" class="nav-btn flex-1 flex flex-col items-center py-2 text-slate-400 hover:text-slate-300">
+                <i class="fa-solid fa-hand-holding-dollar text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Cobros</span>
+            </a>
+            <a href="admin.html" class="nav-btn active-tab flex-1 flex flex-col items-center py-2 text-indigo-400">
+                <i class="fa-solid fa-chart-pie text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Admin</span>
+            </a>
+        </nav>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestión de Cobranza | Chela Sport</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; }
+        .active-tab { color: #6366f1; border-top: 2px solid #6366f1; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="pb-24">
+
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 p-4 sticky top-0 z-40 flex justify-between items-center">
+        <h1 class="font-black text-white text-sm uppercase tracking-widest flex items-center gap-2">
+            <i class="fa-solid fa-hand-holding-dollar text-indigo-500"></i> Cobranza
+        </h1>
+        <div id="bcv-val" class="bg-emerald-900/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-full text-[10px] font-black uppercase">BCV: --</div>
+    </header>
+
+    <main class="p-4">
+        <div class="relative mb-6">
+            <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="search-deudor" oninput="renderDeudores()" placeholder="Buscar por niño o representante..." class="w-full bg-slate-900 border border-slate-800 py-4 pl-12 pr-4 rounded-2xl outline-none focus:border-indigo-500 text-sm">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 text-center">
+                <p class="text-[8px] text-slate-500 uppercase font-black mb-1">Cuentas x Cobrar</p>
+                <p id="total-deuda-global" class="text-xl font-black text-red-500">$0.00</p>
+            </div>
+            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 text-center">
+                <p class="text-[8px] text-slate-500 uppercase font-black mb-1">Clientes Morosos</p>
+                <p id="count-deudores" class="text-xl font-black text-white">0</p>
+            </div>
+        </div>
+
+        <div id="lista-deudores" class="space-y-3"></div>
+    </main>
+
+    <div id="modal-abono" class="fixed inset-0 z-50 bg-slate-950/90 p-4 flex flex-col justify-end hidden">
+        <div class="bg-slate-900 w-full max-w-md mx-auto rounded-[2rem] border border-slate-800 p-6 relative">
+            <button onclick="cerrarModalAbono()" class="absolute top-4 right-4 text-slate-400 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            <h3 id="abono-nombre" class="text-white font-black uppercase text-center mb-6 text-xs italic tracking-widest">Abono: ...</h3>
+            <div class="bg-slate-950 p-4 rounded-2xl mb-6 border border-slate-800 text-center text-red-500">
+                <p class="text-[10px] text-slate-500 uppercase font-black mb-1">Deuda Actual</p>
+                <p id="abono-deuda-actual" class="text-3xl font-black">$0.00</p>
+            </div>
+            <div class="space-y-4">
+                <input type="number" id="input-monto-abono" step="0.01" class="w-full bg-slate-950 border border-slate-800 text-emerald-400 p-4 rounded-2xl font-black text-xl outline-none text-center" placeholder="Monto $">
+                <button onclick="confirmarAbono()" id="btn-confirma-abono" class="w-full bg-emerald-600 text-white font-black py-5 rounded-2xl uppercase tracking-widest text-[11px] shadow-lg">Procesar Abono ✅</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 border-t border-slate-800 z-40 flex justify-around p-2">
+        <a href="index.html" class="flex-1 flex flex-col items-center py-2 text-slate-400"><i class="fa-solid fa-cash-register text-xl"></i><span class="text-[8px] uppercase font-black mt-1">Venta</span></a>
+        <a href="cobranza.html" class="flex-1 flex flex-col items-center py-2 active-tab"><i class="fa-solid fa-hand-holding-dollar text-xl"></i><span class="text-[8px] uppercase font-black mt-1">Cobros</span></a>
+        <a href="admin.html" id="btn-dashboard" class="flex-1 flex flex-col items-center py-2 text-slate-400 hidden"><i class="fa-solid fa-chart-pie text-xl"></i><span class="text-[8px] uppercase font-black mt-1">Admin</span></a>
+    </nav>
+
+    <script src="cobranza.js"></script>
+</body>
+</html>

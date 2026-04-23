@@ -15,9 +15,9 @@
         @keyframes pulse { 0% { border-color: rgba(99, 102, 241, 0.2); } 50% { border-color: rgba(99, 102, 241, 0.8); } 100% { border-color: rgba(99, 102, 241, 0.2); } }
     </style>
 </head>
-<body class="p-4">
+<body id="verificador-body" class="p-4 hidden">
     <div class="max-w-md mx-auto space-y-6">
-        <header class="p-8 text-center bg-slate-900/50 rounded-[3rem] border border-slate-800">
+        <header class="p-8 text-center bg-slate-900/50 rounded-[3rem] border border-slate-800 shadow-lg">
             <div class="inline-block p-4 bg-indigo-600/20 rounded-full mb-4 border border-indigo-500/30">
                 <i class="fa-solid fa-shield-check text-3xl text-indigo-500"></i>
             </div>
@@ -33,6 +33,30 @@
         const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd'; 
         const _sb = supabase.createClient(SB_URL, SB_KEY);
 
+        // 🛡️ VARIABLES DE SEGURIDAD (Cámbialas según necesites)
+        const MASTER_PIN = "2026"; 
+        const ADMIN_EMAIL = 'mauriciando1999@gmail.com';
+
+        // 🔒 CAPA 1: Guardián de Entrada
+        window.onload = async () => {
+            const { data: { user } } = await _sb.auth.getUser();
+            
+            // Si NO está logueado como Admin, pedimos el PIN como segunda oportunidad
+            if(!user || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+                const acceso = prompt("🔒 ACCESO RESTRINGIDO. Ingrese el PIN de Administración:");
+                
+                if(acceso !== MASTER_PIN) {
+                    alert("❌ Acceso denegado. Redirigiendo...");
+                    window.location.href = 'portal.html'; // Lo mandamos lejos de aquí
+                    return;
+                }
+            }
+
+            // Si pasa la seguridad, revelamos la pantalla
+            document.getElementById('verificador-body').classList.remove('hidden');
+            cargarPendientes();
+        };
+
         async function cargarPendientes() {
             try {
                 const { data: pendientes, error } = await _sb
@@ -45,7 +69,7 @@
                 const contenedor = document.getElementById('lista-pendientes');
                 
                 if (!pendientes || pendientes.length === 0) {
-                    contenedor.innerHTML = `<div class="text-center py-20 opacity-40 uppercase font-black text-[10px] tracking-widest">Sin pendientes</div>`;
+                    contenedor.innerHTML = `<div class="text-center py-20 opacity-40 uppercase font-black text-[10px] tracking-widest flex flex-col items-center"><i class="fa-solid fa-mug-hot text-3xl mb-3"></i>Sin pagos pendientes</div>`;
                     return;
                 }
 
@@ -54,8 +78,8 @@
                         <div class="flex justify-between items-start mb-4">
                             <div>
                                 <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-[9px] font-black px-3 py-1 rounded-full uppercase italic">${v.metodo_pago}</span>
-                                <div class="text-4xl font-black text-white mt-4">$${parseFloat(v.total_usd).toFixed(2)}</div>
-                                <p class="text-[11px] text-slate-400 font-bold mt-1 uppercase italic">${v.estudiante_nombre || 'Cliente'}</p>
+                                <div class="text-4xl font-black text-emerald-400 mt-4">$${parseFloat(v.total_usd).toFixed(2)}</div>
+                                <p class="text-[11px] text-slate-400 font-bold mt-1 uppercase italic">${v.estudiante_nombre || 'Cliente / Representante'}</p>
                             </div>
                         </div>
 
@@ -65,31 +89,77 @@
                         </button>
                         ` : ''}
 
-                        <div class="flex gap-3">
-                            <button onclick="verificarPago(${v.id}, 'completado')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all">Autorizar ✅</button>
-                            <button onclick="rechazarPago(${v.id})" class="bg-slate-800 text-red-500 px-6 py-4 rounded-2xl active:scale-95 border border-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+                        <div class="flex gap-3 mt-2">
+                            <button onclick="verificarPago(${v.id}, ${v.estudiante_id || 'null'}, ${v.total_usd})" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all">
+                                Autorizar ✅
+                            </button>
+                            <button onclick="rechazarPago(${v.id})" class="bg-slate-800 text-red-500 px-6 py-4 rounded-2xl active:scale-95 border border-slate-700 shadow-lg">
+                                <i class="fa-solid fa-xmark text-lg"></i>
+                            </button>
                         </div>
                     </div>`).join('');
             } catch (err) { console.error(err); }
         }
 
-        async function verificarPago(id, nuevoEstado) {
-            await _sb.from('ventas').update({ status: nuevoEstado }).eq('id', id);
-            cargarPendientes();
+        // --- LA MAGIA Y CAPA 2 ESTÁN AQUÍ ---
+        async function verificarPago(ventaId, estudianteId, montoReportado) {
+            
+            // 🔒 CAPA 2: PIN de Acción (Evita que alguien más presione el botón)
+            const pinConfirmacion = prompt("🔐 SEGURIDAD: Ingrese PIN Maestro para confirmar autorización:");
+            if (pinConfirmacion !== MASTER_PIN) {
+                return alert("❌ PIN Incorrecto. Autorización cancelada.");
+            }
+
+            // 1. Verificación manual del administrador 
+            const inputMonto = prompt(`Monto a aprobar en USD:\nVerifica el comprobante antes de continuar.`, montoReportado);
+            
+            if (inputMonto === null) return; 
+            
+            const montoConfirmado = parseFloat(inputMonto);
+            if (isNaN(montoConfirmado) || montoConfirmado <= 0) {
+                return alert("❌ Monto inválido. La transacción ha sido cancelada.");
+            }
+
+            try {
+                document.body.style.cursor = 'wait';
+
+                // 2. Descontar de la deuda
+                if (estudianteId) {
+                    const { data: estData, error: errEst } = await _sb.from('estudiantes').select('debt').eq('id', estudianteId).single();
+                    
+                    if (estData) {
+                        const nuevaDeuda = Math.max(0, parseFloat(estData.debt || 0) - montoConfirmado);
+                        await _sb.from('estudiantes').update({ debt: nuevaDeuda }).eq('id', estudianteId);
+                    }
+                }
+
+                // 3. Cambiamos el estado de la venta
+                await _sb.from('ventas').update({ 
+                    status: 'completado',
+                    total_usd: montoConfirmado
+                }).eq('id', ventaId);
+
+                alert(`✅ Pago aprobado por $${montoConfirmado.toFixed(2)}.`);
+                cargarPendientes();
+
+            } catch (e) {
+                alert("Error crítico al procesar el pago: " + e.message);
+            } finally {
+                document.body.style.cursor = 'default';
+            }
         }
 
         async function rechazarPago(id) {
-            if(confirm("¿Rechazar esta venta?")) {
+            // También podemos pedir PIN para rechazar si lo deseas, pero con confirmación basta por ahora
+            if(confirm("¿Estás seguro de rechazar este pago? El representante seguirá teniendo la deuda.")) {
                 await _sb.from('ventas').update({ status: 'rechazado' }).eq('id', id);
                 cargarPendientes();
             }
         }
 
-        function formatRelativeTime(date) { return "Ahora"; } // Simplificado
-
-        // Realtime
+        // Realtime para que lleguen solitos los pagos
         _sb.channel('db-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'ventas' }, () => cargarPendientes()).subscribe();
-        cargarPendientes();
+        
     </script>
 </body>
 </html>

@@ -88,30 +88,36 @@
                 const fileExt = file.name.split('.').pop();
                 const fileName = `pago_${Date.now()}.${fileExt}`;
                 
-                // 1. Subida al Bucket
+                // 1. Subida al Bucket de Supabase
                 const { error: uploadError } = await _sb.storage
                     .from('comprobantes')
-                    .upload(fileName, file);
+                    .upload(fileName, file, { upsert: true }); // Agregamos upsert por seguridad
 
-                if (uploadError) throw uploadError;
+                if (uploadError) throw new Error("Error al subir imagen: " + uploadError.message);
 
                 // 2. Generar URL Pública
                 const { data: { publicUrl } } = _sb.storage.from('comprobantes').getPublicUrl(fileName);
 
-                // 3. Insertar en Ventas
-                await _sb.from('ventas').insert([{
-                    id_orden: `REP-${ref}`,
-                    total_usd: parseFloat(monto),
-                    metodo_pago: `PAGO_MOVIL (Ref: ${ref})`,
-                    status: 'pendiente_verificacion',
-                    comprobante_url: publicUrl,
-                    estudiante_nombre: document.getElementById('nombre-estudiante').innerText.replace('Deuda: ', '')
-                }]);
+                // 3. Insertar en Ventas (AQUÍ ESTABA EL ERROR)
+                const { error: insertError } = await _sb.from('ventas').insert([{
+    // Añadimos Date.now() para que el ID sea irrepetible
+    id_orden: `REP-${ref}-${Date.now().toString().slice(-6)}`, 
+    total_usd: parseFloat(monto),
+    metodo_pago: `PAGO_MOVIL (Ref: ${ref})`,
+    status: 'pendiente_verificacion',
+    comprobante_url: publicUrl,
+    estudiante_nombre: document.getElementById('nombre-estudiante').innerText.replace('Deuda: ', ''),
+    estudiante_id: estId 
+}]);
 
-                alert("✅ Comprobante enviado con éxito.");
-                window.location.href = "exito.html"; // Opcional: crea una página de éxito
+                if (insertError) throw new Error("Error en base de datos: " + insertError.message);
+
+                // 4. Éxito
+                window.location.href = "exito.html"; 
+
             } catch (e) {
-                alert("Error: " + e.message);
+                console.error(e);
+                alert("Hubo un problema: " + e.message);
                 btn.disabled = false;
                 btn.innerText = "Subir Comprobante";
             }

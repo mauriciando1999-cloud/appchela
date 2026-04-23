@@ -37,11 +37,19 @@ async function getBCV() {
 
 // 3. SINCRONIZACIÓN DE DATOS
 async function syncCobranzas() {
-    const { data, error } = await _sb.from('estudiantes').select('*').order('representante');
-    if(error) return console.error(error);
-    state.estudiantes = data || [];
-    renderDeudores();
+    // Usamos _sb directamente como si siempre hubiera estado aquí
+    const { data, error } = await _sb.from('estudiantes').select('*');
+    
+    if (error) {
+        console.error("Error al traer datos:", error);
+        return;
+    }
+    
+    console.log("Datos de los estudiantes:", data);
 }
+
+// Empezamos la ejecución
+syncCobranzas();
 
 // 4. RENDERIZADO DE LISTA (Con Link Corregido)
 function renderDeudores() {

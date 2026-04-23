@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pago Exitoso | Chela Sport</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; overflow: hidden; }
+        
+        /* Animación del check de éxito */
+        @keyframes scaleUp {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-check {
+            animation: scaleUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Confeti sutil de fondo */
+        .glow-bg {
+            background: radial-gradient(circle at center, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-center items-center p-6 relative">
+
+    <div class="absolute inset-0 glow-bg pointer-events-none"></div>
+
+    <main class="w-full max-w-sm bg-slate-900/60 backdrop-blur-md border border-slate-800 p-8 rounded-[3rem] shadow-2xl text-center relative z-10">
+        
+        <div class="w-24 h-24 mx-auto bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full flex justify-center items-center mb-6 animate-check shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+            <i class="fa-solid fa-check text-5xl"></i>
+        </div>
+
+        <h1 class="text-2xl font-black uppercase tracking-tighter text-white mb-2 italic">¡Pago Reportado!</h1>
+        <p class="text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em] mb-6">Operación Exitosa</p>
+
+        <p class="text-slate-400 text-xs leading-relaxed mb-8 px-2">
+            Tu comprobante ha sido enviado a la administración de <span class="text-white font-bold">Chela Sport 1972</span>. 
+            <br><br>
+            El saldo de tu cuenta se actualizará automáticamente en el portal una vez que el administrador verifique la transacción.
+        </p>
+
+        <button onclick="window.location.href='portal.html'" class="w-full bg-slate-800 hover:bg-slate-700 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest border border-slate-700 active:scale-95 transition-all shadow-lg">
+            Volver al Portal
+        </button>
+
+    </main>
+
+    <footer class="mt-12 text-center relative z-10">
+        <p class="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-bolt text-indigo-500"></i> Powered by Envolvia
+        </p>
+    </footer>
+
+</body>
+</html>

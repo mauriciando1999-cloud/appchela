@@ -101,49 +101,60 @@
             } catch (err) { console.error(err); }
         }
 
-        // --- LA MAGIA Y CAPA 2 ESTÁN AQUÍ ---
         async function verificarPago(ventaId, estudianteId, montoReportado) {
+            // 1. PIN de Seguridad (Capa 2)
+            const pinConfirmacion = prompt("🔐 SEGURIDAD: Ingrese PIN Maestro para confirmar:");
+            if (pinConfirmacion !== MASTER_PIN) return alert("❌ PIN Incorrecto.");
+
+            // 2. Preguntar el monto y LA MONEDA
+            const inputMonto = prompt(`Monto a aprobar:\n(Escribe el número, luego configuraremos si es Bs o $)`, montoReportado);
+            if (inputMonto === null) return;
+
+            const esBolivares = confirm("¿Este monto está en BOLÍVARES?\n\nOK = Sí, son Bolívares (El sistema dividirá por el BCV)\nCancelar = No, son Dólares");
+
+            let montoFinalUSD = parseFloat(inputMonto);
             
-            // 🔒 CAPA 2: PIN de Acción (Evita que alguien más presione el botón)
-            const pinConfirmacion = prompt("🔐 SEGURIDAD: Ingrese PIN Maestro para confirmar autorización:");
-            if (pinConfirmacion !== MASTER_PIN) {
-                return alert("❌ PIN Incorrecto. Autorización cancelada.");
+            // --- AQUÍ ESTÁ LA CORRECCIÓN CRÍTICA ---
+            if (esBolivares) {
+                // Obtenemos la tasa actual (asegúrate de que getBCV ya se ejecutó)
+                const tasaTexto = document.getElementById('bcv-val-admin')?.innerText || "";
+                const tasaActual = parseFloat(tasaTexto.replace("Bs. ", ""));
+
+                if (!tasaActual || tasaActual <= 0) {
+                    return alert("❌ Error: No se pudo obtener la tasa BCV para convertir.");
+                }
+
+                montoFinalUSD = montoFinalUSD / tasaActual; // Convertimos Bs a $
+                alert(`🔄 Convirtiendo ${inputMonto} Bs a $${montoFinalUSD.toFixed(2)}`);
             }
 
-            // 1. Verificación manual del administrador 
-            const inputMonto = prompt(`Monto a aprobar en USD:\nVerifica el comprobante antes de continuar.`, montoReportado);
-            
-            if (inputMonto === null) return; 
-            
-            const montoConfirmado = parseFloat(inputMonto);
-            if (isNaN(montoConfirmado) || montoConfirmado <= 0) {
-                return alert("❌ Monto inválido. La transacción ha sido cancelada.");
+            if (isNaN(montoFinalUSD) || montoFinalUSD <= 0) {
+                return alert("❌ Monto inválido.");
             }
 
             try {
                 document.body.style.cursor = 'wait';
 
-                // 2. Descontar de la deuda
+                // 3. Descontar de la deuda del estudiante
                 if (estudianteId) {
-                    const { data: estData, error: errEst } = await _sb.from('estudiantes').select('debt').eq('id', estudianteId).single();
-                    
+                    const { data: estData } = await _sb.from('estudiantes').select('debt').eq('id', estudianteId).single();
                     if (estData) {
-                        const nuevaDeuda = Math.max(0, parseFloat(estData.debt || 0) - montoConfirmado);
+                        const nuevaDeuda = Math.max(0, parseFloat(estData.debt || 0) - montoFinalUSD);
                         await _sb.from('estudiantes').update({ debt: nuevaDeuda }).eq('id', estudianteId);
                     }
                 }
 
-                // 3. Cambiamos el estado de la venta
+                // 4. Actualizar la venta (Guardamos siempre el valor en USD para tus gráficas)
                 await _sb.from('ventas').update({ 
                     status: 'completado',
-                    total_usd: montoConfirmado
+                    total_usd: montoFinalUSD 
                 }).eq('id', ventaId);
 
-                alert(`✅ Pago aprobado por $${montoConfirmado.toFixed(2)}.`);
+                alert(`✅ Pago aprobado con éxito por $${montoFinalUSD.toFixed(2)}.`);
                 cargarPendientes();
 
             } catch (e) {
-                alert("Error crítico al procesar el pago: " + e.message);
+                alert("Error: " + e.message);
             } finally {
                 document.body.style.cursor = 'default';
             }

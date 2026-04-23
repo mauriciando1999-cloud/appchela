@@ -1,57 +1,64 @@
-const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
-const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
-const _sb = supabase.createClient(SB_URL, SB_KEY);
-const ADMIN_EMAIL = 'mauriciando1999@gmail.com';
+// --- LÓGICA DE COBRANZAS Y RECORDATORIOS (VERSIÓN FINAL) ---
 
-let state = { estudiantes: [], userRole: 'vendedor' };
+let state = { 
+    estudiantes: [], 
+    userRole: 'vendedor',
+    tasaBCV: 0 
+};
+
 let abonoTemporal = { id: null, deudaMax: 0 };
 
-// 1. INICIALIZACIÓN Y AUTH
+// 1. INICIALIZACIÓN Y SEGURIDAD
 window.onload = async () => {
+    // Verificamos sesión (Las constantes _sb y ADMIN_EMAIL vienen de config.js)
     const { data: { user } } = await _sb.auth.getUser();
-    if(!user) return window.location.href = 'index.html';
+    if(!user) return window.location.href = 'login.html';
 
+    // Definir Rol
     state.userRole = (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) ? 'admin' : 'vendedor';
     
-    // Mostrar botón admin si corresponde
+    // UI según rol
     if(state.userRole === 'admin') {
         document.getElementById('btn-dashboard')?.classList.remove('hidden');
     }
 
-    getBCV();
+    // Cargar Tasa y luego Datos
+    await getBCV();
     syncCobranzas();
 };
 
-// 2. OBTENER TASA BCV
+// 2. OBTENER TASA (DolarAPI)
 async function getBCV() {
     try {
         const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
         const data = await res.json();
         if (data?.promedio) {
-            document.getElementById('bcv-val').innerText = `BCV: ${parseFloat(data.promedio).toFixed(2)}`;
+            state.tasaBCV = parseFloat(data.promedio);
+            const el = document.getElementById('bcv-val');
+            if(el) el.innerText = `BCV: ${state.tasaBCV.toFixed(2)}`;
         }
     } catch (e) {
-        console.warn("Error tasa BCV");
+        console.warn("No se pudo sincronizar la tasa BCV");
     }
 }
 
 // 3. SINCRONIZACIÓN DE DATOS
 async function syncCobranzas() {
-    // Usamos _sb directamente como si siempre hubiera estado aquí
-    const { data, error } = await _sb.from('estudiantes').select('*');
+    const { data, error } = await _sb
+        .from('estudiantes')
+        .select('*')
+        .order('name', { ascending: true });
     
     if (error) {
-        console.error("Error al traer datos:", error);
+        console.error("Error Supabase:", error);
         return;
     }
     
-    console.log("Datos de los estudiantes:", data);
+    state.estudiantes = data; 
+    renderDeudores(); 
 }
 
-// Empezamos la ejecución
-syncCobranzas();
-
-// 4. RENDERIZADO DE LISTA (Con Link Corregido)
+// 4. RENDERIZADO DE LA LISTA (CON WHATSAPP + ABONO)
 function renderDeudores() {
     const list = document.getElementById('lista-deudores');
     if(!list) return;
@@ -71,7 +78,7 @@ function renderDeudores() {
         const debtNum = parseFloat(h.debt || 0);
         if(debtNum > 0) { totalD += debtNum; countD++; }
 
-        // --- LINK DE PAGO ROBUSTO ---
+        // --- GENERACIÓN DE LINK DE WHATSAPP ---
         const origin = window.location.origin;
         const linkPago = `${origin}/pago.html?estudiante=${h.id}&monto=${debtNum.toFixed(2)}`;
 
@@ -93,7 +100,7 @@ function renderDeudores() {
                     <p class="text-[11px] font-black uppercase text-white truncate leading-none">${h.name}</p>
                     ${h.bloqueado ? '<span class="bg-red-600/20 text-red-500 border border-red-500/30 text-[7px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Bloqueado</span>' : ''}
                 </div>
-                <p class="text-[9px] text-slate-500 font-bold truncate">Rep: ${h.representante} • <span class="text-indigo-400">PIN: ${h.pin_seguridad || '----'}</span></p>
+                <p class="text-[9px] text-slate-500 font-bold truncate">Rep: ${h.representante}</p>
                 <p class="text-[9px] text-indigo-400 mt-1 font-mono">${h.phone}</p>
             </div>
             
@@ -103,16 +110,16 @@ function renderDeudores() {
                     <p class="font-black text-sm text-red-400">$${debtNum.toFixed(2)}</p>
                 </div>
 
-                <button onclick="window.open('${urlWhatsApp}', '_blank')" class="bg-emerald-600 text-white w-9 h-9 rounded-full flex justify-center items-center active:scale-90 shadow-lg">
+                <button onclick="window.open('${urlWhatsApp}', '_blank')" class="bg-emerald-600 text-white w-9 h-9 rounded-full flex justify-center items-center active:scale-90 shadow-lg transition-transform">
                     <i class="fa-brands fa-whatsapp text-sm"></i>
                 </button>
 
-                <button onclick="abrirModalAbono(${h.id}, '${h.name}', ${debtNum})" class="bg-indigo-600 text-white w-9 h-9 rounded-full flex justify-center items-center active:scale-90 shadow-lg ml-1">
+                <button onclick="abrirModalAbono(${h.id}, '${h.name}', ${debtNum})" class="bg-indigo-600 text-white w-9 h-9 rounded-full flex justify-center items-center active:scale-90 shadow-lg ml-1 transition-transform">
                     <i class="fa-solid fa-dollar-sign text-xs"></i>
                 </button>
 
                 ${state.userRole === 'admin' ? `
-                    <button onclick="toggleBloqueo(${h.id}, ${h.bloqueado})" class="w-9 h-9 rounded-full ${h.bloqueado ? 'bg-red-600' : 'bg-slate-800'} border border-slate-700 flex justify-center items-center ml-1 active:scale-90 shadow-sm">
+                    <button onclick="toggleBloqueo(${h.id}, ${h.bloqueado})" class="w-9 h-9 rounded-full ${h.bloqueado ? 'bg-red-600' : 'bg-slate-800'} border border-slate-700 flex justify-center items-center ml-1 active:scale-90 shadow-sm transition-all">
                         <i class="fa-solid ${h.bloqueado ? 'fa-lock' : 'fa-lock-open'} text-[10px]"></i>
                     </button>
                 ` : ''}
@@ -124,7 +131,7 @@ function renderDeudores() {
     document.getElementById('count-deudores').innerText = countD;
 }
 
-// 5. GESTIÓN DE ABONOS
+// 5. GESTIÓN DE ABONOS (CON CONVERSIÓN VES/USD)
 function abrirModalAbono(id, nombre, deuda) {
     if(deuda <= 0) return;
     abonoTemporal = { id, deudaMax: deuda };
@@ -140,32 +147,50 @@ function cerrarModalAbono() {
 
 async function confirmarAbono() {
     const btn = document.getElementById('btn-confirma-abono');
-    const monto = parseFloat(document.getElementById('input-monto-abono').value);
+    const inputMonto = document.getElementById('input-monto-abono');
+    const moneda = document.getElementById('select-moneda-abono').value;
     
-    if (isNaN(monto) || monto <= 0 || monto > abonoTemporal.deudaMax + 0.1) {
-        return alert("Monto inválido");
+    let montoEscrito = parseFloat(inputMonto.value);
+    
+    if (isNaN(montoEscrito) || montoEscrito <= 0) return alert("⚠️ Ingresa un monto válido.");
+
+    // --- LÓGICA MULTIMONEDA ---
+    let montoUSD = montoEscrito;
+    if (moneda === 'VES') {
+        if (state.tasaBCV <= 0) return alert("❌ Tasa BCV no cargada.");
+        montoUSD = montoEscrito / state.tasaBCV; 
+    }
+
+    if (montoUSD > abonoTemporal.deudaMax + 0.1) {
+        return alert(`❌ El abono ($${montoUSD.toFixed(2)}) supera la deuda.`);
     }
 
     btn.disabled = true;
-    btn.innerText = "Procesando...";
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Procesando...';
 
     try {
-        const nuevaDeuda = Math.max(0, abonoTemporal.deudaMax - monto);
+        const nuevaDeuda = Math.max(0, abonoTemporal.deudaMax - montoUSD);
         
-        // Actualizar Deuda
+        // Actualizar Deuda en Estudiantes
         await _sb.from('estudiantes').update({ debt: nuevaDeuda }).eq('id', abonoTemporal.id);
         
-        // Registrar el abono como una venta para que sume a las estadísticas
+        // Registrar Venta (Dual: $ para reporte, Bs para auditoría)
         await _sb.from('ventas').insert([{
-            id_orden: `ABO-${Date.now().toString().slice(-4)}`,
-            total_usd: monto, 
-            metodo_pago: 'ABONO_EFECTIVO', 
-            status: 'completado', 
-            items: [{ name: `Abono de Deuda`, qty: 1, price: monto }]
+            id_orden: `ABO-${Date.now().toString().slice(-6)}`,
+            total_usd: montoUSD,           // Esto alimenta tu ERP Gerencial
+            monto_original: montoEscrito,   // Esto es lo que realmente entró (ej: 2000 Bs)
+            moneda: moneda,                 // 'VES' o 'USD'
+            tasa_referencia: state.tasaBCV,
+            metodo_pago: moneda === 'VES' ? 'ABONO_BS' : 'ABONO_EFECTIVO', 
+            status: 'completado',
+            estudiante_id: abonoTemporal.id,
+            estudiante_nombre: document.getElementById('abono-nombre').innerText.replace('Abono: ', '')
         }]);
 
         cerrarModalAbono();
         syncCobranzas();
+        alert(`✅ Abono registrado por ${montoEscrito} ${moneda}`);
+        
     } catch (e) {
         alert("Error: " + e.message);
     } finally {
@@ -188,6 +213,6 @@ async function toggleBloqueo(id, estadoActual) {
         if(error) throw error;
         syncCobranzas();
     } catch (e) {
-        alert("Error al cambiar estatus: " + e.message);
+        alert("Error: " + e.message);
     }
 }

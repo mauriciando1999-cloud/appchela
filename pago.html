@@ -10,7 +10,10 @@
 </head>
 <body class="bg-[#020617] text-white p-4 font-sans">
     <div class="max-w-md mx-auto bg-slate-900 rounded-[2.5rem] border border-slate-800 overflow-hidden shadow-2xl">
-        <div class="bg-indigo-600 p-8 text-center">
+        <div class="bg-indigo-600 p-8 text-center relative">
+            <div id="bcv-floating" class="absolute top-4 right-4 bg-black/20 px-3 py-1 rounded-full text-[9px] font-black tracking-widest">
+                BCV: --
+            </div>
             <i class="fa-solid fa-university text-3xl mb-4"></i>
             <h1 class="text-xl font-black uppercase tracking-widest">Reporte de Pago</h1>
             <p id="nombre-estudiante" class="text-[10px] font-bold opacity-80 uppercase mt-1">Cargando...</p>
@@ -20,6 +23,7 @@
             <div class="text-center">
                 <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Monto a Cancelar</p>
                 <h2 id="monto-usd" class="text-4xl font-black text-emerald-400">$0.00</h2>
+                <p id="monto-bs" class="text-lg font-black text-slate-400 mt-1">Bs. 0.00</p>
             </div>
 
             <div class="bg-black/30 p-5 rounded-2xl border border-slate-800">
@@ -60,13 +64,27 @@
 
         const params = new URLSearchParams(window.location.search);
         const estId = params.get('estudiante');
-        const monto = params.get('monto');
-        document.getElementById('monto-usd').innerText = `$${parseFloat(monto || 0).toFixed(2)}`;
+        const montoUSD = parseFloat(params.get('monto') || 0);
+        let tasaGlobal = 0;
 
+        // 1. CARGAR DATOS Y TASA BCV
         async function init() {
-            if(!estId) return;
-            const { data } = await _sb.from('estudiantes').select('name').eq('id', estId).single();
-            if(data) document.getElementById('nombre-estudiante').innerText = `Deuda: ${data.name}`;
+            document.getElementById('monto-usd').innerText = `$${montoUSD.toFixed(2)}`;
+            
+            // Traer tasa
+            try {
+                const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+                const data = await res.json();
+                tasaGlobal = data.promedio;
+                document.getElementById('bcv-floating').innerText = `BCV: ${tasaGlobal.toFixed(2)}`;
+                document.getElementById('monto-bs').innerText = `Bs. ${(montoUSD * tasaGlobal).toFixed(2)}`;
+            } catch (e) { console.error("Error tasa"); }
+
+            // Traer nombre estudiante
+            if(estId) {
+                const { data } = await _sb.from('estudiantes').select('name').eq('id', estId).single();
+                if(data) document.getElementById('nombre-estudiante').innerText = `Deuda: ${data.name}`;
+            }
         }
         init();
 
@@ -75,12 +93,14 @@
             if(file) document.getElementById('file-name').innerText = file.name;
         };
 
+        // 2. ENVIAR REPORTE CORREGIDO
         async function enviarReporte() {
             const ref = document.getElementById('ref').value;
             const file = document.getElementById('file-input').files[0];
             const btn = document.getElementById('btn-enviar');
 
             if(ref.length < 4 || !file) return alert("⚠️ Ingresa la referencia y adjunta la foto.");
+            
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Subiendo...';
 
@@ -88,35 +108,36 @@
                 const fileExt = file.name.split('.').pop();
                 const fileName = `pago_${Date.now()}.${fileExt}`;
                 
-                // 1. Subida al Bucket de Supabase
+                // A. Subida al Bucket
                 const { error: uploadError } = await _sb.storage
                     .from('comprobantes')
-                    .upload(fileName, file, { upsert: true }); // Agregamos upsert por seguridad
+                    .upload(fileName, file);
 
-                if (uploadError) throw new Error("Error al subir imagen: " + uploadError.message);
+                if (uploadError) throw uploadError;
 
-                // 2. Generar URL Pública
+                // B. Obtener URL Pública
                 const { data: { publicUrl } } = _sb.storage.from('comprobantes').getPublicUrl(fileName);
 
-                // 3. Insertar en Ventas (AQUÍ ESTABA EL ERROR)
+                // C. Registro en Ventas (EL CAMBIO CRÍTICO ESTÁ AQUÍ)
+                const montoBsCalculado = montoUSD * tasaGlobal;
+
                 const { error: insertError } = await _sb.from('ventas').insert([{
-    // Añadimos Date.now() para que el ID sea irrepetible
-    id_orden: `REP-${ref}-${Date.now().toString().slice(-6)}`, 
-    total_usd: parseFloat(monto),
-    metodo_pago: `PAGO_MOVIL (Ref: ${ref})`,
-    status: 'pendiente_verificacion',
-    comprobante_url: publicUrl,
-    estudiante_nombre: document.getElementById('nombre-estudiante').innerText.replace('Deuda: ', ''),
-    estudiante_id: estId 
-}]);
+                    id_orden: `REP-${ref}-${Date.now().toString().slice(-4)}`,
+                    total_usd: montoUSD,           // Se queda en $ para tus gráficas
+                    monto_original: montoBsCalculado, // Se guarda en Bs para tu banco
+                    moneda: 'VES',
+                    metodo_pago: `PAGO_MOVIL (Ref: ${ref})`,
+                    status: 'pendiente_verificacion',
+                    estudiante_id: estId,
+                    comprobante_url: publicUrl,
+                    tasa_referencia: tasaGlobal
+                }]);
 
-                if (insertError) throw new Error("Error en base de datos: " + insertError.message);
+                if (insertError) throw insertError;
 
-                // 4. Éxito
                 window.location.href = "exito.html"; 
 
             } catch (e) {
-                console.error(e);
                 alert("Hubo un problema: " + e.message);
                 btn.disabled = false;
                 btn.innerText = "Subir Comprobante";

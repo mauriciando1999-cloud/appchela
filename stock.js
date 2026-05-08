@@ -95,9 +95,53 @@ function renderStock() {
 // ==========================================
 // 3. FACTURA MÚLTIPLE (Ingreso de Mercancía)
 // ==========================================
+// ==========================================
+// 3. FACTURA MÚLTIPLE (Recepción y Cuentas por Pagar)
+// ==========================================
 function abrirModalFactura() {
-    document.getElementById('factura-filas').innerHTML = '';
-    agregarFilaFactura(); 
+    const container = document.getElementById('factura-filas');
+    
+    // Inyectamos el encabezado de la factura y el datalist de productos
+    container.innerHTML = `
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 mb-4 grid grid-cols-2 gap-3">
+            <div>
+                <label class="text-[9px] text-slate-500 uppercase font-black">Proveedor</label>
+                <input type="text" id="fac-proveedor" placeholder="Ej. Textilera C.A." class="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-xs outline-none focus:border-indigo-500">
+            </div>
+            <div>
+                <label class="text-[9px] text-slate-500 uppercase font-black">N° Factura / Ref</label>
+                <input type="text" id="fac-ref" placeholder="Opcional" class="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-xs outline-none focus:border-indigo-500">
+            </div>
+        </div>
+        <div id="filas-dinamicas" class="space-y-3"></div>
+        
+        <datalist id="prods-datalist">
+            ${state.products.map(p => `<option value="${p.name}"></option>`).join('')}
+        </datalist>
+    `;
+    
+    filaContador = 0;
+    agregarFilaFactura();
+    
+    // Opciones exclusivas para el Admin
+    const contenedorOpciones = document.getElementById('opciones-admin-factura');
+    if (contenedorOpciones) {
+        if (state.userRole === 'admin') {
+            contenedorOpciones.innerHTML = `
+                <div class="mt-4 flex flex-col gap-2 bg-slate-900 border border-slate-700 p-3 rounded-xl">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="chk-pagada" class="w-4 h-4 text-emerald-600 bg-slate-950 border-slate-600 rounded">
+                        <label for="chk-pagada" class="ml-2 text-xs font-bold text-emerald-400 tracking-widest uppercase">Marcar factura como YA PAGADA</label>
+                    </div>
+                </div>
+            `;
+            contenedorOpciones.classList.remove('hidden');
+        } else {
+            contenedorOpciones.innerHTML = '';
+            contenedorOpciones.classList.add('hidden');
+        }
+    }
+    
     document.getElementById('modal-factura').classList.remove('hidden');
 }
 
@@ -106,28 +150,25 @@ function cerrarModalFactura() { document.getElementById('modal-factura').classLi
 function agregarFilaFactura() {
     filaContador++;
     const id = filaContador;
-    const container = document.getElementById('factura-filas');
+    const container = document.getElementById('filas-dinamicas');
     
-    // Muestra también el proveedor en el select para guiar a la vendedora
-    const opcionesHTML = state.products.map(p => `<option value="${p.id}">${p.name} [${p.proveedor || 'S/A'}]</option>`).join('');
-
     const row = document.createElement('div');
     row.id = `factura-fila-${id}`;
-    row.className = 'factura-item bg-slate-900 border border-slate-800 p-3 rounded-2xl flex items-center gap-2';
+    row.className = 'factura-item bg-slate-900 border border-slate-800 p-3 rounded-2xl flex flex-wrap items-center gap-2 relative';
     
     row.innerHTML = `
+        <div class="w-full relative">
+            <input type="text" list="prods-datalist" class="f-nombre w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl text-[11px] outline-none focus:border-indigo-500 font-bold uppercase" placeholder="Buscar o escribir nombre nuevo...">
+        </div>
         <div class="flex-1">
-            <p class="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1 ml-1">Producto</p>
-            <select class="f-prod w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl outline-none font-bold text-[10px]">
-                <option value="">Seleccione...</option>
-                ${opcionesHTML}
-            </select>
+            <p class="text-[9px] text-slate-500 uppercase font-black text-center mb-1">Cant.</p>
+            <input type="number" inputmode="numeric" class="f-qty w-full bg-slate-950 border border-slate-700 text-emerald-400 p-2 rounded-xl text-sm font-black text-center outline-none" placeholder="0">
         </div>
-        <div class="w-20">
-            <p class="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1 text-center">Cant.</p>
-            <input type="number" inputmode="numeric" class="f-qty w-full bg-slate-950 border border-slate-700 text-emerald-400 p-2 rounded-xl font-black text-sm outline-none focus:border-emerald-500 text-center" placeholder="0">
+        <div class="flex-1">
+            <p class="text-[9px] text-slate-500 uppercase font-black text-center mb-1">Costo Unit ($)</p>
+            <input type="number" step="0.01" inputmode="decimal" class="f-costo w-full bg-slate-950 border border-slate-700 text-red-400 p-2 rounded-xl text-sm font-black text-center outline-none" placeholder="0.00">
         </div>
-        <button onclick="document.getElementById('factura-fila-${id}').remove()" class="mt-4 w-8 h-8 rounded-full bg-slate-950 text-red-500 border border-slate-800 flex justify-center items-center hover:bg-red-900/20 active:scale-90">
+        <button onclick="document.getElementById('factura-fila-${id}').remove()" class="w-8 h-8 rounded-full bg-slate-950 text-red-500 border border-slate-800 flex justify-center items-center mt-4 active:scale-90">
             <i class="fa-solid fa-trash text-xs"></i>
         </button>
     `;
@@ -137,34 +178,94 @@ function agregarFilaFactura() {
 async function guardarFacturaMasiva() {
     const items = document.querySelectorAll('.factura-item');
     if(items.length === 0) return alert("Añade al menos un producto.");
-
-    let actualizaciones = {}; 
+    
+    const proveedor = document.getElementById('fac-proveedor').value.trim() || 'Proveedor Sin Nombre';
+    const refFac = document.getElementById('fac-ref').value.trim() || `REC-${Date.now().toString().slice(-5)}`;
+    
     let errorValidacion = false;
+    let costoTotalFactura = 0;
+    let itemsFactura = []; 
+    let prodsAprocesar = [];
 
     items.forEach(item => {
-        const prodId = parseInt(item.querySelector('.f-prod').value);
+        const nombreStr = item.querySelector('.f-nombre').value.trim().toUpperCase();
         const qty = parseInt(item.querySelector('.f-qty').value);
+        const costo = parseFloat(item.querySelector('.f-costo').value);
 
-        if (isNaN(prodId) || isNaN(qty) || qty <= 0) errorValidacion = true;
-        else actualizaciones[prodId] = (actualizaciones[prodId] || 0) + qty;
+        if (!nombreStr || isNaN(qty) || qty <= 0 || isNaN(costo) || costo < 0) {
+            errorValidacion = true;
+        } else {
+            costoTotalFactura += (costo * qty);
+            itemsFactura.push({ nombre: nombreStr, cantidad: qty, costo_unitario: costo });
+            
+            // Verifica si el producto ya existe en la base de datos
+            const prodExistente = state.products.find(p => p.name.toUpperCase() === nombreStr);
+            prodsAprocesar.push({
+                existente: !!prodExistente,
+                id: prodExistente ? prodExistente.id : null,
+                nombre: nombreStr,
+                qty: qty,
+                costo: costo,
+                stockActual: prodExistente ? prodExistente.stock : 0
+            });
+        }
     });
 
-    if (errorValidacion) return alert("⚠️ Revisa los productos y cantidades.");
+    if (errorValidacion) return alert("⚠️ Revisa que todos los campos (Producto, Cantidad y Costo) estén llenos correctamente.");
 
     const btn = document.getElementById('btn-save-factura');
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
     btn.disabled = true;
 
+    // Lógica de estado para el Admin
+    const checkboxPagada = document.getElementById('chk-pagada');
+    const estaPagada = state.userRole === 'admin' && checkboxPagada && checkboxPagada.checked;
+    const estatusFactura = estaPagada ? 'pagado' : 'pendiente_pago';
+
     try {
-        for (const [id, qtyToAdd] of Object.entries(actualizaciones)) {
-            const prod = state.products.find(p => p.id == id);
-            await _sb.from('productos').update({ stock: prod.stock + qtyToAdd }).eq('id', id);
+        // 1. Procesar Inventario (Actualiza o crea productos)
+        for (const p of prodsAprocesar) {
+            if (p.existente) {
+                await _sb.from('productos').update({ 
+                    stock: p.stockActual + p.qty,
+                    cost: p.costo, 
+                    proveedor: proveedor
+                }).eq('id', p.id);
+            } else {
+                const precioSugerido = p.costo * 1.4; 
+                await _sb.from('productos').insert([{
+                    name: p.nombre,
+                    stock: p.qty,
+                    cost: p.costo,
+                    price: precioSugerido,
+                    proveedor: proveedor,
+                    categoria: 'Nuevos'
+                }]);
+            }
         }
-        alert("✅ Factura registrada con éxito.");
+
+        // 2. Registrar en la tabla 'facturas'
+        if (costoTotalFactura > 0) {
+            const estaPagada = state.userRole === 'admin' && document.getElementById('chk-pagada')?.checked;
+            
+            await _sb.from('facturas').insert([{
+                proveedor: proveedor,
+                concepto: `Factura N°: ${refFac}`, // Usamos el concepto para guardar el número de factura
+                monto_usd: costoTotalFactura,
+                fecha_vencimiento: new Date().toISOString().split('T')[0], // Guarda la fecha actual (YYYY-MM-DD)
+                status: estaPagada ? 'pagado' : 'pendiente' // Usamos 'status' como dicta tu tabla
+            }]);
+        }
+
+        alert(`✅ Recepción de mercancía registrada.\nTotal Factura: $${costoTotalFactura.toFixed(2)}`);
         cerrarModalFactura();
         syncStock(); 
-    } catch (e) { alert("Error: " + e.message); }
-    finally { btn.innerHTML = '<i class="fa-solid fa-check"></i> Procesar Factura'; btn.disabled = false; }
+    } catch (e) { 
+        alert("Error: " + e.message); 
+    } finally { 
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Procesar Factura'; 
+        btn.disabled = false; 
+    }
 }
 
 // ==========================================

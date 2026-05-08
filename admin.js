@@ -1,11 +1,11 @@
-// admin.js - ERP Gerencial Envolvia
+// admin.js - ERP Gerencial Envolvia (Facturación Agrupada y Cajas Bs)
 const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
 const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
 const _sb = supabase.createClient(SB_URL, SB_KEY);
 const ADMIN_EMAIL = 'mauriciando1999@gmail.com';
 const URL_SISTEMA = 'https://appchela.vercel.app';
 
-let state = { tasa: 45.30, tasaAyer: 45.00, gastos: [], ingresosMes: 0, gastosMes: 0, estudiantes: [] };
+let state = { tasa: 45.30, tasaAyer: 45.00, facturas: [], ingresosMes: 0, gastosMes: 0, estudiantes: [] };
 
 // ==========================================
 // 1. INICIALIZACIÓN
@@ -34,12 +34,12 @@ async function getBCV() {
         
         if (data?.promedio) {
             state.tasa = parseFloat(data.promedio);
-            state.tasaAyer = state.tasa - 0.05; // Simulación académica de tendencia
+            state.tasaAyer = state.tasa - 0.05; 
         }
         
         document.getElementById('bcv-val-admin').innerText = `Bs. ${state.tasa.toFixed(2)}`;
         analizarTendencia();
-    } catch (e) { console.warn("DolarAPI no responde"); }
+    } catch (e) { console.warn("DolarAPI no responde, usando tasa de respaldo."); }
 }
 
 function analizarTendencia() {
@@ -61,10 +61,9 @@ function analizarTendencia() {
 }
 
 // ==========================================
-// 3. CARGA DE DATOS DEL ERP (INGRESOS Y GASTOS)
+// 3. CARGA DE DATOS DEL ERP (INGRESOS Y FACTURAS)
 // ==========================================
 async function loadERP() {
-    // Definimos fechas (Hoy para tesorería, Todo el mes para Utilidad)
     const hoy = new Date().toISOString().split('T')[0];
     const primerDiaMes = new Date();
     primerDiaMes.setDate(1);
@@ -73,34 +72,33 @@ async function loadERP() {
     // A. CARGAR VENTAS (INGRESOS)
     const { data: sales } = await _sb.from('ventas').select('total_usd, metodo_pago, created_at').gte('created_at', mesInicioStr);
     
-    let cajaHoy = { PM: 0, PUNTO: 0, EFECTIVO: 0 };
+    // Contenedores de caja para HOY (Guardamos en USD para cálculos matemáticos precisos)
+    let cajaHoy = { PM_USD: 0, PUNTO_USD: 0, EFECTIVO_USD: 0 };
     state.ingresosMes = 0;
 
     if (sales) {
         sales.forEach(v => {
-            const monto = parseFloat(v.total_usd);
-            state.ingresosMes += monto; // Sumar al mes
+            const montoUsd = parseFloat(v.total_usd);
+            state.ingresosMes += montoUsd; 
 
-            // Si la venta es de hoy, la metemos en la tesorería diaria
             if (v.created_at.startsWith(hoy)) {
-                if(v.metodo_pago.includes('PAGO_MOVIL')) cajaHoy.PM += monto;
-                else if(v.metodo_pago.includes('PUNTO')) cajaHoy.PUNTO += monto;
-                else if(v.metodo_pago.includes('EFECTIVO')) cajaHoy.EFECTIVO += monto;
+                if(v.metodo_pago.includes('PAGO_MOVIL')) cajaHoy.PM_USD += montoUsd;
+                else if(v.metodo_pago.includes('PUNTO')) cajaHoy.PUNTO_USD += montoUsd;
+                else if(v.metodo_pago.includes('EFECTIVO')) cajaHoy.EFECTIVO_USD += montoUsd;
             }
         });
     }
 
-    // B. CARGAR GASTOS (EGRESOS)
-    // Usamos try-catch por si la tabla 'gastos' aún no ha sido creada en Supabase
+    // B. CARGAR FACTURAS (CUENTAS POR PAGAR)
     try {
-        const { data: gastosData, error } = await _sb.from('gastos').select('*').order('estado', { ascending: false }).order('created_at', { ascending: false });
+        const { data: facturasData, error } = await _sb.from('facturas').select('*').order('created_at', { ascending: false });
         if(error) throw error;
         
-        state.gastos = gastosData || [];
-        state.gastosMes = state.gastos.reduce((sum, g) => sum + parseFloat(g.monto_usd), 0);
+        state.facturas = facturasData || [];
+        state.gastosMes = state.facturas.filter(f => f.created_at.startsWith(mesInicioStr.slice(0,7))).reduce((sum, f) => sum + parseFloat(f.monto_usd), 0);
     } catch(e) {
-        console.warn("Tabla 'gastos' no encontrada. Ejecuta el SQL provisto.");
-        state.gastos = [];
+        console.warn("Error cargando facturas. Verifica la tabla.", e);
+        state.facturas = [];
     }
 
     // C. CARGAR DEUDORES (Para botón masivo)
@@ -108,19 +106,22 @@ async function loadERP() {
     state.estudiantes = estData || [];
 
     renderDashboard(cajaHoy);
-    renderGastos();
+    renderFacturasAgrupadas();
 }
 
 function renderDashboard(cajaHoy) {
-    // Render Tesorería Hoy
-    document.getElementById('caja-pm').innerText = `$${cajaHoy.PM.toFixed(2)}`;
-    document.getElementById('caja-pm-bs').innerText = `Bs. ${(cajaHoy.PM * state.tasa).toFixed(2)}`;
+    // Renderizado Bancario (Prioridad Bolívares para Banesco y Exterior)
+    const pmBs = (cajaHoy.PM_USD * state.tasa).toFixed(2);
+    document.getElementById('caja-pm-bs').innerText = `Bs. ${pmBs}`;
+    document.getElementById('caja-pm').innerText = `$${cajaHoy.PM_USD.toFixed(2)}`;
 
-    document.getElementById('caja-punto').innerText = `$${cajaHoy.PUNTO.toFixed(2)}`;
-    document.getElementById('caja-punto-bs').innerText = `Bs. ${(cajaHoy.PUNTO * state.tasa).toFixed(2)}`;
+    const puntoBs = (cajaHoy.PUNTO_USD * state.tasa).toFixed(2);
+    document.getElementById('caja-punto-bs').innerText = `Bs. ${puntoBs}`;
+    document.getElementById('caja-punto').innerText = `$${cajaHoy.PUNTO_USD.toFixed(2)}`;
 
-    document.getElementById('caja-efectivo').innerText = `$${cajaHoy.EFECTIVO.toFixed(2)}`;
-    document.getElementById('caja-efectivo-bs').innerText = `Bs. ${(cajaHoy.EFECTIVO * state.tasa).toFixed(2)}`;
+    // Caja Chica (Prioridad Dólares)
+    document.getElementById('caja-efectivo').innerText = `$${cajaHoy.EFECTIVO_USD.toFixed(2)}`;
+    document.getElementById('caja-efectivo-bs').innerText = `Bs. ${(cajaHoy.EFECTIVO_USD * state.tasa).toFixed(2)}`;
 
     // Render Utilidad Mensual
     document.getElementById('stat-ingresos').innerText = `+$${state.ingresosMes.toFixed(2)}`;
@@ -144,41 +145,141 @@ function renderDashboard(cajaHoy) {
 }
 
 // ==========================================
-// 4. CONTROL DE CUENTAS POR PAGAR (GASTOS)
+// 4. AGRUPACIÓN Y PAGO DE FACTURAS POR PROVEEDOR
 // ==========================================
-function renderGastos() {
+function renderFacturasAgrupadas() {
     const list = document.getElementById('lista-gastos');
     
-    if (state.gastos.length === 0) {
-        list.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs font-bold">Sin cuentas por pagar.</div>`;
+    // 1. Filtrar solo las pendientes
+    const pendientes = state.facturas.filter(f => f.status === 'pendiente');
+
+    if (pendientes.length === 0) {
+        list.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs font-bold">Sin cuentas por pagar pendientes.</div>`;
         return;
     }
 
-    list.innerHTML = state.gastos.map(g => {
-        const isPagado = g.estado === 'pagado';
-        const color = isPagado ? 'text-slate-500 line-through' : 'text-white';
-        const badgeColor = isPagado ? 'bg-slate-800 text-slate-500' : 'bg-red-900/30 text-red-400 border border-red-500/30';
-        
-        const btnAccion = isPagado 
-            ? `<i class="fa-solid fa-check-circle text-emerald-500 text-xl"></i>`
-            : `<button onclick="pagarGasto(${g.id})" class="bg-slate-800 text-emerald-400 w-8 h-8 rounded-full flex justify-center items-center hover:bg-emerald-900 transition-colors border border-slate-700" title="Marcar como pagado"><i class="fa-solid fa-check text-xs"></i></button>`;
+    // 2. Agrupar por proveedor
+    const agrupado = pendientes.reduce((acc, f) => {
+        const prov = f.proveedor || 'Sin Nombre';
+        if (!acc[prov]) acc[prov] = { facturas: [], totalUsd: 0 };
+        acc[prov].facturas.push(f);
+        acc[prov].totalUsd += parseFloat(f.monto_usd);
+        return acc;
+    }, {});
 
+    // 3. Renderizar grupos
+    list.innerHTML = Object.keys(agrupado).map(proveedor => {
+        const data = agrupado[proveedor];
+        const numFacturas = data.facturas.length;
+        
         return `
-        <div class="p-4 flex justify-between items-center bg-slate-900">
+        <div class="p-4 flex justify-between items-center bg-slate-900 border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors">
             <div class="flex-1 pr-2">
-                <p class="text-[11px] font-black uppercase ${color} truncate">${g.concepto}</p>
+                <p class="text-[11px] font-black uppercase text-white truncate"><i class="fa-solid fa-truck text-slate-500 mr-2"></i>${proveedor}</p>
                 <div class="flex gap-2 mt-1">
-                    <span class="text-[8px] px-2 py-0.5 rounded-md font-bold uppercase tracking-widest ${badgeColor}">${g.categoria}</span>
+                    <span class="text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-widest bg-indigo-900/30 text-indigo-400 border border-indigo-500/30">
+                        ${numFacturas} Factura${numFacturas > 1 ? 's' : ''}
+                    </span>
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <span class="font-black text-sm ${isPagado ? 'text-slate-600' : 'text-red-400'}">$${parseFloat(g.monto_usd).toFixed(2)}</span>
-                ${btnAccion}
+                <div class="text-right">
+                    <span class="font-black text-sm text-red-400 block leading-tight">$${data.totalUsd.toFixed(2)}</span>
+                    <span class="text-[9px] font-bold text-slate-500">Bs. ${(data.totalUsd * state.tasa).toFixed(2)}</span>
+                </div>
+                <button onclick="abrirModalPagoProveedor('${proveedor}')" class="bg-indigo-600 text-white w-8 h-8 rounded-full flex justify-center items-center hover:bg-indigo-500 transition-transform active:scale-90 shadow-lg shadow-indigo-900/50" title="Pagar Facturas">
+                    <i class="fa-solid fa-money-bill-wave text-[10px]"></i>
+                </button>
             </div>
         </div>`;
     }).join('');
 }
 
+// Ventana Dinámica para pago múltiple
+function abrirModalPagoProveedor(proveedor) {
+    const facturas = state.facturas.filter(f => f.status === 'pendiente' && (f.proveedor || 'Sin Nombre') === proveedor);
+    
+    let facturasHtml = facturas.map(f => `
+        <label class="flex items-center p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-indigo-500/50 transition-colors">
+            <input type="checkbox" value="${f.id}" data-monto="${f.monto_usd}" checked onchange="recalcularTotalModal()" class="chk-factura w-4 h-4 text-indigo-600 bg-slate-900 border-slate-700 rounded focus:ring-indigo-500 focus:ring-2 mr-3">
+            <div class="flex-1">
+                <p class="text-[10px] font-black text-white uppercase">${f.concepto}</p>
+                <p class="text-[8px] text-slate-500 font-bold">Vence: ${f.fecha_vencimiento || 'N/A'}</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs font-black text-red-400">$${parseFloat(f.monto_usd).toFixed(2)}</p>
+            </div>
+        </label>
+    `).join('');
+
+    const modalHtml = `
+        <div id="modal-pago-multiple" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col justify-end p-4 pb-10 transition-all">
+            <div class="bg-slate-900 w-full max-w-md mx-auto rounded-[2.5rem] border border-slate-800 p-6 shadow-2xl relative flex flex-col max-h-[85vh]">
+                <button onclick="document.getElementById('modal-pago-multiple').remove()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2 active:scale-90"><i class="fa-solid fa-xmark text-xl"></i></button>
+                
+                <h3 class="text-white font-black uppercase tracking-widest text-sm mb-2 mt-2 flex items-center gap-2">
+                    <i class="fa-solid fa-building-columns text-emerald-400"></i> Liquidar a Proveedor
+                </h3>
+                <p class="text-xs text-indigo-400 font-bold mb-4 uppercase"><i class="fa-solid fa-truck mr-1"></i> ${proveedor}</p>
+                
+                <div class="flex-1 overflow-y-auto space-y-2 mb-4 pr-1 no-scrollbar">
+                    ${facturasHtml}
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 mb-4 text-center">
+                    <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Monto a Liquidar</p>
+                    <div class="flex justify-center items-end gap-3">
+                        <p id="modal-total-usd" class="text-3xl font-black text-white">$0.00</p>
+                    </div>
+                    <p id="modal-total-bs" class="text-sm font-black text-emerald-400 mt-1 bg-emerald-900/20 inline-block px-3 py-1 rounded-lg border border-emerald-500/30">Bs. 0.00</p>
+                </div>
+
+                <button onclick="procesarPagoMultiple('${proveedor}')" id="btn-confirma-pago-prov" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-[11px] active:scale-95 shadow-lg shadow-emerald-900/30 flex justify-center items-center gap-2 transition-transform shrink-0">
+                    <i class="fa-solid fa-check-double"></i> Registrar Pago
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Inyectar y calcular inicial
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    recalcularTotalModal();
+}
+
+window.recalcularTotalModal = function() {
+    let sumUsd = 0;
+    document.querySelectorAll('.chk-factura:checked').forEach(chk => {
+        sumUsd += parseFloat(chk.dataset.monto);
+    });
+    document.getElementById('modal-total-usd').innerText = `$${sumUsd.toFixed(2)}`;
+    document.getElementById('modal-total-bs').innerText = `Bs. ${(sumUsd * state.tasa).toFixed(2)}`;
+};
+
+async function procesarPagoMultiple(proveedor) {
+    const checkboxes = document.querySelectorAll('.chk-factura:checked');
+    const idsAPagar = Array.from(checkboxes).map(chk => chk.value);
+
+    if(idsAPagar.length === 0) return alert("Selecciona al menos una factura para pagar.");
+
+    const btn = document.getElementById('btn-confirma-pago-prov');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+    btn.disabled = true;
+
+    try {
+        // Actualizar estatus masivamente en Supabase
+        await _sb.from('facturas').update({ status: 'pagado' }).in('id', idsAPagar);
+        
+        alert(`✅ Se registraron los pagos para ${proveedor} con éxito.`);
+        document.getElementById('modal-pago-multiple').remove();
+        loadERP(); 
+    } catch (e) {
+        alert("Error al procesar pago: " + e.message);
+        btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Registrar Pago';
+        btn.disabled = false;
+    }
+}
+
+// Mantenemos la creación manual de facturas/gastos extra por si acaso
 function abrirModalGasto() {
     document.getElementById('gasto-concepto').value = '';
     document.getElementById('gasto-monto').value = '';
@@ -197,24 +298,20 @@ async function guardarGasto() {
     btn.disabled = true;
 
     try {
-        await _sb.from('gastos').insert([{ concepto, categoria, monto_usd: monto, estado: 'pendiente' }]);
+        await _sb.from('facturas').insert([{ 
+            concepto: concepto, 
+            proveedor: categoria, // Usamos proveedor en lugar de categoria para unificar
+            monto_usd: monto, 
+            status: 'pendiente',
+            fecha_vencimiento: new Date().toISOString().split('T')[0]
+        }]);
         document.getElementById('modal-gasto').classList.add('hidden');
-        loadERP(); // Recarga todo el dashboard
-    } catch (e) {
-        alert("Error: Asegúrate de haber creado la tabla 'gastos' en Supabase. Detalles: " + e.message);
-    } finally {
+        loadERP(); 
+    } catch (e) { alert("Error: " + e.message); } 
+    finally {
         btn.innerHTML = '<i class="fa-solid fa-plus"></i> Añadir a Cuentas x Pagar';
         btn.disabled = false;
     }
-}
-
-async function pagarGasto(id) {
-    if(!confirm("¿Marcar esta factura de la empresa como PAGADA?")) return;
-    
-    try {
-        await _sb.from('gastos').update({ estado: 'pagado' }).eq('id', id);
-        loadERP();
-    } catch (e) { alert(e.message); }
 }
 
 // ==========================================

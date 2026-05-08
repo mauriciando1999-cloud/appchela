@@ -121,7 +121,9 @@ function renderProducts() {
     if (!grid) return;
     const search = document.getElementById('search').value.toLowerCase();
     
+    // 🔥 Aquí filtramos para que solo pasen los que tienen stock > 0
     let prods = state.products.filter(p => 
+        p.stock > 0 && 
         (categoriaActual === 'Todos' || p.categoria === categoriaActual) &&
         p.name.toLowerCase().includes(search)
     );

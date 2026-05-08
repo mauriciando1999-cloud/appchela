@@ -1,4 +1,10 @@
-// --- LÓGICA DE COBRANZAS Y RECORDATORIOS (VERSIÓN FINAL) ---
+// --- LÓGICA DE COBRANZAS Y RECORDATORIOS (VERSIÓN FINAL CHELA SPORT) ---
+
+// Configuración inicial (Asegúrate de que estas constantes existan en config.js)
+const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
+const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
+const _sb = supabase.createClient(SB_URL, SB_KEY);
+const ADMIN_EMAIL = 'mauriciando1999@gmail.com';
 
 let state = { 
     estudiantes: [], 
@@ -10,22 +16,24 @@ let abonoTemporal = { id: null, deudaMax: 0 };
 
 // 1. INICIALIZACIÓN Y SEGURIDAD
 window.onload = async () => {
+    // Verificamos sesión
     const { data: { user } } = await _sb.auth.getUser();
+    if(!user) return window.location.href = 'index.html';
+
+    // Definir Rol
+    state.userRole = (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) ? 'admin' : 'vendedor';
     
-    if (user) {
-        // Definir si es admin
-        const isAdmin = user.email.toLowerCase() === 'mauriciando1999@gmail.com';
-        
-        // MOSTRAR EL BOTÓN SOLO SI ES ADMIN
-        if (isAdmin) {
-            document.getElementById('btn-admin')?.classList.remove('hidden');
-        }
-        
-        // El resto de tu lógica de sincronización...
-        await sync(); 
+    // UI según rol: Ocultar/Mostrar acceso a Admin
+    const btnAdmin = document.getElementById('btn-admin');
+    if(state.userRole === 'admin') {
+        btnAdmin?.classList.remove('hidden');
     } else {
-        window.location.href = 'index.html';
+        btnAdmin?.classList.add('hidden');
     }
+
+    // Cargar Tasa y luego Datos
+    await getBCV();
+    syncCobranzas();
 };
 
 // 2. OBTENER TASA (DolarAPI)
@@ -59,7 +67,7 @@ async function syncCobranzas() {
     renderDeudores(); 
 }
 
-// 4. RENDERIZADO DE LA LISTA (CON WHATSAPP + ABONO)
+// 4. RENDERIZADO DE LA LISTA
 function renderDeudores() {
     const list = document.getElementById('lista-deudores');
     if(!list) return;
@@ -68,8 +76,7 @@ function renderDeudores() {
     
     let filtered = state.estudiantes.filter(e => 
         e.name.toLowerCase().includes(search) || 
-        e.representante.toLowerCase().includes(search) ||
-        e.phone.includes(search)
+        e.representante.toLowerCase().includes(search)
     );
 
     let totalD = 0;
@@ -79,7 +86,6 @@ function renderDeudores() {
         const debtNum = parseFloat(h.debt || 0);
         if(debtNum > 0) { totalD += debtNum; countD++; }
 
-        // --- GENERACIÓN DE LINK DE WHATSAPP ---
         const origin = window.location.origin;
         const linkPago = `${origin}/pago.html?estudiante=${h.id}&monto=${debtNum.toFixed(2)}`;
 
@@ -91,8 +97,7 @@ function renderDeudores() {
             `¡Gracias!`
         );
         
-        const phoneClean = h.phone.replace(/\D/g,'');
-        const urlWhatsApp = `https://wa.me/${phoneClean}?text=${mensajeWa}`;
+        const urlWhatsApp = `https://wa.me/${h.phone.replace(/\D/g,'')}?text=${mensajeWa}`;
 
         return `
         <div class="bg-slate-900 border ${h.bloqueado ? 'border-red-900/40' : 'border-slate-800'} p-4 rounded-2xl flex justify-between items-center shadow-sm mb-3">
@@ -102,7 +107,6 @@ function renderDeudores() {
                     ${h.bloqueado ? '<span class="bg-red-600/20 text-red-500 border border-red-500/30 text-[7px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Bloqueado</span>' : ''}
                 </div>
                 <p class="text-[9px] text-slate-500 font-bold truncate">Rep: ${h.representante}</p>
-                <p class="text-[9px] text-indigo-400 mt-1 font-mono">${h.phone}</p>
             </div>
             
             <div class="flex items-center gap-2 shrink-0">
@@ -156,41 +160,33 @@ async function confirmarAbono() {
     if (isNaN(montoEscrito) || montoEscrito <= 0) return alert("⚠️ Ingresa un monto válido.");
 
     // --- LÓGICA MULTIMONEDA ---
-    let montoUSD = montoEscrito;
-    if (moneda === 'VES') {
-        if (state.tasaBCV <= 0) return alert("❌ Tasa BCV no cargada.");
-        montoUSD = montoEscrito / state.tasaBCV; 
-    }
+    let montoUSD = moneda === 'VES' ? (montoEscrito / state.tasaBCV) : montoEscrito;
 
     if (montoUSD > abonoTemporal.deudaMax + 0.1) {
         return alert(`❌ El abono ($${montoUSD.toFixed(2)}) supera la deuda.`);
     }
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Procesando...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>';
 
     try {
         const nuevaDeuda = Math.max(0, abonoTemporal.deudaMax - montoUSD);
         
-        // Actualizar Deuda en Estudiantes
+        // 1. Actualizar Deuda en Estudiantes
         await _sb.from('estudiantes').update({ debt: nuevaDeuda }).eq('id', abonoTemporal.id);
         
-        // Registrar Venta (Dual: $ para reporte, Bs para auditoría)
+        // 2. Registrar Venta (Mapeado para que Admin lo vea en sus cajas)
         await _sb.from('ventas').insert([{
             id_orden: `ABO-${Date.now().toString().slice(-6)}`,
-            total_usd: montoUSD,           // Esto alimenta tu ERP Gerencial
-            monto_original: montoEscrito,   // Esto es lo que realmente entró (ej: 2000 Bs)
-            moneda: moneda,                 // 'VES' o 'USD'
-            tasa_referencia: state.tasaBCV,
-            metodo_pago: moneda === 'VES' ? 'ABONO_BS' : 'ABONO_EFECTIVO', 
+            total_usd: montoUSD,
+            metodo_pago: moneda === 'VES' ? 'PAGO_MOVIL' : 'EFECTIVO', // 'PAGO_MOVIL' suma a Banesco en admin.js
             status: 'completado',
-            estudiante_id: abonoTemporal.id,
             estudiante_nombre: document.getElementById('abono-nombre').innerText.replace('Abono: ', '')
         }]);
 
         cerrarModalAbono();
         syncCobranzas();
-        alert(`✅ Abono registrado por ${montoEscrito} ${moneda}`);
+        alert(`✅ Abono registrado exitosamente.`);
         
     } catch (e) {
         alert("Error: " + e.message);
@@ -202,16 +198,10 @@ async function confirmarAbono() {
 
 // 6. TOGGLE BLOQUEO (Solo Admin)
 async function toggleBloqueo(id, estadoActual) {
-    const accion = estadoActual ? "DESBLOQUEAR" : "BLOQUEAR";
-    if(!confirm(`¿Deseas ${accion} el crédito para este representante?`)) return;
+    if(!confirm(`¿Deseas cambiar el estado de bloqueo para este representante?`)) return;
 
     try {
-        const { error } = await _sb
-            .from('estudiantes')
-            .update({ bloqueado: !estadoActual })
-            .eq('id', id);
-
-        if(error) throw error;
+        await _sb.from('estudiantes').update({ bloqueado: !estadoActual }).eq('id', id);
         syncCobranzas();
     } catch (e) {
         alert("Error: " + e.message);

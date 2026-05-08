@@ -1,17 +1,15 @@
 {
-  "name": "CHELA Retail PRO",
-  "short_name": "PROVEEDURIA",
-  "description": "Plataforma de Gestión Retail y Proveeduría",
-  "start_url": "/index.html",
+  "name": "Chela Sport POS",
+  "short_name": "Chela POS",
+  "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#4f46e5",
+  "background_color": "#020617",
+  "theme_color": "#6366f1",
   "icons": [
     {
       "src": "icon.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }

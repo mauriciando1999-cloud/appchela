@@ -10,21 +10,22 @@ let abonoTemporal = { id: null, deudaMax: 0 };
 
 // 1. INICIALIZACIÓN Y SEGURIDAD
 window.onload = async () => {
-    // Verificamos sesión (Las constantes _sb y ADMIN_EMAIL vienen de config.js)
     const { data: { user } } = await _sb.auth.getUser();
-    if(!user) return window.location.href = 'login.html';
-
-    // Definir Rol
-    state.userRole = (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) ? 'admin' : 'vendedor';
     
-    // UI según rol
-    if(state.userRole === 'admin') {
-        document.getElementById('btn-dashboard')?.classList.remove('hidden');
+    if (user) {
+        // Definir si es admin
+        const isAdmin = user.email.toLowerCase() === 'mauriciando1999@gmail.com';
+        
+        // MOSTRAR EL BOTÓN SOLO SI ES ADMIN
+        if (isAdmin) {
+            document.getElementById('btn-admin')?.classList.remove('hidden');
+        }
+        
+        // El resto de tu lógica de sincronización...
+        await sync(); 
+    } else {
+        window.location.href = 'index.html';
     }
-
-    // Cargar Tasa y luego Datos
-    await getBCV();
-    syncCobranzas();
 };
 
 // 2. OBTENER TASA (DolarAPI)

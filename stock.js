@@ -106,29 +106,20 @@ window.abrirModalFactura = function() {
     const proveedoresUnicos = [...new Set(state.products.map(p => p.proveedor).filter(Boolean))];
 
     container.innerHTML = `
-        <!-- BOTÓN MÁGICO DE INTELIGENCIA ARTIFICIAL -->
-        <div class="mb-4">
-            <input type="file" id="ia-factura-file" accept="image/*" capture="environment" class="hidden" onchange="procesarFacturaIA(event)">
-            <button onclick="document.getElementById('ia-factura-file').click()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)] py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest active:scale-95 flex justify-center items-center gap-2 transition-all">
-                <i class="fa-solid fa-camera"></i> Tomar foto a la factura
-            </button>
-            <p class="text-[8px] text-center mt-2 text-indigo-400 font-bold uppercase tracking-widest">La IA extraerá productos, cant. y costos</p>
-        </div>
-
         <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 mb-4 grid grid-cols-2 gap-3">
             <div>
                 <label class="text-[9px] text-slate-500 uppercase font-black">Proveedor</label>
-                <input type="text" id="fac-proveedor" list="proveedores-list" class="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-xs outline-none focus:border-indigo-500 font-bold uppercase">
+                <input type="text" id="fac-proveedor" list="proveedores-list" placeholder="Ej. Textilera C.A." class="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-xs outline-none focus:border-indigo-500 font-bold uppercase">
                 <datalist id="proveedores-list">
                     ${proveedoresUnicos.map(prov => `<option value="${prov}"></option>`).join('')}
                 </datalist>
             </div>
             <div>
-                <label class="text-[9px] text-slate-500 uppercase font-black">N° Factura</label>
-                <input type="text" id="fac-ref" class="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-xs outline-none focus:border-indigo-500 font-bold">
+                <label class="text-[9px] text-slate-500 uppercase font-black">N° Factura / Ref</label>
+                <input type="text" id="fac-ref" placeholder="Opcional" class="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-xs outline-none focus:border-indigo-500 font-bold">
             </div>
         </div>
-        <div id="filas-dinamicas" class="space-y-3"></div>
+        <div id="filas-dinamicas" class="space-y-4"></div>
         <datalist id="prods-datalist">
             ${state.products.map(p => `<option value="${p.name}"></option>`).join('')}
         </datalist>
@@ -143,35 +134,60 @@ window.cerrarModalFactura = function() {
     document.getElementById('modal-factura').classList.add('hidden'); 
 }
 
+// Función auxiliar para cambiar la vista cuando eligen "Paquete"
+window.togglePaquete = function(select) {
+    const row = select.closest('.factura-item');
+    const inputUndPaq = row.querySelector('.f-und-paq');
+    const lblCant = row.querySelector('.lbl-cant');
+
+    if(select.value === 'paquete') {
+        inputUndPaq.disabled = false;
+        inputUndPaq.classList.replace('text-slate-500', 'text-amber-400');
+        if(!inputUndPaq.value || inputUndPaq.value === '1') inputUndPaq.value = ''; // Vacía para escribir
+        lblCant.innerText = 'Paqs';
+    } else {
+        inputUndPaq.disabled = true;
+        inputUndPaq.value = '1';
+        inputUndPaq.classList.replace('text-amber-400', 'text-slate-500');
+        lblCant.innerText = 'Unds';
+    }
+}
+
 window.agregarFilaFactura = function() {
     filaContador++;
     const id = filaContador;
     const container = document.getElementById('filas-dinamicas');
     const row = document.createElement('div');
     row.id = `factura-fila-${id}`;
-    row.className = 'factura-item bg-slate-900 border border-slate-800 p-3 rounded-2xl flex flex-wrap items-center gap-2 relative';
+    row.className = 'factura-item bg-slate-900 border border-slate-800 p-3 rounded-2xl flex flex-col gap-2 relative';
     
     row.innerHTML = `
         <div class="w-full relative">
             <input type="text" list="prods-datalist" onchange="cargarDatosProducto(this)" class="f-nombre w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl text-[11px] outline-none focus:border-indigo-500 font-bold uppercase" placeholder="BUSCAR O CREAR PRODUCTO...">
             <p class="info-producto text-[9px] text-indigo-400 font-bold mt-1 px-1 hidden"></p>
         </div>
-        <div class="flex-1 min-w-[70px]">
-            <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1">Tipo</p>
-            <select class="f-tipo w-full bg-slate-950 border border-slate-700 text-indigo-300 p-2 rounded-xl text-[10px] font-black text-center outline-none uppercase">
-                <option value="unidad">Unidad</option>
-                <option value="paquete">Paquete</option>
-            </select>
+        <div class="flex gap-2 w-full">
+            <div class="flex-1">
+                <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1">Tipo</p>
+                <select onchange="togglePaquete(this)" class="f-tipo w-full bg-slate-950 border border-slate-700 text-indigo-300 p-2 rounded-xl text-[10px] font-black text-center outline-none uppercase">
+                    <option value="unidad">Unidad</option>
+                    <option value="paquete">Paquete</option>
+                </select>
+            </div>
+            <div class="flex-1">
+                <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1">Trae</p>
+                <input type="number" class="f-und-paq w-full bg-slate-950 border border-slate-700 text-slate-500 p-2 rounded-xl text-[11px] font-black text-center outline-none disabled:opacity-40 disabled:bg-slate-900" placeholder="1" disabled value="1">
+            </div>
+            <div class="flex-1">
+                <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1">Cant <span class="lbl-cant text-emerald-500">Unds</span></p>
+                <input type="number" class="f-qty w-full bg-slate-950 border border-slate-700 text-emerald-400 p-2 rounded-xl text-[11px] font-black text-center outline-none" placeholder="0">
+            </div>
+            <div class="flex-1">
+                <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1">Costo $</p>
+                <input type="number" step="0.01" class="f-costo w-full bg-slate-950 border border-slate-700 text-red-400 p-2 rounded-xl text-[11px] font-black text-center outline-none" placeholder="0.00">
+            </div>
+            <button onclick="document.getElementById('factura-fila-${id}').remove()" class="absolute -right-2 -top-2 bg-red-500/20 border border-red-500 text-red-500 w-6 h-6 rounded-full flex items-center justify-center text-[10px] active:scale-90 transition-transform"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="flex-1 min-w-[60px]">
-            <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1">Cant.</p>
-            <input type="number" class="f-qty w-full bg-slate-950 border border-slate-700 text-emerald-400 p-2 rounded-xl text-sm font-black text-center outline-none" placeholder="0">
-        </div>
-        <div class="flex-1 min-w-[70px]">
-            <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1">Costo Unit $</p>
-            <input type="number" step="0.01" class="f-costo w-full bg-slate-950 border border-slate-700 text-red-400 p-2 rounded-xl text-sm font-black text-center outline-none" placeholder="0.00">
-        </div>
-        <button onclick="document.getElementById('factura-fila-${id}').remove()" class="text-red-500 px-2 mt-4 active:scale-90 transition-transform"><i class="fa-solid fa-trash"></i></button>
     `;
     container.appendChild(row);
 }
@@ -181,21 +197,34 @@ window.cargarDatosProducto = function(input) {
     const prod = state.products.find(p => p.name.toUpperCase() === nombre);
     const row = input.closest('.factura-item');
     const infoP = row.querySelector('.info-producto');
-    const inputCosto = row.querySelector('.f-costo');
     const selectTipo = row.querySelector('.f-tipo');
+    const inputUndPaq = row.querySelector('.f-und-paq');
+    const inputCosto = row.querySelector('.f-costo');
 
     if (prod) {
-        infoP.innerHTML = `Venta: $${parseFloat(prod.price).toFixed(2)} | Costo Ant: $${parseFloat(prod.cost || 0).toFixed(2)}`;
+        infoP.innerHTML = `P. Venta: $${parseFloat(prod.price).toFixed(2)} | Costo Unit Ant: $${parseFloat(prod.cost || 0).toFixed(2)}`;
         infoP.classList.remove('hidden');
         
-        // Autocompleta Costo si está vacío
-        if (inputCosto && !inputCosto.value) inputCosto.value = prod.cost || '';
-        
-        // Autocompleta el Tipo si existe en BD
-        if (selectTipo && prod.tipo_unidad) selectTipo.value = prod.tipo_unidad.toLowerCase();
+        // AUTOCOMPLETADO INTELIGENTE
+        if (prod.tipo_unidad === 'paquete') {
+            selectTipo.value = 'paquete';
+            inputUndPaq.value = prod.unidades_por_paquete || 1;
+            
+            // Si el costo está vacío, sugerimos el costo del paquete completo basado en la compra anterior
+            if (!inputCosto.value && prod.cost) {
+                inputCosto.value = (parseFloat(prod.cost) * parseInt(inputUndPaq.value)).toFixed(2);
+            }
+        } else {
+            selectTipo.value = 'unidad';
+            inputUndPaq.value = 1;
+            if (!inputCosto.value) inputCosto.value = prod.cost || '';
+        }
+        togglePaquete(selectTipo); // Actualiza colores y bloqueos visuales
     } else {
         infoP.innerHTML = `✨ Producto Nuevo (Se registrará)`;
         infoP.classList.remove('hidden');
+        selectTipo.value = 'unidad';
+        togglePaquete(selectTipo);
     }
 }
 
@@ -203,10 +232,8 @@ window.guardarFacturaMasiva = async function() {
     const items = document.querySelectorAll('.factura-item');
     if(items.length === 0) return alert("Añade al menos un producto.");
     
-    // Controles a prueba de errores
     const facProveedorEl = document.getElementById('fac-proveedor');
     const facRefEl = document.getElementById('fac-ref');
-    
     const proveedor = (facProveedorEl ? facProveedorEl.value.trim() : '') || 'Proveedor Sin Nombre';
     const refFac = (facRefEl ? facRefEl.value.trim() : '') || `REC-${Date.now().toString().slice(-5)}`;
     
@@ -214,22 +241,19 @@ window.guardarFacturaMasiva = async function() {
     let costoTotalFactura = 0;
     const btn = document.getElementById('btn-save-factura');
     
-    // Validación blindada
+    // Validación
     items.forEach(item => {
-        const elNombre = item.querySelector('.f-nombre');
-        const elQty = item.querySelector('.f-qty');
-        const elCosto = item.querySelector('.f-costo');
+        const nombre = item.querySelector('.f-nombre').value.trim();
+        const qty = parseInt(item.querySelector('.f-qty').value);
+        const undsPaq = parseInt(item.querySelector('.f-und-paq').value);
+        const cost = parseFloat(item.querySelector('.f-costo').value);
         
-        if (!elNombre || !elQty || !elCosto) { errorValidacion = true; return; }
-        
-        const nombre = elNombre.value.trim();
-        const qty = parseInt(elQty.value);
-        const cost = parseFloat(elCosto.value);
-        
-        if (!nombre || isNaN(qty) || qty <= 0 || isNaN(cost)) errorValidacion = true;
+        if (!nombre || isNaN(qty) || qty <= 0 || isNaN(cost) || isNaN(undsPaq) || undsPaq <= 0) {
+            errorValidacion = true;
+        }
     });
 
-    if (errorValidacion) return alert("⚠️ Revisa que todos los campos de producto estén llenos correctamente.");
+    if (errorValidacion) return alert("⚠️ Verifica que todos los campos (Nombre, Cantidad, Unidades por paquete y Costo) tengan valores válidos.");
 
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
     btn.disabled = true;
@@ -237,31 +261,39 @@ window.guardarFacturaMasiva = async function() {
     try {
         for (let item of items) {
             const name = item.querySelector('.f-nombre').value.trim().toUpperCase();
-            const elTipo = item.querySelector('.f-tipo');
-            const tipoUnidad = elTipo ? elTipo.value : 'unidad'; // Por si falla, asume unidad
-            const qty = parseInt(item.querySelector('.f-qty').value);
-            const cost = parseFloat(item.querySelector('.f-costo').value);
+            const tipo = item.querySelector('.f-tipo').value;
+            const undsPaq = parseInt(item.querySelector('.f-und-paq').value);
+            const qtyComprada = parseInt(item.querySelector('.f-qty').value);
+            const costoIngresado = parseFloat(item.querySelector('.f-costo').value);
             
-            costoTotalFactura += (cost * qty);
+            // LA MATEMÁTICA CLAVE:
+            const stockAAgregar = tipo === 'paquete' ? (qtyComprada * undsPaq) : qtyComprada;
+            const costoUnitarioReal = tipo === 'paquete' ? (costoIngresado / undsPaq) : costoIngresado;
+            const costoTotalFila = costoIngresado * qtyComprada; // Costo ingresado es lo que pagó por el item (unidad o paquete)
+            
+            costoTotalFactura += costoTotalFila;
+
             const pExistente = state.products.find(p => p.name.toUpperCase() === name);
 
             if (pExistente) {
-                // Actualiza stock, costo y tipo
+                // Actualiza stock, costo unitario, y recuerda el tipo de empaque
                 await _sb.from('productos').update({ 
-                    stock: pExistente.stock + qty, 
-                    cost: cost,
-                    tipo_unidad: tipoUnidad,
+                    stock: pExistente.stock + stockAAgregar, 
+                    cost: costoUnitarioReal,
+                    tipo_unidad: tipo,
+                    unidades_por_paquete: undsPaq,
                     proveedor: proveedor
                 }).eq('id', pExistente.id);
             } else {
-                // Inserta nuevo producto
+                // Inserta producto nuevo
                 await _sb.from('productos').insert([{ 
                     name, 
-                    stock: qty, 
-                    cost: cost, 
-                    price: cost * 1.4, 
+                    stock: stockAAgregar, 
+                    cost: costoUnitarioReal, 
+                    price: costoUnitarioReal * 1.4, // Precio sugerido +40%
                     categoria: 'Nuevos',
-                    tipo_unidad: tipoUnidad,
+                    tipo_unidad: tipo,
+                    unidades_por_paquete: undsPaq,
                     proveedor: proveedor
                 }]);
             }
@@ -278,7 +310,7 @@ window.guardarFacturaMasiva = async function() {
             }]);
         }
 
-        alert(`✅ Inventario actualizado.\nFactura enviada a Administración por $${costoTotalFactura.toFixed(2)}`);
+        alert(`✅ Stock guardado.\nFactura pendiente enviada a Admin por $${costoTotalFactura.toFixed(2)}`);
         cerrarModalFactura();
         syncStock();
     } catch (e) { 

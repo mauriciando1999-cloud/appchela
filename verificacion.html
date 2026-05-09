@@ -11,21 +11,37 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #020617; font-family: 'Inter', sans-serif; color: white; }
         .card-shadow { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); }
-        .pulse-border { animation: pulse 2s infinite; }
+        .pulse-border { animation: pulse 2s infinite; border: 2px solid rgba(99, 102, 241, 0.2); }
         @keyframes pulse { 0% { border-color: rgba(99, 102, 241, 0.2); } 50% { border-color: rgba(99, 102, 241, 0.8); } 100% { border-color: rgba(99, 102, 241, 0.2); } }
+        .img-preview:hover { transform: scale(1.02); transition: all 0.3s ease; }
     </style>
 </head>
 <body id="verificador-body" class="p-4 hidden">
+
     <div class="max-w-md mx-auto space-y-6">
-        <header class="p-8 text-center bg-slate-900/50 rounded-[3rem] border border-slate-800 shadow-lg">
+        <header class="p-8 text-center bg-slate-900/50 rounded-[3rem] border border-slate-800 shadow-lg relative">
+            <div id="bcv-badge" class="absolute top-4 right-6 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-[9px] font-black italic uppercase">
+                Cargando Tasa...
+            </div>
             <div class="inline-block p-4 bg-indigo-600/20 rounded-full mb-4 border border-indigo-500/30">
                 <i class="fa-solid fa-shield-check text-3xl text-indigo-500"></i>
             </div>
             <h1 class="text-3xl font-black uppercase italic tracking-tighter">Verificador</h1>
-            <p class="text-[10px] text-indigo-400 font-black uppercase tracking-[0.3em]">Módulo de Seguridad Chela Sport</p>
+            <p class="text-[10px] text-indigo-400 font-black uppercase tracking-[0.3em]">Gestión de Pagos Chela Sport</p>
         </header>
 
+        <!-- Notificación de Entrada (Oculta por defecto) -->
+        <div id="new-payment-alert" class="hidden bg-indigo-600 text-white p-4 rounded-2xl text-center font-black text-xs uppercase tracking-widest animate-bounce shadow-lg shadow-indigo-500/40">
+            <i class="fa-solid fa-bell mr-2"></i> ¡Nuevo pago recibido! Actualizando...
+        </div>
+
         <div id="lista-pendientes" class="space-y-4 pb-20"></div>
+    </div>
+
+    <!-- MODAL DE VISTA PREVIA DE IMAGEN -->
+    <div id="modal-img" class="fixed inset-0 bg-black/95 z-[100] hidden flex-col items-center justify-center p-4">
+        <button onclick="cerrarImg()" class="absolute top-6 right-6 text-white text-4xl">&times;</button>
+        <img id="img-full" src="" class="max-w-full max-h-[80vh] rounded-xl shadow-2xl">
     </div>
 
     <script>
@@ -33,29 +49,38 @@
         const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd'; 
         const _sb = supabase.createClient(SB_URL, SB_KEY);
 
-        // 🛡️ VARIABLES DE SEGURIDAD (Cámbialas según necesites)
         const MASTER_PIN = "2026"; 
         const ADMIN_EMAIL = 'mauriciando1999@gmail.com';
+        let tasaActual = 0;
 
-        // 🔒 CAPA 1: Guardián de Entrada
         window.onload = async () => {
             const { data: { user } } = await _sb.auth.getUser();
             
-            // Si NO está logueado como Admin, pedimos el PIN como segunda oportunidad
             if(!user || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
                 const acceso = prompt("🔒 ACCESO RESTRINGIDO. Ingrese el PIN de Administración:");
-                
                 if(acceso !== MASTER_PIN) {
-                    alert("❌ Acceso denegado. Redirigiendo...");
-                    window.location.href = 'portal.html'; // Lo mandamos lejos de aquí
+                    alert("❌ Acceso denegado.");
+                    window.location.href = 'portal.html';
                     return;
                 }
             }
 
-            // Si pasa la seguridad, revelamos la pantalla
             document.getElementById('verificador-body').classList.remove('hidden');
+            await getTasa();
             cargarPendientes();
         };
+
+        async function getTasa() {
+            try {
+                const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+                const data = await res.json();
+                tasaActual = parseFloat(data.promedio);
+                document.getElementById('bcv-badge').innerText = `BCV: Bs. ${tasaActual.toFixed(2)}`;
+            } catch (e) {
+                console.error("Error tasa:", e);
+                document.getElementById('bcv-badge').innerText = "BCV: Error";
+            }
+        }
 
         async function cargarPendientes() {
             try {
@@ -73,84 +98,75 @@
                     return;
                 }
 
-                contenedor.innerHTML = pendientes.map(v => `
+                contenedor.innerHTML = pendientes.map(v => {
+                    const montoBs = (parseFloat(v.total_usd) * tasaActual).toLocaleString('es-VE', { minimumFractionDigits: 2 });
+                    
+                    return `
                     <div class="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] card-shadow relative overflow-hidden pulse-border mb-4">
                         <div class="flex justify-between items-start mb-4">
                             <div>
                                 <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-[9px] font-black px-3 py-1 rounded-full uppercase italic">${v.metodo_pago}</span>
                                 <div class="text-4xl font-black text-emerald-400 mt-4">$${parseFloat(v.total_usd).toFixed(2)}</div>
-                                <p class="text-[11px] text-slate-400 font-bold mt-1 uppercase italic">${v.estudiante_nombre || 'Cliente / Representante'}</p>
+                                <div class="text-xs font-bold text-slate-500 uppercase tracking-tighter">Equivale a: <span class="text-indigo-400">Bs. ${montoBs}</span></div>
+                                <p class="text-[11px] text-slate-200 font-black mt-3 uppercase italic underline decoration-indigo-500">${v.estudiante_nombre || 'Sin Nombre'}</p>
                             </div>
                         </div>
 
                         ${v.comprobante_url ? `
-                        <button onclick="window.open('${v.comprobante_url}', '_blank')" class="w-full mb-4 bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all">
-                            <i class="fa-solid fa-image mr-2"></i> Ver Comprobante
-                        </button>
-                        ` : ''}
+                        <div class="relative group cursor-pointer mb-4" onclick="verImg('${v.comprobante_url}')">
+                            <img src="${v.comprobante_url}" class="w-full h-32 object-cover rounded-2xl border border-slate-700 img-preview">
+                            <div class="absolute inset-0 bg-indigo-600/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
+                                <i class="fa-solid fa-magnifying-glass-plus text-white text-2xl"></i>
+                            </div>
+                        </div>
+                        ` : `
+                        <div class="w-full h-20 border-2 border-dashed border-slate-800 rounded-2xl flex items-center justify-center mb-4">
+                            <p class="text-[9px] text-slate-600 font-black uppercase">Sin comprobante adjunto</p>
+                        </div>
+                        `}
 
                         <div class="flex gap-3 mt-2">
-                            <button onclick="verificarPago(${v.id}, ${v.estudiante_id || 'null'}, ${v.total_usd})" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all">
+                            <button onclick="verificarPago(${v.id}, ${v.estudiante_id}, ${v.total_usd})" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all">
                                 Autorizar ✅
                             </button>
                             <button onclick="rechazarPago(${v.id})" class="bg-slate-800 text-red-500 px-6 py-4 rounded-2xl active:scale-95 border border-slate-700 shadow-lg">
-                                <i class="fa-solid fa-xmark text-lg"></i>
+                                <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
-                    </div>`).join('');
+                    </div>`;
+                }).join('');
             } catch (err) { console.error(err); }
         }
 
+        // --- FUNCIONES DE IMAGEN ---
+        function verImg(url) {
+            document.getElementById('img-full').src = url;
+            document.getElementById('modal-img').classList.replace('hidden', 'flex');
+        }
+        function cerrarImg() {
+            document.getElementById('modal-img').classList.replace('flex', 'hidden');
+        }
+
+        // --- LÓGICA DE APROBACIÓN ---
         async function verificarPago(ventaId, estudianteId, montoReportado) {
-            // 1. PIN de Seguridad (Capa 2)
-            const pinConfirmacion = prompt("🔐 SEGURIDAD: Ingrese PIN Maestro para confirmar:");
+            const pinConfirmacion = prompt("🔐 SEGURIDAD: Ingrese PIN Maestro:");
             if (pinConfirmacion !== MASTER_PIN) return alert("❌ PIN Incorrecto.");
-
-            // 2. Preguntar el monto y LA MONEDA
-            const inputMonto = prompt(`Monto a aprobar:\n(Escribe el número, luego configuraremos si es Bs o $)`, montoReportado);
-            if (inputMonto === null) return;
-
-            const esBolivares = confirm("¿Este monto está en BOLÍVARES?\n\nOK = Sí, son Bolívares (El sistema dividirá por el BCV)\nCancelar = No, son Dólares");
-
-            let montoFinalUSD = parseFloat(inputMonto);
-            
-            // --- AQUÍ ESTÁ LA CORRECCIÓN CRÍTICA ---
-            if (esBolivares) {
-                // Obtenemos la tasa actual (asegúrate de que getBCV ya se ejecutó)
-                const tasaTexto = document.getElementById('bcv-val-admin')?.innerText || "";
-                const tasaActual = parseFloat(tasaTexto.replace("Bs. ", ""));
-
-                if (!tasaActual || tasaActual <= 0) {
-                    return alert("❌ Error: No se pudo obtener la tasa BCV para convertir.");
-                }
-
-                montoFinalUSD = montoFinalUSD / tasaActual; // Convertimos Bs a $
-                alert(`🔄 Convirtiendo ${inputMonto} Bs a $${montoFinalUSD.toFixed(2)}`);
-            }
-
-            if (isNaN(montoFinalUSD) || montoFinalUSD <= 0) {
-                return alert("❌ Monto inválido.");
-            }
 
             try {
                 document.body.style.cursor = 'wait';
-
-                // 3. Descontar de la deuda del estudiante
+                
+                // Descontar deuda si existe ID de estudiante
                 if (estudianteId) {
                     const { data: estData } = await _sb.from('estudiantes').select('debt').eq('id', estudianteId).single();
                     if (estData) {
-                        const nuevaDeuda = Math.max(0, parseFloat(estData.debt || 0) - montoFinalUSD);
+                        const nuevaDeuda = Math.max(0, parseFloat(estData.debt || 0) - montoReportado);
                         await _sb.from('estudiantes').update({ debt: nuevaDeuda }).eq('id', estudianteId);
                     }
                 }
 
-                // 4. Actualizar la venta (Guardamos siempre el valor en USD para tus gráficas)
-                await _sb.from('ventas').update({ 
-                    status: 'completado',
-                    total_usd: montoFinalUSD 
-                }).eq('id', ventaId);
+                await _sb.from('ventas').update({ status: 'completado' }).eq('id', ventaId);
 
-                alert(`✅ Pago aprobado con éxito por $${montoFinalUSD.toFixed(2)}.`);
+                alert(`✅ Pago aprobado por $${montoReportado.toFixed(2)}.`);
                 cargarPendientes();
 
             } catch (e) {
@@ -161,15 +177,30 @@
         }
 
         async function rechazarPago(id) {
-            // También podemos pedir PIN para rechazar si lo deseas, pero con confirmación basta por ahora
-            if(confirm("¿Estás seguro de rechazar este pago? El representante seguirá teniendo la deuda.")) {
+            if(confirm("¿Rechazar este pago? No se descontará la deuda.")) {
                 await _sb.from('ventas').update({ status: 'rechazado' }).eq('id', id);
                 cargarPendientes();
             }
         }
 
-        // Realtime para que lleguen solitos los pagos
-        _sb.channel('db-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'ventas' }, () => cargarPendientes()).subscribe();
+        // --- NOTIFICACIONES Y REALTIME ---
+        const sonarAlerta = () => {
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+            audio.play();
+        };
+
+        _sb.channel('ventas-reales').on('postgres_changes', 
+            { event: 'INSERT', schema: 'public', table: 'ventas' }, 
+            (payload) => {
+                if(payload.new.status === 'pendiente_verificacion') {
+                    const alertBox = document.getElementById('new-payment-alert');
+                    alertBox.classList.remove('hidden');
+                    sonarAlerta();
+                    cargarPendientes();
+                    setTimeout(() => alertBox.classList.add('hidden'), 5000);
+                }
+            }
+        ).subscribe();
         
     </script>
 </body>

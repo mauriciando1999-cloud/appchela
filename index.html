@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chela Sport | Ventas POS</title>
     <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#6366f1">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -20,160 +20,118 @@
 </head>
 <body class="overflow-x-hidden pb-24 selection:bg-indigo-500/30">
 
+    <!-- Auth Screen -->
     <div id="auth-screen" class="min-h-screen flex items-center justify-center p-4 relative z-50 bg-slate-950">
         <form onsubmit="handleLogin(event)" class="bg-slate-900 border border-slate-800 p-8 rounded-[2rem] w-full max-w-sm shadow-2xl relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-emerald-500 to-indigo-500"></div>
-            
             <div class="text-center mb-8 mt-2">
                 <h1 class="text-3xl font-black uppercase tracking-widest text-white">Chela Sport</h1>
                 <p class="text-[10px] text-indigo-400 font-bold tracking-widest mt-1">SISTEMA POS v2.0</p>
             </div>
-            
             <div class="space-y-4">
-                <div class="relative">
-                    <i class="fa-solid fa-user text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"></i>
-                    <input type="email" id="login-email" placeholder="Correo Administrativo" required class="w-full bg-slate-950 border border-slate-800 py-4 pl-12 pr-4 rounded-xl text-white text-sm outline-none focus:border-indigo-500 transition-colors">
-                </div>
-                
-                <div class="relative">
-                    <i class="fa-solid fa-lock text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"></i>
-                    <input type="password" id="login-pass" placeholder="Contraseña" required class="w-full bg-slate-950 border border-slate-800 py-4 pl-12 pr-4 rounded-xl text-white text-sm outline-none focus:border-indigo-500 transition-colors">
-                </div>
+                <div class="relative"><i class="fa-solid fa-user text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"></i><input type="email" id="login-email" placeholder="Correo Administrativo" required class="w-full bg-slate-950 border border-slate-800 py-4 pl-12 pr-4 rounded-xl text-white text-sm outline-none focus:border-indigo-500 transition-colors"></div>
+                <div class="relative"><i class="fa-solid fa-lock text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"></i><input type="password" id="login-pass" placeholder="Contraseña" required class="w-full bg-slate-950 border border-slate-800 py-4 pl-12 pr-4 rounded-xl text-white text-sm outline-none focus:border-indigo-500 transition-colors"></div>
             </div>
-
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black p-4 rounded-xl active:scale-95 transition-all uppercase tracking-widest text-xs mt-8 shadow-lg shadow-indigo-900/50">
-                Ingresar al Sistema
-            </button>
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black p-4 rounded-xl active:scale-95 transition-all uppercase tracking-widest text-xs mt-8 shadow-lg shadow-indigo-900/50">Ingresar al Sistema</button>
         </form>
     </div>
 
+    <!-- Main App Content -->
     <div id="app-content" class="hidden transition-opacity duration-300">
-        
         <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 p-4 sticky top-0 z-40 flex justify-between items-center shadow-sm">
-            <h1 class="font-black text-white text-sm uppercase tracking-widest flex items-center gap-2">
-                <i class="fa-solid fa-store text-indigo-500"></i> Ventas
-            </h1>
+            <h1 class="font-black text-white text-sm uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-store text-indigo-500"></i> Ventas</h1>
             <div class="flex items-center gap-3">
                 <span id="bcv-val" class="bg-emerald-900/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest">BCV: --</span>
-                <button onclick="handleLogout()" class="text-slate-400 hover:text-red-400 bg-slate-800 hover:bg-red-900/20 w-8 h-8 rounded-full flex justify-center items-center transition-all shadow-sm border border-slate-700 hover:border-red-900">
-                    <i class="fa-solid fa-power-off"></i>
-                </button>
+                <button onclick="handleLogout()" class="text-slate-400 hover:text-red-400 bg-slate-800 hover:bg-red-900/20 w-8 h-8 rounded-full flex justify-center items-center transition-all shadow-sm border border-slate-700 hover:border-red-900"><i class="fa-solid fa-power-off"></i></button>
             </div>
         </header>
 
         <main class="p-4">
-            <div class="relative mb-4">
-                <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"></i>
-                <input type="text" id="search" oninput="renderProducts()" placeholder="Buscar producto, talla o código..." class="w-full bg-slate-900 border border-slate-800 py-4 pl-12 pr-4 rounded-2xl outline-none focus:border-indigo-500 text-sm shadow-inner transition-colors">
-            </div>
-            
+            <div class="relative mb-4"><i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"></i><input type="text" id="search" oninput="renderProducts()" placeholder="Buscar producto, talla o código..." class="w-full bg-slate-900 border border-slate-800 py-4 pl-12 pr-4 rounded-2xl outline-none focus:border-indigo-500 text-sm shadow-inner transition-colors"></div>
             <div class="flex overflow-x-auto gap-2 pb-4 no-scrollbar">
                 <button onclick="filtrar('Todos')" class="px-5 py-2.5 bg-indigo-600 rounded-full text-[10px] font-black tracking-widest active:scale-95 transition-transform shrink-0 shadow-lg shadow-indigo-900/30">TODOS</button>
                 <button onclick="filtrar('Uniformes')" class="px-5 py-2.5 bg-slate-800 border border-slate-700 rounded-full text-[10px] font-black tracking-widest text-slate-300 active:scale-95 transition-transform shrink-0">UNIFORMES</button>
                 <button onclick="filtrar('Chucherias')" class="px-5 py-2.5 bg-slate-800 border border-slate-700 rounded-full text-[10px] font-black tracking-widest text-slate-300 active:scale-95 transition-transform shrink-0">CHUCHERÍAS</button>
             </div>
-
             <div id="grid-productos" class="grid grid-cols-2 gap-3 mb-8"></div>
         </main>
 
-        <button id="floating-cart-btn" onclick="abrirCarrito()" class="hidden fixed bottom-24 right-4 z-40 bg-indigo-600 text-white p-3.5 rounded-full shadow-[0_10px_25px_rgba(79,70,229,0.5)] flex items-center gap-3 active:scale-90 border-[3px] border-slate-950 transition-transform">
-            <i class="fa-solid fa-cart-shopping text-lg ml-1"></i>
-            <span id="total-resumen" class="font-black text-sm bg-slate-950 px-3 py-1 rounded-full mr-1">$0.00</span>
-        </button>
+        <button id="floating-cart-btn" onclick="abrirCarrito()" class="hidden fixed bottom-24 right-4 z-40 bg-indigo-600 text-white p-3.5 rounded-full shadow-[0_10px_25px_rgba(79,70,229,0.5)] flex items-center gap-3 active:scale-90 border-[3px] border-slate-950 transition-transform"><i class="fa-solid fa-cart-shopping text-lg ml-1"></i><span id="total-resumen" class="font-black text-sm bg-slate-950 px-3 py-1 rounded-full mr-1">$0.00</span></button>
 
+        <!-- Cart Modal -->
         <div id="modal-carrito" class="fixed inset-0 z-50 bg-slate-950 flex flex-col hidden transition-all">
             <header class="bg-slate-900 border-b border-slate-800 p-5 flex justify-between items-center">
-                <h2 class="font-black uppercase tracking-widest text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-receipt text-indigo-500"></i> Resumen de Venta
-                </h2>
+                <h2 class="font-black uppercase tracking-widest text-sm flex items-center gap-2"><i class="fa-solid fa-receipt text-indigo-500"></i> Resumen de Venta</h2>
                 <button onclick="cerrarCarrito()" class="text-slate-400 hover:text-white bg-slate-800 w-8 h-8 rounded-full flex justify-center items-center active:scale-90 transition-all border border-slate-700"><i class="fa-solid fa-xmark text-sm"></i></button>
             </header>
-            
-            <div id="cart-list" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950">
-            </div>
-            
+            <div id="cart-list" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950"></div>
             <div class="bg-slate-900 border-t border-slate-800 p-6 rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
                 <div class="flex justify-between items-end mb-5">
-                    <div>
-                        <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Total a Pagar</p>
-                        <p id="total-vef" class="text-xs font-bold text-slate-300 bg-slate-950 px-3 py-1 rounded-lg border border-slate-800 inline-block">Bs. 0.00</p>
-                    </div>
+                    <div><p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Total a Pagar</p><p id="total-vef" class="text-xs font-bold text-slate-300 bg-slate-950 px-3 py-1 rounded-lg border border-slate-800 inline-block">Bs. 0.00</p></div>
                     <p id="total-usd" class="text-4xl font-black text-emerald-400">$0.00</p>
                 </div>
-                
                 <div class="grid grid-cols-2 gap-3 mb-3">
-                    <button onclick="procesarTransaccion('EFECTIVO')" class="bg-emerald-600 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-lg shadow-emerald-900/30 flex justify-center items-center gap-2">
-                        <i class="fa-solid fa-money-bill-wave text-sm"></i> Efectivo
-                    </button>
-                    <button onclick="procesarTransaccion('PUNTO')" class="bg-indigo-600 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-lg shadow-indigo-900/30 flex justify-center items-center gap-2">
-                        <i class="fa-solid fa-credit-card text-sm"></i> Punto
-                    </button>
+                    <button onclick="procesarTransaccion('EFECTIVO')" class="bg-emerald-600 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-lg shadow-emerald-900/30 flex justify-center items-center gap-2"><i class="fa-solid fa-money-bill-wave text-sm"></i> Efectivo</button>
+                    <button onclick="procesarTransaccion('PUNTO')" class="bg-indigo-600 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-lg shadow-indigo-900/30 flex justify-center items-center gap-2"><i class="fa-solid fa-credit-card text-sm"></i> Punto</button>
+                </div>
+                <button onclick="abrirModalPagoMovil()" class="w-full bg-cyan-600 hover:bg-cyan-500 mb-3 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-lg shadow-cyan-900/30 flex justify-center items-center gap-2 transition-transform"><i class="fa-solid fa-qrcode text-sm"></i> Generar QR Pago Móvil</button>
+                
+                <!-- NFC + Manual Credit Input -->
+                <div class="mb-4">
+                    <label class="text-[10px] text-slate-500 font-bold uppercase">Escanear Tarjeta o Buscar Alumno</label>
+                    <input type="text" id="input-credito-alumno" placeholder="Acerca la tarjeta al móvil..." class="w-full bg-slate-950 border border-slate-700 text-white p-4 rounded-xl text-sm font-bold outline-none focus:border-indigo-500" oninput="buscarAlumnoNFC(this.value)">
+                    <div id="lista-alumnos-nfc" class="mt-2 bg-slate-900 border border-slate-800 rounded-xl hidden max-h-40 overflow-y-auto"></div>
                 </div>
 
-                <button onclick="abrirModalPagoMovil()" class="w-full bg-cyan-600 hover:bg-cyan-500 mb-3 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-lg shadow-cyan-900/30 flex justify-center items-center gap-2 transition-transform">
-                    <i class="fa-solid fa-qrcode text-sm"></i> Generar QR Pago Móvil
-                </button>
-
-                <div class="mb-4">
-    <label class="text-[10px] text-slate-500 font-bold uppercase">Escanear Tarjeta o Buscar Alumno</label>
-    <input type="text" id="input-credito-alumno" 
-           placeholder="Acerca la tarjeta al móvil..." 
-           class="w-full bg-slate-950 border border-slate-700 text-white p-4 rounded-xl text-sm font-bold outline-none focus:border-indigo-500"
-           oninput="buscarAlumnoNFC(this.value)">
-    <div id="lista-alumnos-nfc" class="mt-2 bg-slate-900 border border-slate-800 rounded-xl hidden max-h-40 overflow-y-auto"></div>
-</div>
+                <button onclick="abrirModalCreditoVenta()" class="w-full bg-slate-800 border border-slate-700 text-indigo-400 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 flex justify-center items-center gap-2 transition-transform"><i class="fa-solid fa-handshake"></i> Dar a Crédito (+10%)</button>
             </div>
         </div>
 
         <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 z-40 flex justify-around p-2 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
-    <a href="index.html" class="flex-1 flex flex-col items-center py-2 text-indigo-500 border-t-2 border-indigo-500">
-        <i class="fa-solid fa-cash-register text-xl mb-1"></i>
-        <span class="text-[8px] uppercase font-black tracking-widest mt-1">Venta</span>
-    </a>
-    
-    <a href="stock.html" class="flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors">
-        <i class="fa-solid fa-boxes-stacked text-xl mb-1"></i>
-        <span class="text-[8px] uppercase font-black tracking-widest mt-1">Stock</span>
-    </a>
-    
-    <a href="cobranza.html" class="flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors">
-        <i class="fa-solid fa-hand-holding-dollar text-xl mb-1"></i>
-        <span class="text-[8px] uppercase font-black tracking-widest mt-1">Cobros</span>
-    </a>
-    
-    <a href="admin.html" id="btn-admin" class="hidden flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors">
-        <i class="fa-solid fa-chart-pie text-xl mb-1"></i>
-        <span class="text-[8px] uppercase font-black tracking-widest mt-1">Admin</span>
-    </a>
-</nav>
+            <a href="index.html" class="flex-1 flex flex-col items-center py-2 text-indigo-500 border-t-2 border-indigo-500"><i class="fa-solid fa-cash-register text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Venta</span></a>
+            <a href="stock.html" class="flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors"><i class="fa-solid fa-boxes-stacked text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Stock</span></a>
+            <a href="cobranza.html" class="flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors"><i class="fa-solid fa-hand-holding-dollar text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Cobros</span></a>
+            <a href="admin.html" id="btn-admin" class="hidden flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors"><i class="fa-solid fa-chart-pie text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Admin</span></a>
+        </nav>
     </div>
 
     <script src="app.js"></script>
+    <script src="config.js"></script>
+    <script src="cobranza.js"></script>
 
     <script>
-        setTimeout(() => {
-            if (typeof _sb === 'undefined') {
-                console.error("⚠️ CRÍTICO: Supabase no cargó o app.js no está enlazado correctamente.");
-                const authScreen = document.getElementById('auth-screen');
-                if(authScreen && !authScreen.classList.contains('hidden')) {
-                    authScreen.innerHTML = `
-                        <div class="flex flex-col items-center justify-center text-center p-8 bg-slate-900 border border-red-900/50 rounded-3xl w-full max-w-sm">
-                            <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4">
-                                <i class="fa-solid fa-wifi text-2xl text-red-500 animate-pulse"></i>
-                            </div>
-                            <h2 class="text-white font-black uppercase tracking-widest mb-2">Error de Conexión</h2>
-                            <p class="text-xs text-slate-400 leading-relaxed mb-6">No pudimos conectar con Supabase. Revisa tu conexión a internet o asegúrate de que app.js esté en la misma carpeta.</p>
-                            <button onclick="window.location.reload()" class="bg-slate-800 text-white font-bold text-xs uppercase px-6 py-3 rounded-xl border border-slate-700 active:scale-95">Reintentar</button>
-                        </div>`;
-                }
+        // Lógica de búsqueda NFC/Manual
+        window.buscarAlumnoNFC = async function(valor) {
+            const lista = document.getElementById('lista-alumnos-nfc');
+            if (valor.length < 3) {
+                lista.classList.add('hidden');
+                return;
             }
-        }, 3000);
+            const { data, error } = await _sb
+                .from('estudiantes')
+                .select('id, nombre, deuda, nfc_uid')
+                .or(`nombre.ilike.%${valor}%,nfc_uid.eq.${valor}`)
+                .limit(5);
+
+            if (data && data.length > 0) {
+                lista.classList.remove('hidden');
+                lista.innerHTML = data.map(al => `
+                    <div onclick="seleccionarAlumnoCredito('${al.id}', '${al.nombre}')" 
+                         class="p-3 border-b border-slate-800 cursor-pointer hover:bg-slate-800 flex justify-between">
+                        <span class="text-white text-xs font-bold">${al.nombre}</span>
+                        <span class="text-[9px] text-emerald-400">$${al.deuda}</span>
+                    </div>
+                `).join('');
+            } else {
+                lista.classList.add('hidden');
+            }
+        };
+
+        window.seleccionarAlumnoCredito = function(id, nombre) {
+            window.alumnoSeleccionadoID = id;
+            document.getElementById('input-credito-alumno').value = nombre;
+            document.getElementById('lista-alumnos-nfc').classList.add('hidden');
+        };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <script src="config.js"></script>
-    
-    <script src="cobranza.js"></script>
-    
 </body>
 </html>

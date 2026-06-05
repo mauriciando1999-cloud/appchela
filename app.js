@@ -716,35 +716,42 @@ async function cobranzaMasiva() {
 }
 window.buscarAlumnoNFC = async function(valor) {
     const lista = document.getElementById('lista-alumnos-nfc');
-    if (valor.length < 3) {
+    
+    // 1. Limpieza del valor: eliminamos espacios extra
+    const query = valor.trim();
+    
+    if (query.length < 2) {
         lista.classList.add('hidden');
         return;
     }
 
-    // Buscamos si lo que se escribió es un nombre o un UID
-    // Si tienes una columna 'nfc_uid' en tu tabla 'estudiantes'
-    const { data, error } = await _sb
-        .from('estudiantes')
-        .select('id, nombre, deuda, nfc_uid')
-        .or(`nombre.ilike.%${valor}%,nfc_uid.eq.${valor}`)
-        .limit(5);
+    try {
+        // 2. Ajuste de consulta: Buscamos coincidencia exacta de UID o parcial en nombre
+        // Nota: Asegúrate de que 'nfc_uid' sea el nombre exacto de tu columna en Supabase
+        const { data, error } = await _sb
+            .from('estudiantes')
+            .select('id, nombre, deuda, nfc_uid')
+            .or(`nombre.ilike.%${query}%,nfc_uid.eq.${query}`)
+            .limit(5);
 
-    if (data && data.length > 0) {
-        lista.classList.remove('hidden');
-        lista.innerHTML = data.map(al => `
-            <div onclick="seleccionarAlumnoCredito('${al.id}', '${al.nombre}')" 
-                 class="p-3 border-b border-slate-800 cursor-pointer hover:bg-slate-800 flex justify-between">
-                <span class="text-white text-xs font-bold">${al.nombre}</span>
-                <span class="text-[9px] text-emerald-400">$${al.deuda}</span>
-            </div>
-        `).join('');
-    } else {
-        lista.classList.add('hidden');
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+            lista.classList.remove('hidden');
+            lista.innerHTML = data.map(al => `
+                <div onclick="seleccionarAlumnoCredito('${al.id}', '${al.nombre}')" 
+                     class="p-3 border-b border-slate-800 cursor-pointer hover:bg-slate-800 flex justify-between items-center transition-colors">
+                    <div>
+                        <span class="text-white text-xs font-bold block">${al.nombre}</span>
+                        <span class="text-[9px] text-slate-500">ID Tarjeta: ${al.nfc_uid || 'No registrada'}</span>
+                    </div>
+                    <span class="text-[10px] text-emerald-400 font-black">$${al.deuda}</span>
+                </div>
+            `).join('');
+        } else {
+            lista.classList.add('hidden');
+        }
+    } catch (err) {
+        console.error("Error al buscar alumno:", err);
     }
-};
-
-window.seleccionarAlumnoCredito = function(id, nombre) {
-    window.alumnoSeleccionadoID = id;
-    document.getElementById('input-credito-alumno').value = nombre;
-    document.getElementById('lista-alumnos-nfc').classList.add('hidden');
 };

@@ -391,30 +391,30 @@ window.guardarEdicionAdmin = async function() {
 // 5. ASISTENTE DE COMPRAS IA
 // ==========================================
 window.abrirModalCompras = function() {
-    // Mapa de Proveedores (Añade aquí los números con código de país, sin +)
+    // Lista actualizada de proveedores
     const telefonosProveedores = {
-        "URIEL": "584121234567",
-        "CHELASPORT": "584127654321",
-        "BOLSOS": "584141112233"
-        // Agrega el resto aquí...
+        "URIEL": "584129074882",
+        "CHELASPORT": "584122969255",
+        "C15": "584129084001"
     };
 
     const contenedor = document.getElementById('lista-proveedores-ia');
     const urgentes = state.products.filter(p => p.stock <= 5);
     
     if (!urgentes.length) {
-        contenedor.innerHTML = "<p class='text-center text-xs opacity-50'>Todo en orden.</p>";
+        contenedor.innerHTML = "<p class='text-center text-xs opacity-50 py-4'>Todo el inventario está en niveles óptimos.</p>";
     } else {
         let porProv = {};
         urgentes.forEach(p => { 
             const pr = (p.proveedor || 'Sin Asignar').toUpperCase();
             if(!porProv[pr]) porProv[pr] = [];
-            porProv[pr].push(`${p.name} (Stock: ${p.stock})`);
+            porProv[pr].push(`${p.name} (Stock actual: ${p.stock})`);
         });
 
         contenedor.innerHTML = Object.entries(porProv).map(([prov, items]) => {
             const textoProv = `🛒 PEDIDO - CHELA SPORT\nProveedor: ${prov}\n\n` + 
-                              items.map(item => `- ${item}`).join('\n');
+                              items.map(item => `- ${item}`).join('\n') + 
+                              `\n\nQuedo atento a la confirmación, gracias.`;
             
             const numero = telefonosProveedores[prov] || "";
             const linkWa = numero ? `https://wa.me/${numero}?text=${encodeURIComponent(textoProv)}` : "#";
@@ -428,7 +428,7 @@ window.abrirModalCompras = function() {
                             <i class="fa-brands fa-whatsapp mr-2"></i> Enviar pedido a ${prov}
                         </a>
                     ` : `
-                        <p class="text-[9px] text-red-400 italic">⚠️ Configura el número para enviar automático</p>
+                        <p class="text-[9px] text-red-400 italic">⚠️ Número no configurado para ${prov}</p>
                     `}
                 </div>
             `;

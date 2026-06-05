@@ -114,9 +114,14 @@
                     <i class="fa-solid fa-qrcode text-sm"></i> Generar QR Pago Móvil
                 </button>
 
-                <button onclick="abrirModalCreditoVenta()" class="w-full bg-slate-800 border border-slate-700 text-indigo-400 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 flex justify-center items-center gap-2 transition-transform">
-                    <i class="fa-solid fa-handshake"></i> Dar a Crédito (+10%)
-                </button>
+                <div class="mb-4">
+    <label class="text-[10px] text-slate-500 font-bold uppercase">Escanear Tarjeta o Buscar Alumno</label>
+    <input type="text" id="input-credito-alumno" 
+           placeholder="Acerca la tarjeta al móvil..." 
+           class="w-full bg-slate-950 border border-slate-700 text-white p-4 rounded-xl text-sm font-bold outline-none focus:border-indigo-500"
+           oninput="buscarAlumnoNFC(this.value)">
+    <div id="lista-alumnos-nfc" class="mt-2 bg-slate-900 border border-slate-800 rounded-xl hidden max-h-40 overflow-y-auto"></div>
+</div>
             </div>
         </div>
 

@@ -714,3 +714,37 @@ async function cobranzaMasiva() {
     
     alert("Procesando ventanas de WhatsApp. Asegúrate de dar 'Enviar' en cada una.");
 }
+window.buscarAlumnoNFC = async function(valor) {
+    const lista = document.getElementById('lista-alumnos-nfc');
+    if (valor.length < 3) {
+        lista.classList.add('hidden');
+        return;
+    }
+
+    // Buscamos si lo que se escribió es un nombre o un UID
+    // Si tienes una columna 'nfc_uid' en tu tabla 'estudiantes'
+    const { data, error } = await _sb
+        .from('estudiantes')
+        .select('id, nombre, deuda, nfc_uid')
+        .or(`nombre.ilike.%${valor}%,nfc_uid.eq.${valor}`)
+        .limit(5);
+
+    if (data && data.length > 0) {
+        lista.classList.remove('hidden');
+        lista.innerHTML = data.map(al => `
+            <div onclick="seleccionarAlumnoCredito('${al.id}', '${al.nombre}')" 
+                 class="p-3 border-b border-slate-800 cursor-pointer hover:bg-slate-800 flex justify-between">
+                <span class="text-white text-xs font-bold">${al.nombre}</span>
+                <span class="text-[9px] text-emerald-400">$${al.deuda}</span>
+            </div>
+        `).join('');
+    } else {
+        lista.classList.add('hidden');
+    }
+};
+
+window.seleccionarAlumnoCredito = function(id, nombre) {
+    window.alumnoSeleccionadoID = id;
+    document.getElementById('input-credito-alumno').value = nombre;
+    document.getElementById('lista-alumnos-nfc').classList.add('hidden');
+};

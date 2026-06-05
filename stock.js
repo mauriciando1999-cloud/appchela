@@ -391,6 +391,14 @@ window.guardarEdicionAdmin = async function() {
 // 5. ASISTENTE DE COMPRAS IA
 // ==========================================
 window.abrirModalCompras = function() {
+    // Mapa de Proveedores (Añade aquí los números con código de país, sin +)
+    const telefonosProveedores = {
+        "URIEL": "584121234567",
+        "CHELASPORT": "584127654321",
+        "BOLSOS": "584141112233"
+        // Agrega el resto aquí...
+    };
+
     const contenedor = document.getElementById('lista-proveedores-ia');
     const urgentes = state.products.filter(p => p.stock <= 5);
     
@@ -399,25 +407,29 @@ window.abrirModalCompras = function() {
     } else {
         let porProv = {};
         urgentes.forEach(p => { 
-            const pr = p.proveedor || 'Sin Asignar';
+            const pr = (p.proveedor || 'Sin Asignar').toUpperCase();
             if(!porProv[pr]) porProv[pr] = [];
             porProv[pr].push(`${p.name} (Stock: ${p.stock})`);
         });
 
         contenedor.innerHTML = Object.entries(porProv).map(([prov, items]) => {
-            // Generamos el texto específico para este proveedor
-            const textoProv = `🛒 PEDIDO - CHELA SPORT\nProveedor: ${prov.toUpperCase()}\n\n` + 
+            const textoProv = `🛒 PEDIDO - CHELA SPORT\nProveedor: ${prov}\n\n` + 
                               items.map(item => `- ${item}`).join('\n');
             
-            // Botón que solo copia lo de este bloque
+            const numero = telefonosProveedores[prov] || "";
+            const linkWa = numero ? `https://wa.me/${numero}?text=${encodeURIComponent(textoProv)}` : "#";
+
             return `
                 <div class="bg-slate-900 p-4 rounded-xl mb-3 border border-slate-700">
                     <p class="text-[11px] font-black uppercase text-indigo-400 mb-2">${prov}</p>
-                    <p class="text-[10px] text-slate-400 mb-3 whitespace-pre-line">${items.join(', ')}</p>
-                    <button onclick="copiarLista('${encodeURIComponent(textoProv)}')" 
-                            class="w-full bg-emerald-600 text-white text-[10px] font-black py-2 rounded-lg hover:bg-emerald-500 shadow-lg active:scale-95 transition-transform">
-                        <i class="fa-solid fa-copy mr-2"></i> Copiar pedido para ${prov}
-                    </button>
+                    <p class="text-[10px] text-slate-400 mb-3">${items.join(', ')}</p>
+                    ${numero ? `
+                        <a href="${linkWa}" target="_blank" class="block w-full bg-emerald-600 text-white text-[10px] font-black py-2 rounded-lg text-center hover:bg-emerald-500 shadow-lg active:scale-95 transition-transform">
+                            <i class="fa-brands fa-whatsapp mr-2"></i> Enviar pedido a ${prov}
+                        </a>
+                    ` : `
+                        <p class="text-[9px] text-red-400 italic">⚠️ Configura el número para enviar automático</p>
+                    `}
                 </div>
             `;
         }).join('');

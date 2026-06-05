@@ -276,27 +276,23 @@ window.guardarFacturaMasiva = async function() {
             const pExistente = state.products.find(p => p.name.toUpperCase() === name);
 
             if (pExistente) {
-                // Actualiza stock, costo unitario, y recuerda el tipo de empaque
-                await _sb.from('productos').update({ 
-                    stock: pExistente.stock + stockAAgregar, 
-                    cost: costoUnitarioReal,
-                    tipo_unidad: tipo,
-                    unidades_por_paquete: undsPaq,
-                    proveedor: proveedor
-                }).eq('id', pExistente.id);
-            } else {
-                // Inserta producto nuevo
-                await _sb.from('productos').insert([{ 
-                    name, 
-                    stock: stockAAgregar, 
-                    cost: costoUnitarioReal, 
-                    price: costoUnitarioReal * 1.4, // Precio sugerido +40%
-                    categoria: 'Nuevos',
-                    tipo_unidad: tipo,
-                    unidades_por_paquete: undsPaq,
-                    proveedor: proveedor
-                }]);
-            }
+    // Actualización: Solo con las columnas que existen en tu tabla (image_6cef5b.png)
+    await _sb.from('productos').update({ 
+        stock: pExistente.stock + stockAAgregar, 
+        cost: costoUnitarioReal,
+        proveedor: proveedor
+    }).eq('id', pExistente.id);
+} else {
+    // Inserción: Ajustado a las columnas presentes en tu tabla
+    await _sb.from('productos').insert([{ 
+        name: name, 
+        stock: stockAAgregar, 
+        cost: costoUnitarioReal, 
+        price: costoUnitarioReal * 1.4, // Precio sugerido +40%
+        categoria: 'Nuevos',           // Nota: Tienes columna 'categoria' y 'categoria' duplicada en la imagen, usa esta
+        proveedor: proveedor
+    }]);
+}
         }
 
         // Crear cuenta por pagar para el Admin (STATUS PENDIENTE)

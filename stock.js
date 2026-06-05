@@ -404,34 +404,23 @@ window.abrirModalCompras = function() {
             porProv[pr].push(`${p.name} (Stock: ${p.stock})`);
         });
 
-        // Generamos el HTML y guardamos el texto para exportar
-        let textoParaExportar = "🛒 LISTA DE COMPRAS URGENTES - CHELA SPORT\n\n";
-        
         contenedor.innerHTML = Object.entries(porProv).map(([prov, items]) => {
-            textoParaExportar += `*${prov.toUpperCase()}*\n- ${items.join('\n- ')}\n\n`;
+            // Generamos el texto específico para este proveedor
+            const textoProv = `🛒 PEDIDO - CHELA SPORT\nProveedor: ${prov.toUpperCase()}\n\n` + 
+                              items.map(item => `- ${item}`).join('\n');
+            
+            // Botón que solo copia lo de este bloque
             return `
-                <div class="bg-slate-900 p-3 rounded-xl mb-2 border border-slate-700">
-                    <p class="text-[10px] font-black uppercase text-indigo-400">${prov}</p>
-                    <p class="text-[9px] text-slate-400">${items.join(', ')}</p>
+                <div class="bg-slate-900 p-4 rounded-xl mb-3 border border-slate-700">
+                    <p class="text-[11px] font-black uppercase text-indigo-400 mb-2">${prov}</p>
+                    <p class="text-[10px] text-slate-400 mb-3 whitespace-pre-line">${items.join(', ')}</p>
+                    <button onclick="copiarLista('${encodeURIComponent(textoProv)}')" 
+                            class="w-full bg-emerald-600 text-white text-[10px] font-black py-2 rounded-lg hover:bg-emerald-500 shadow-lg active:scale-95 transition-transform">
+                        <i class="fa-solid fa-copy mr-2"></i> Copiar pedido para ${prov}
+                    </button>
                 </div>
             `;
         }).join('');
-
-        // AGREGAMOS EL BOTÓN DE EXPORTACIÓN DENTRO DEL MODAL
-        contenedor.innerHTML += `
-            <button onclick="copiarLista('${encodeURIComponent(textoParaExportar)}')" 
-                    class="w-full mt-4 bg-emerald-600 text-white text-[10px] font-black py-2 rounded-lg hover:bg-emerald-500 shadow-lg">
-                <i class="fa-solid fa-copy mr-2"></i> Copiar Lista para WhatsApp
-            </button>
-        `;
     }
     document.getElementById('modal-compras').classList.remove('hidden');
-}
-
-// Función auxiliar para copiar
-window.copiarLista = function(textoCodificado) {
-    const texto = decodeURIComponent(textoCodificado);
-    navigator.clipboard.writeText(texto).then(() => {
-        alert("✅ Lista copiada. Ya puedes pegarla en WhatsApp.");
-    });
 }

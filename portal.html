@@ -165,7 +165,7 @@
                         <h2 id="total-deuda" class="text-3xl font-black text-white tracking-tight">$0.00</h2>
                     </div>
 
-                    <!-- BOTÓN DE NOTIFICACIONES CORREGIDO -->
+                    <!-- BOTÓN DE NOTIFICACIONES -->
                     <button id="btn-notificaciones" onclick="solicitarNotificaciones()" class="w-full bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-400 active:scale-95 transition-all mb-6">
                         <i id="icono-notificaciones" class="fa-solid fa-bell text-indigo-400"></i> 
                         <span id="txt-notificaciones">Habilitar Alertas de Consumo</span>
@@ -189,7 +189,7 @@
         const _sb = supabase.createClient(SB_URL, SB_KEY);
         
         let currentUser = { nombre: '', phone: '', pin: '' };
-        let estudiantesCached = []; // 🔥 MEMORIA LOCAL PARA EVITAR GLITCH DE TIEMPO REAL
+        let estudiantesCached = []; 
 
         window.onload = () => {
             const savedPhone = localStorage.getItem('userPhone');
@@ -210,7 +210,7 @@
             const audio = document.getElementById('audio-instrucciones');
             const btn = document.getElementById('btn-audio');
             if (audio.paused) {
-                audio.play().catch(e => console.log("Audio en espera de interacción inicial."));
+                audio.play().catch(e => console.log("Audio en espera de interacción."));
                 btn.innerHTML = '<i class="fa-solid fa-pause text-white text-xl"></i>';
             } else {
                 audio.pause();
@@ -347,7 +347,7 @@
             }
         }
 
-        // --- DASHBOARD OPTIMIZADO CON PROGRAMMATIC REALTIME FILTERING ---
+        // --- DASHBOARD Y REALTIME ---
         async function abrirDashboard(phone) {
             nextStep('dashboard');
             cargarAvisosDelSistema();
@@ -364,11 +364,9 @@
             
             document.getElementById('dashboard-bienvenida').innerText = `Hola, ${data[0].representante}`;
             
-            // Guardamos el estado inicial en caché local
             estudiantesCached = data;
             renderizarListaHijos(data);
 
-            // 🔥 ESCUCHADOR BULLETPROOF: Escucha la tabla y filtra programáticamente en JS
             _sb.channel('cambios-globales')
                 .on('postgres_changes', { 
                     event: 'UPDATE', 
@@ -376,11 +374,8 @@
                     table: 'estudiantes'
                 }, (payload) => {
                     const nuevo = payload.new;
-
-                    // Ignorar cambios que no pertenezcan al teléfono de esta familia
                     if (nuevo.phone !== phone) return;
 
-                    // Buscamos el registro viejo guardado en nuestra memoria JS
                     const alumnoPrevio = estudiantesCached.find(h => h.id === nuevo.id);
                     
                     if (alumnoPrevio && nuevo.debt > alumnoPrevio.debt) {
@@ -388,7 +383,6 @@
                         dispararAlertaNativa(`¡Consumo Registrado!`, `${nuevo.name} acaba de gastar $${montoGastado} en Chela Sport 1972.`);
                     }
 
-                    // Sincronizar automáticamente la interfaz
                     solicitarDatosActualizados(phone);
                 })
                 .subscribe();
@@ -397,7 +391,7 @@
         async function solicitarDatosActualizados(phone) {
             const { data } = await _sb.from('estudiantes').select('*').eq('phone', phone);
             if (data) {
-                estudiantesCached = data; // Renovar la memoria local
+                estudiantesCached = data; 
                 renderizarListaHijos(data);
             }
         }
@@ -418,9 +412,9 @@
 
                 const btnLimite = `<button onclick="modificarLimiteCredito('${hijo.id}', ${hijo.limite_credito || 100}, '${phone}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 text-[11px] font-bold px-2.5 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-pen text-[9px]"></i> Límite</button>`;
 
-                // 🔥 NUEVO: BOTÓN DINÁMICO PARA PROCESAR EL PAGO
+                // 🔥 ENLACE DE PAGO CORREGIDO HACIA COBRANZA.HTML
                 const btnPagar = deudaActual > 0
-                    ? `<button onclick="procesarPago('${hijo.id}', ${deudaActual}, '${phone}', '${hijo.name}')" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-wallet text-[9px]"></i> Pagar</button>`
+                    ? `<button onclick="procesarPago('${hijo.id}', ${deudaActual}, '${phone}', '${hijo.name}')" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 text-[11px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-receipt text-[9px]"></i> Pagar</button>`
                     : '';
 
                 const statusBadge = hijo.bloqueado 
@@ -452,28 +446,9 @@
             document.getElementById('total-deuda').innerText = `$${acumuladorDeuda.toFixed(2)}`;
         }
 
-        // 🔥 LOGICA ACCIONABLE DEL BOTÓN DE PAGO
-        async function procesarPago(id, deudaActual, phone, nombreEstudiante) {
-            const montoPagar = prompt(`¿Cuánto desea abonar a la cuenta de ${nombreEstudiante}?\nDeuda acumulada actual: $${deudaActual.toFixed(2)}`, deudaActual.toFixed(2));
-            
-            if (montoPagar === null) return; // Cancelado
-            
-            const abono = parseFloat(montoPagar);
-            if (isNaN(abono) || abono <= 0 || abono > deudaActual) {
-                return alert("❌ Monto inválido. Debe ser mayor a 0 y no puede superar la deuda actual.");
-            }
-
-            const nuevaDeuda = parseFloat((deudaActual - abono).toFixed(2));
-
-            // Actualización directa en Supabase
-            const { error } = await _sb.from('estudiantes').update({ debt: nuevaDeuda }).eq('id', id);
-            
-            if (error) {
-                alert("Ocurrió un error al procesar el pago en la base de datos.");
-            } else {
-                alert(`✅ ¡Pago exitoso! Se restaron $${abono.toFixed(2)} a la cuenta.`);
-                solicitarDatosActualizados(phone);
-            }
+        // 🔥 NUEVA REDIRECCIÓN DIRECTA A COBRANZA.HTML SIN ALTERAR LA BASE DE DATOS
+        function procesarPago(id, deudaActual, phone, nombreEstudiante) {
+            window.location.href = `cobranza.html?id=${id}&name=${encodeURIComponent(nombreEstudiante)}&debt=${deudaActual.toFixed(2)}&phone=${phone}`;
         }
 
         async function dispararAlertaNativa(titulo, cuerpo) {
@@ -489,9 +464,7 @@
                     return;
                 }
             }
-            try {
-                new Notification(titulo, { body: cuerpo });
-            } catch(e) { console.log("Notificación bloqueada por comportamiento en background."); }
+            try { new Notification(titulo, { body: cuerpo }); } catch(e) {}
         }
 
         async function cambiarEstadoBloqueo(id, nuevoEstado, phone) {

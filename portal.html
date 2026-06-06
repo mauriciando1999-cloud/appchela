@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;600;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; overflow-x: hidden; }
         .step { display: none; }
         .step.active { display: block; animation: fadeIn 0.4s ease-out; }
@@ -189,6 +189,7 @@
         const _sb = supabase.createClient(SB_URL, SB_KEY);
         
         let currentUser = { nombre: '', phone: '', pin: '' };
+        let estudiantesCached = []; // 🔥 MEMORIA LOCAL PARA EVITAR GLITCH DE TIEMPO REAL
 
         window.onload = () => {
             const savedPhone = localStorage.getItem('userPhone');
@@ -217,15 +218,12 @@
             }
         }
 
-        // --- GESTIÓN DE ANUNCIOS / PUBLICIDAD ---
         async function cargarAvisosDelSistema() {
             const cajaAnuncios = document.getElementById('caja-anuncios');
             const textoAnuncio = document.getElementById('texto-anuncio');
 
             try {
-                // Modifica este texto temporalmente. Al dejarlo en "" la caja se oculta automáticamente.
                 const avisoTemporal = "¡Bienvenidos al nuevo portal de Chela Sport 1972! Aquí podrás ajustar los límites y suspender el crédito familiar instantáneamente.";
-                
                 if (avisoTemporal && avisoTemporal.trim() !== "") {
                     textoAnuncio.innerText = avisoTemporal;
                     cajaAnuncios.classList.remove('hidden');
@@ -237,7 +235,6 @@
             }
         }
 
-        // --- API DE NOTIFICACIONES REFACTORIZADA PARA MÓVILES ---
         function verificarEstadoNotificaciones() {
             if (!("Notification" in window)) return;
             const btn = document.getElementById('btn-notificaciones');
@@ -261,7 +258,6 @@
             
             if (permiso === "granted") {
                 verificarEstadoNotificaciones();
-                
                 if ('serviceWorker' in navigator) {
                     const registration = await navigator.serviceWorker.getRegistration();
                     if (registration) {
@@ -272,17 +268,11 @@
                         return;
                     }
                 }
-                
                 try {
-                    new Notification("¡Portal Familiar!", {
-                        body: "Dispositivo emparejado para recibir alertas de consumo.",
-                    });
-                } catch(e) {
-                    console.log("Modo nativo no soportado fuera de Service Worker.");
-                }
-                
+                    new Notification("¡Portal Familiar!", { body: "Dispositivo emparejado para recibir alertas de consumo." });
+                } catch(e) { console.log("Modo nativo fallback."); }
             } else {
-                alert("❌ Permiso denegado. Si estás en iPhone (iOS), recuerda añadir primero la aplicación a tu Pantalla de Inicio para poder habilitar notificaciones.");
+                alert("❌ Permiso denegado. Si estás en iPhone (iOS), añade la app a tu Pantalla de Inicio para poder recibir alertas.");
             }
         }
 
@@ -357,7 +347,7 @@
             }
         }
 
-        // --- DASHBOARD Y REALTIME UNIFICADOS ---
+        // --- DASHBOARD OPTIMIZADO CON PROGRAMMATIC REALTIME FILTERING ---
         async function abrirDashboard(phone) {
             nextStep('dashboard');
             cargarAvisosDelSistema();
@@ -368,31 +358,37 @@
             const { data, error } = await _sb.from('estudiantes').select('*').eq('phone', phone);
             
             if(error || !data || data.length === 0) {
-                container.innerHTML = '<p class="text-center text-red-400 py-4 text-xs font-bold">Error de sincronización.</p>';
+                container.innerHTML = '<p class="text-center text-red-400 py-4 text-xs font-bold">Error de sincronización o cuenta vacía.</p>';
                 return;
             }
             
             document.getElementById('dashboard-bienvenida').innerText = `Hola, ${data[0].representante}`;
+            
+            // Guardamos el estado inicial en caché local
+            estudiantesCached = data;
             renderizarListaHijos(data);
 
-            // Suscribirse a cambios en tiempo real específicos del teléfono de este representante
-            _sb.channel('cambios-consumo')
+            // 🔥 ESCUCHADOR BULLETPROOF: Escucha la tabla y filtra programáticamente en JS
+            _sb.channel('cambios-globales')
                 .on('postgres_changes', { 
                     event: 'UPDATE', 
                     schema: 'public', 
-                    table: 'estudiantes',
-                    filter: `phone=eq.${phone}`
+                    table: 'estudiantes'
                 }, (payload) => {
-                    const antiguo = payload.old;
                     const nuevo = payload.new;
 
-                    // Si la deuda aumentó, disparamos la alerta nativa en background/foreground
-                    if (nuevo.debt > antiguo.debt) {
-                        const montoGastado = (nuevo.debt - antiguo.debt).toFixed(2);
+                    // Ignorar cambios que no pertenezcan al teléfono de esta familia
+                    if (nuevo.phone !== phone) return;
+
+                    // Buscamos el registro viejo guardado en nuestra memoria JS
+                    const alumnoPrevio = estudiantesCached.find(h => h.id === nuevo.id);
+                    
+                    if (alumnoPrevio && nuevo.debt > alumnoPrevio.debt) {
+                        const montoGastado = (nuevo.debt - alumnoPrevio.debt).toFixed(2);
                         dispararAlertaNativa(`¡Consumo Registrado!`, `${nuevo.name} acaba de gastar $${montoGastado} en Chela Sport 1972.`);
                     }
 
-                    // Refrescar los componentes visuales de la interfaz de inmediato
+                    // Sincronizar automáticamente la interfaz
                     solicitarDatosActualizados(phone);
                 })
                 .subscribe();
@@ -400,7 +396,10 @@
 
         async function solicitarDatosActualizados(phone) {
             const { data } = await _sb.from('estudiantes').select('*').eq('phone', phone);
-            if (data) renderizarListaHijos(data);
+            if (data) {
+                estudiantesCached = data; // Renovar la memoria local
+                renderizarListaHijos(data);
+            }
         }
 
         function renderizarListaHijos(data) {
@@ -410,13 +409,19 @@
             const phone = data[0].phone;
 
             data.forEach(hijo => {
-                acumuladorDeuda += parseFloat(hijo.debt || 0);
+                const deudaActual = parseFloat(hijo.debt || 0);
+                acumuladorDeuda += deudaActual;
                 
                 const btnBloqueo = hijo.bloqueado 
-                    ? `<button onclick="cambiarEstadoBloqueo('${hijo.id}', false, '${phone}')" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-lock-open text-[10px]"></i> Activar</button>`
-                    : `<button onclick="cambiarEstadoBloqueo('${hijo.id}', true, '${phone}')" class="bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-lock text-[10px]"></i> Bloquear</button>`;
+                    ? `<button onclick="cambiarEstadoBloqueo('${hijo.id}', false, '${phone}')" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-bold px-2.5 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-lock-open text-[9px]"></i> Activar</button>`
+                    : `<button onclick="cambiarEstadoBloqueo('${hijo.id}', true, '${phone}')" class="bg-red-500/10 text-red-400 border border-red-500/20 text-[11px] font-bold px-2.5 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-lock text-[9px]"></i> Bloquear</button>`;
 
-                const btnLimite = `<button onclick="modificarLimiteCredito('${hijo.id}', ${hijo.limite_credito || 100}, '${phone}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-pen text-[9px]"></i> Límite</button>`;
+                const btnLimite = `<button onclick="modificarLimiteCredito('${hijo.id}', ${hijo.limite_credito || 100}, '${phone}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 text-[11px] font-bold px-2.5 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-pen text-[9px]"></i> Límite</button>`;
+
+                // 🔥 NUEVO: BOTÓN DINÁMICO PARA PROCESAR EL PAGO
+                const btnPagar = deudaActual > 0
+                    ? `<button onclick="procesarPago('${hijo.id}', ${deudaActual}, '${phone}', '${hijo.name}')" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-wallet text-[9px]"></i> Pagar</button>`
+                    : '';
 
                 const statusBadge = hijo.bloqueado 
                     ? `<span class="bg-red-500/10 text-red-400 border border-red-500/20 text-[9px] uppercase font-black px-2 py-0.5 rounded-md tracking-wider">Bloqueado</span>`
@@ -428,7 +433,7 @@
                             <div>
                                 <p class="font-bold text-sm text-slate-100">${hijo.name}</p>
                                 <p class="text-xs font-semibold text-slate-400 mt-0.5">
-                                    Deuda: <span class="${hijo.debt > 0 ? 'text-amber-400' : 'text-slate-400'}">$${hijo.debt || 0}</span> 
+                                    Deuda: <span class="${deudaActual > 0 ? 'text-amber-400 font-bold' : 'text-slate-400'}">$${deudaActual.toFixed(2)}</span> 
                                     <span class="text-slate-600 mx-1">|</span> 
                                     Límite: <span class="text-indigo-400">$${hijo.limite_credito || 100}</span>
                                 </p>
@@ -436,6 +441,7 @@
                             <div>${statusBadge}</div>
                         </div>
                         <div class="flex gap-2 justify-end border-t border-slate-800/40 pt-2">
+                            ${btnPagar}
                             ${btnLimite}
                             ${btnBloqueo}
                         </div>
@@ -444,6 +450,30 @@
             });
             
             document.getElementById('total-deuda').innerText = `$${acumuladorDeuda.toFixed(2)}`;
+        }
+
+        // 🔥 LOGICA ACCIONABLE DEL BOTÓN DE PAGO
+        async function procesarPago(id, deudaActual, phone, nombreEstudiante) {
+            const montoPagar = prompt(`¿Cuánto desea abonar a la cuenta de ${nombreEstudiante}?\nDeuda acumulada actual: $${deudaActual.toFixed(2)}`, deudaActual.toFixed(2));
+            
+            if (montoPagar === null) return; // Cancelado
+            
+            const abono = parseFloat(montoPagar);
+            if (isNaN(abono) || abono <= 0 || abono > deudaActual) {
+                return alert("❌ Monto inválido. Debe ser mayor a 0 y no puede superar la deuda actual.");
+            }
+
+            const nuevaDeuda = parseFloat((deudaActual - abono).toFixed(2));
+
+            // Actualización directa en Supabase
+            const { error } = await _sb.from('estudiantes').update({ debt: nuevaDeuda }).eq('id', id);
+            
+            if (error) {
+                alert("Ocurrió un error al procesar el pago en la base de datos.");
+            } else {
+                alert(`✅ ¡Pago exitoso! Se restaron $${abono.toFixed(2)} a la cuenta.`);
+                solicitarDatosActualizados(phone);
+            }
         }
 
         async function dispararAlertaNativa(titulo, cuerpo) {
@@ -459,18 +489,15 @@
                     return;
                 }
             }
-            
             try {
                 new Notification(titulo, { body: cuerpo });
-            } catch(e) {
-                console.log("Notificación ignorada por el OS.");
-            }
+            } catch(e) { console.log("Notificación bloqueada por comportamiento en background."); }
         }
 
         async function cambiarEstadoBloqueo(id, nuevoEstado, phone) {
             const { error } = await _sb.from('estudiantes').update({ bloqueado: nuevoEstado }).eq('id', id);
             if (error) alert("Error al cambiar estado.");
-            // El refresco ya no es manual completo, pero lo invocamos por seguridad
+            else solicitarDatosActualizados(phone);
         }
 
         async function modificarLimiteCredito(id, limiteActual, phone) {
@@ -481,6 +508,7 @@
 
             const { error } = await _sb.from('estudiantes').update({ limite_credito: num }).eq('id', id);
             if (error) alert("Error al guardar límite.");
+            else solicitarDatosActualizados(phone);
         }
 
         function cerrarSesion() {

@@ -262,7 +262,6 @@
             if (permiso === "granted") {
                 verificarEstadoNotificaciones();
                 
-                // MÓVILES: Si la PWA tiene un Service Worker registrado y activo, enviamos la alerta por ahí
                 if ('serviceWorker' in navigator) {
                     const registration = await navigator.serviceWorker.getRegistration();
                     if (registration) {
@@ -274,17 +273,16 @@
                     }
                 }
                 
-                // DESKTOP: Fallback clásico si no se ejecuta como PWA instalada todavía
                 try {
                     new Notification("¡Portal Familiar!", {
                         body: "Dispositivo emparejado para recibir alertas de consumo.",
                     });
                 } catch(e) {
-                    console.log("Modo nativo no soportado fuera de Service Worker en este equipo.");
+                    console.log("Modo nativo no soportado fuera de Service Worker.");
                 }
                 
             } else {
-                alert("❌ Permiso denegado. Si estás en iPhone (iOS), recuerda ir a Ajustes > Safari o añadir primero la aplicación a tu Pantalla de Inicio para poder habilitar notificaciones.");
+                alert("❌ Permiso denegado. Si estás en iPhone (iOS), recuerda añadir primero la aplicación a tu Pantalla de Inicio para poder habilitar notificaciones.");
             }
         }
 
@@ -359,6 +357,7 @@
             }
         }
 
+        // --- DASHBOARD Y REALTIME UNIFICADOS ---
         async function abrirDashboard(phone) {
             nextStep('dashboard');
             cargarAvisosDelSistema();
@@ -376,36 +375,34 @@
             document.getElementById('dashboard-bienvenida').innerText = `Hola, ${data[0].representante}`;
             renderizarListaHijos(data);
 
-            // 🔥 NUEVO: Escuchar cambios en tiempo real específicos de este representante
+            // Suscribirse a cambios en tiempo real específicos del teléfono de este representante
             _sb.channel('cambios-consumo')
                 .on('postgres_changes', { 
                     event: 'UPDATE', 
                     schema: 'public', 
                     table: 'estudiantes',
-                    filter: `phone=eq.${phone}` // Solo escucha los alumnos de este teléfono
+                    filter: `phone=eq.${phone}`
                 }, (payload) => {
                     const antiguo = payload.old;
                     const nuevo = payload.new;
 
-                    // Si la deuda aumentó, disparamos la notificación nativa
+                    // Si la deuda aumentó, disparamos la alerta nativa en background/foreground
                     if (nuevo.debt > antiguo.debt) {
                         const montoGastado = (nuevo.debt - antiguo.debt).toFixed(2);
                         dispararAlertaNativa(`¡Consumo Registrado!`, `${nuevo.name} acaba de gastar $${montoGastado} en Chela Sport 1972.`);
                     }
 
-                    // Refrescar la interfaz automáticamente con los nuevos datos
+                    // Refrescar los componentes visuales de la interfaz de inmediato
                     solicitarDatosActualizados(phone);
                 })
                 .subscribe();
         }
 
-        // Función auxiliar para repintar la lista sin romper la conexión de tiempo real
         async function solicitarDatosActualizados(phone) {
             const { data } = await _sb.from('estudiantes').select('*').eq('phone', phone);
             if (data) renderizarListaHijos(data);
         }
 
-        // Separamos el renderizado para poder usarlo dinámicamente
         function renderizarListaHijos(data) {
             const container = document.getElementById('lista-hijos');
             container.innerHTML = '';
@@ -449,7 +446,6 @@
             document.getElementById('total-deuda').innerText = `$${acumuladorDeuda.toFixed(2)}`;
         }
 
-        // Función centralizada para empujar la burbuja de notificación
         async function dispararAlertaNativa(titulo, cuerpo) {
             if (Notification.permission !== "granted") return;
 
@@ -467,13 +463,14 @@
             try {
                 new Notification(titulo, { body: cuerpo });
             } catch(e) {
-                console.log("Notificación fallida en background.");
+                console.log("Notificación ignorada por el OS.");
             }
         }
+
         async function cambiarEstadoBloqueo(id, nuevoEstado, phone) {
             const { error } = await _sb.from('estudiantes').update({ bloqueado: nuevoEstado }).eq('id', id);
             if (error) alert("Error al cambiar estado.");
-            else abrirDashboard(phone);
+            // El refresco ya no es manual completo, pero lo invocamos por seguridad
         }
 
         async function modificarLimiteCredito(id, limiteActual, phone) {
@@ -484,7 +481,6 @@
 
             const { error } = await _sb.from('estudiantes').update({ limite_credito: num }).eq('id', id);
             if (error) alert("Error al guardar límite.");
-            else abrirDashboard(phone);
         }
 
         function cerrarSesion() {

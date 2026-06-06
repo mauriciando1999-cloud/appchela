@@ -755,3 +755,13 @@ window.buscarAlumnoNFC = async function(valor) {
         console.error("Error al buscar alumno:", err);
     }
 };
+// En tu app.js, al cargar la página:
+async function checkSession() {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (session) {
+        // Redirigir al panel del representante directamente
+        mostrarPanelRepresentante(session.user);
+    } else {
+        // Mostrar Login
+    }
+}

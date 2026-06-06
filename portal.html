@@ -8,7 +8,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Portal Familiar | Chela Sport 1972</title>
     
-    <!-- CDNs Necesarios -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -31,7 +30,6 @@
         
         <div class="flex-1">
             
-            <!-- STEP 1: HOME -->
             <div id="step-1" class="step active">
                 <section class="py-12 bg-slate-900/30 border border-slate-800/50 rounded-[2.5rem] mb-8 text-center px-4 mt-4 shadow-xl glass">
                     <h2 class="text-white font-black uppercase text-lg tracking-tighter mb-4 italic">
@@ -56,7 +54,6 @@
                 </div>
             </div>
 
-            <!-- STEP 2: REGISTRO - REPRESENTANTE -->
             <div id="step-2" class="step">
                 <div class="p-4">
                     <button onclick="nextStep(1)" class="text-slate-500 hover:text-slate-300 transition-all mb-6 flex items-center gap-2 font-bold text-sm">
@@ -85,7 +82,6 @@
                 </div>
             </div>
 
-            <!-- STEP 3: REGISTRO - ALUMNOS -->
             <div id="step-3" class="step">
                 <div class="p-4">
                     <button onclick="nextStep(2)" class="text-slate-500 hover:text-slate-300 transition-all mb-6 flex items-center gap-2 font-bold text-sm">
@@ -110,7 +106,6 @@
                 </div>
             </div>
 
-            <!-- STEP LOGIN: ACCESO -->
             <div id="step-login" class="step">
                 <div class="p-4">
                     <button onclick="nextStep(1)" class="text-slate-500 hover:text-slate-300 transition-all mb-6 flex items-center gap-2 font-bold text-sm">
@@ -135,7 +130,6 @@
                 </div>
             </div>
 
-            <!-- STEP DASHBOARD: PANEL PRINCIPAL -->
             <div id="step-dashboard" class="step">
                 <div class="p-4">
                     <div class="flex justify-between items-center mb-6">
@@ -148,15 +142,13 @@
                         </button>
                     </div>
 
-                    <!-- CAJA DE AVISOS / PUBLICIDAD -->
                     <div id="caja-anuncios" class="p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/20 mb-4 hidden glass">
                         <div class="flex items-center gap-2 mb-1">
                             <i class="fa-solid fa-bullhorn text-indigo-400 text-xs"></i>
                             <span class="text-[10px] uppercase font-black tracking-wider text-indigo-400">Anuncio Oficial</span>
                         </div>
                         <p id="texto-anuncio" class="text-xs text-slate-300 font-medium leading-relaxed">
-                            <!-- Se carga dinámicamente desde JS -->
-                        </p>
+                            </p>
                     </div>
 
                     <div class="p-6 rounded-3xl bg-gradient-to-br from-indigo-900/40 to-slate-900/60 border border-indigo-500/20 shadow-xl mb-4 relative overflow-hidden">
@@ -165,7 +157,6 @@
                         <h2 id="total-deuda" class="text-3xl font-black text-white tracking-tight">$0.00</h2>
                     </div>
 
-                    <!-- BOTÓN DE NOTIFICACIONES -->
                     <button id="btn-notificaciones" onclick="solicitarNotificaciones()" class="w-full bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-400 active:scale-95 transition-all mb-6">
                         <i id="icono-notificaciones" class="fa-solid fa-bell text-indigo-400"></i> 
                         <span id="txt-notificaciones">Habilitar Alertas de Consumo</span>
@@ -174,15 +165,13 @@
                     <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 px-1">Estado de Alumnos</h4>
                     
                     <div id="lista-hijos" class="space-y-3">
-                        <!-- Estructurado desde JavaScript -->
-                    </div>
+                        </div>
                 </div>
             </div>
 
         </div>
     </div>
 
-    <!-- LÓGICA DE NEGOCIO INTEGRADA -->
     <script>
         const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
         const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
@@ -412,7 +401,7 @@
 
                 const btnLimite = `<button onclick="modificarLimiteCredito('${hijo.id}', ${hijo.limite_credito || 100}, '${phone}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 text-[11px] font-bold px-2.5 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-pen text-[9px]"></i> Límite</button>`;
 
-                // 🔥 ENLACE DE PAGO CORREGIDO HACIA COBRANZA.HTML
+                // 🔥 BOTÓN REORIENTADO A PAGO.HTML
                 const btnPagar = deudaActual > 0
                     ? `<button onclick="procesarPago('${hijo.id}', ${deudaActual}, '${phone}', '${hijo.name}')" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 text-[11px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-receipt text-[9px]"></i> Pagar</button>`
                     : '';
@@ -446,9 +435,9 @@
             document.getElementById('total-deuda').innerText = `$${acumuladorDeuda.toFixed(2)}`;
         }
 
-        // 🔥 NUEVA REDIRECCIÓN DIRECTA A COBRANZA.HTML SIN ALTERAR LA BASE DE DATOS
+        // 🔥 REDIRECCIÓN CORREGIDA HACIA PAGO.HTML EN LUGAR DE COBRANZA
         function procesarPago(id, deudaActual, phone, nombreEstudiante) {
-            window.location.href = `cobranza.html?id=${id}&name=${encodeURIComponent(nombreEstudiante)}&debt=${deudaActual.toFixed(2)}&phone=${phone}`;
+            window.location.href = `pago.html?id=${id}&name=${encodeURIComponent(nombreEstudiante)}&debt=${deudaActual.toFixed(2)}&phone=${phone}`;
         }
 
         async function dispararAlertaNativa(titulo, cuerpo) {

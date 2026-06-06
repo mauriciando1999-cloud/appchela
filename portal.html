@@ -374,9 +374,44 @@
             }
             
             document.getElementById('dashboard-bienvenida').innerText = `Hola, ${data[0].representante}`;
+            renderizarListaHijos(data);
+
+            // 🔥 NUEVO: Escuchar cambios en tiempo real específicos de este representante
+            _sb.channel('cambios-consumo')
+                .on('postgres_changes', { 
+                    event: 'UPDATE', 
+                    schema: 'public', 
+                    table: 'estudiantes',
+                    filter: `phone=eq.${phone}` // Solo escucha los alumnos de este teléfono
+                }, (payload) => {
+                    const antiguo = payload.old;
+                    const nuevo = payload.new;
+
+                    // Si la deuda aumentó, disparamos la notificación nativa
+                    if (nuevo.debt > antiguo.debt) {
+                        const montoGastado = (nuevo.debt - antiguo.debt).toFixed(2);
+                        dispararAlertaNativa(`¡Consumo Registrado!`, `${nuevo.name} acaba de gastar $${montoGastado} en Chela Sport 1972.`);
+                    }
+
+                    // Refrescar la interfaz automáticamente con los nuevos datos
+                    solicitarDatosActualizados(phone);
+                })
+                .subscribe();
+        }
+
+        // Función auxiliar para repintar la lista sin romper la conexión de tiempo real
+        async function solicitarDatosActualizados(phone) {
+            const { data } = await _sb.from('estudiantes').select('*').eq('phone', phone);
+            if (data) renderizarListaHijos(data);
+        }
+
+        // Separamos el renderizado para poder usarlo dinámicamente
+        function renderizarListaHijos(data) {
+            const container = document.getElementById('lista-hijos');
             container.innerHTML = '';
             let acumuladorDeuda = 0;
-            
+            const phone = data[0].phone;
+
             data.forEach(hijo => {
                 acumuladorDeuda += parseFloat(hijo.debt || 0);
                 
@@ -414,6 +449,27 @@
             document.getElementById('total-deuda').innerText = `$${acumuladorDeuda.toFixed(2)}`;
         }
 
+        // Función centralizada para empujar la burbuja de notificación
+        async function dispararAlertaNativa(titulo, cuerpo) {
+            if (Notification.permission !== "granted") return;
+
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration) {
+                    registration.showNotification(titulo, {
+                        body: cuerpo,
+                        icon: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/bell.svg"
+                    });
+                    return;
+                }
+            }
+            
+            try {
+                new Notification(titulo, { body: cuerpo });
+            } catch(e) {
+                console.log("Notificación fallida en background.");
+            }
+        }
         async function cambiarEstadoBloqueo(id, nuevoEstado, phone) {
             const { error } = await _sb.from('estudiantes').update({ bloqueado: nuevoEstado }).eq('id', id);
             if (error) alert("Error al cambiar estado.");

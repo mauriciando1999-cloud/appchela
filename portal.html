@@ -148,7 +148,7 @@
                         </button>
                     </div>
 
-                    <!-- CAJA DE AVISOS / PUBLICIDAD (Fácilmente modificable) -->
+                    <!-- CAJA DE AVISOS / PUBLICIDAD -->
                     <div id="caja-anuncios" class="p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/20 mb-4 hidden glass">
                         <div class="flex items-center gap-2 mb-1">
                             <i class="fa-solid fa-bullhorn text-indigo-400 text-xs"></i>
@@ -165,7 +165,7 @@
                         <h2 id="total-deuda" class="text-3xl font-black text-white tracking-tight">$0.00</h2>
                     </div>
 
-                    <!-- BOTÓN NATIVO DE NOTIFICACIONES -->
+                    <!-- BOTÓN DE NOTIFICACIONES CORREGIDO -->
                     <button id="btn-notificaciones" onclick="solicitarNotificaciones()" class="w-full bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-400 active:scale-95 transition-all mb-6">
                         <i id="icono-notificaciones" class="fa-solid fa-bell text-indigo-400"></i> 
                         <span id="txt-notificaciones">Habilitar Alertas de Consumo</span>
@@ -223,16 +223,8 @@
             const textoAnuncio = document.getElementById('texto-anuncio');
 
             try {
-                /* 
-                  💡 PARA EL FUTURO DESDE TU PANEL DE ADMIN:
-                  Puedes crear una tabla llamada 'configuracion' o 'anuncios' y descomentar estas líneas:
-                  
-                  const { data } = await _sb.from('anuncios').select('contenido').eq('activo', true).single();
-                  if(data) { textoAnuncio.innerText = data.contenido; cajaAnuncios.classList.remove('hidden'); }
-                */
-
-                // Cambia este texto directamente cuando quieras actualizarlo manualmente por ahora:
-                const avisoTemporal = "¡Bienvenidos al nuevo portal! Recuerda revisar los límites de crédito asignados a tus representados.";
+                // Modifica este texto temporalmente. Al dejarlo en "" la caja se oculta automáticamente.
+                const avisoTemporal = "¡Bienvenidos al nuevo portal de Chela Sport 1972! Aquí podrás ajustar los límites y suspender el crédito familiar instantáneamente.";
                 
                 if (avisoTemporal && avisoTemporal.trim() !== "") {
                     textoAnuncio.innerText = avisoTemporal;
@@ -241,11 +233,11 @@
                     cajaAnuncios.classList.add('hidden');
                 }
             } catch (error) {
-                console.error("Error cargando anuncios de la plataforma:", error);
+                console.error("Error cargando anuncios:", error);
             }
         }
 
-        // --- API DE NOTIFICACIONES ---
+        // --- API DE NOTIFICACIONES REFACTORIZADA PARA MÓVILES ---
         function verificarEstadoNotificaciones() {
             if (!("Notification" in window)) return;
             const btn = document.getElementById('btn-notificaciones');
@@ -255,25 +247,44 @@
             if (Notification.permission === "granted") {
                 btn.classList.replace('text-slate-400', 'text-emerald-400');
                 icono.classList.replace('text-indigo-400', 'text-emerald-400');
-                txt.innerText = "Alertas de Consumo Activas";
+                txt.innerText = "Alertas Vinculadas Correctamente";
                 btn.disabled = true;
             }
         }
 
         async function solicitarNotificaciones() {
             if (!("Notification" in window)) {
-                return alert("⚠️ Tu navegador o dispositivo no soporta notificaciones nativas.");
+                return alert("⚠️ Tu navegador o dispositivo no soporta notificaciones.");
             }
 
             const permiso = await Notification.requestPermission();
+            
             if (permiso === "granted") {
                 verificarEstadoNotificaciones();
-                new Notification("¡Portal Familiar!", {
-                    body: "Las alertas de consumo han sido vinculadas correctamente a este dispositivo.",
-                    icon: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/bell.svg"
-                });
+                
+                // MÓVILES: Si la PWA tiene un Service Worker registrado y activo, enviamos la alerta por ahí
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        registration.showNotification("¡Portal Familiar!", {
+                            body: "Dispositivo emparejado para recibir alertas de consumo.",
+                            icon: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/bell.svg"
+                        });
+                        return;
+                    }
+                }
+                
+                // DESKTOP: Fallback clásico si no se ejecuta como PWA instalada todavía
+                try {
+                    new Notification("¡Portal Familiar!", {
+                        body: "Dispositivo emparejado para recibir alertas de consumo.",
+                    });
+                } catch(e) {
+                    console.log("Modo nativo no soportado fuera de Service Worker en este equipo.");
+                }
+                
             } else {
-                alert("❌ Has denegado los permisos de notificación.");
+                alert("❌ Permiso denegado. Si estás en iPhone (iOS), recuerda ir a Ajustes > Safari o añadir primero la aplicación a tu Pantalla de Inicio para poder habilitar notificaciones.");
             }
         }
 
@@ -350,7 +361,7 @@
 
         async function abrirDashboard(phone) {
             nextStep('dashboard');
-            cargarAvisosDelSistema(); // Cargar la caja publicitaria de forma dinámica
+            cargarAvisosDelSistema();
             
             const container = document.getElementById('lista-hijos');
             container.innerHTML = '<div class="text-center py-6 text-slate-500 font-medium"><i class="fa-solid fa-circle-notch fa-spin mr-2 text-indigo-500"></i>Sincronizando portal...</div>';

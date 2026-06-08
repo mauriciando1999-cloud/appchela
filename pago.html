@@ -62,26 +62,35 @@
         const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
         const _sb = supabase.createClient(SB_URL, SB_KEY);
 
+        // Mapeo unificado con fallback para evitar rupturas de nombres de variables
         const params = new URLSearchParams(window.location.search);
-        const estId = params.get('estudiante');
-        const montoUSD = parseFloat(params.get('monto') || 0);
+        const estId = params.get('id') || params.get('estudiante');
+        const montoUSD = parseFloat(params.get('debt') || params.get('monto') || 0);
+        const nombreUrl = params.get('name');
         let tasaGlobal = 0;
 
         // 1. CARGAR DATOS Y TASA BCV
         async function init() {
             document.getElementById('monto-usd').innerText = `$${montoUSD.toFixed(2)}`;
             
-            // Traer tasa
+            // Carga inmediata del nombre desde URL para experiencia de usuario instantánea
+            if (nombreUrl) {
+                document.getElementById('nombre-estudiante').innerText = `Deuda: ${decodeURIComponent(nombreUrl)}`;
+            }
+            
+            // Traer tasa oficial BCV
             try {
                 const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
                 const data = await res.json();
                 tasaGlobal = data.promedio;
                 document.getElementById('bcv-floating').innerText = `BCV: ${tasaGlobal.toFixed(2)}`;
                 document.getElementById('monto-bs').innerText = `Bs. ${(montoUSD * tasaGlobal).toFixed(2)}`;
-            } catch (e) { console.error("Error tasa"); }
+            } catch (e) { 
+                console.error("Error obteniendo tasa cambiaria"); 
+            }
 
-            // Traer nombre estudiante
-            if(estId) {
+            // Fallback: Si por alguna razón no vino el nombre en la URL, lo busca en Supabase
+            if(!nombreUrl && estId) {
                 const { data } = await _sb.from('estudiantes').select('name').eq('id', estId).single();
                 if(data) document.getElementById('nombre-estudiante').innerText = `Deuda: ${data.name}`;
             }
@@ -93,13 +102,13 @@
             if(file) document.getElementById('file-name').innerText = file.name;
         };
 
-        // 2. ENVIAR REPORTE CORREGIDO
+        // 2. ENVIAR REPORTE EN ESTADO PENDIENTE
         async function enviarReporte() {
-            const ref = document.getElementById('ref').value;
+            const ref = document.getElementById('ref').value.trim();
             const file = document.getElementById('file-input').files[0];
             const btn = document.getElementById('btn-enviar');
 
-            if(ref.length < 4 || !file) return alert("⚠️ Ingresa la referencia y adjunta la foto.");
+            if(ref.length < 4 || !file) return alert("⚠️ Ingresa los últimos 4 dígitos de la referencia y adjunta la foto.");
             
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Subiendo...';
@@ -108,26 +117,26 @@
                 const fileExt = file.name.split('.').pop();
                 const fileName = `pago_${Date.now()}.${fileExt}`;
                 
-                // A. Subida al Bucket
+                // A. Subida al Bucket de Almacenamiento
                 const { error: uploadError } = await _sb.storage
                     .from('comprobantes')
                     .upload(fileName, file);
 
                 if (uploadError) throw uploadError;
 
-                // B. Obtener URL Pública
+                // B. Obtener URL Pública del archivo subido
                 const { data: { publicUrl } } = _sb.storage.from('comprobantes').getPublicUrl(fileName);
 
-                // C. Registro en Ventas (EL CAMBIO CRÍTICO ESTÁ AQUÍ)
-                const montoBsCalculado = montoUSD * tasaGlobal;
+                // C. Registro en Ventas con estado 'pendiente_verificacion'
+                const montoBsCalculado = montoUSD * (tasaGlobal || 1);
 
                 const { error: insertError } = await _sb.from('ventas').insert([{
                     id_orden: `REP-${ref}-${Date.now().toString().slice(-4)}`,
-                    total_usd: montoUSD,           // Se queda en $ para tus gráficas
-                    monto_original: montoBsCalculado, // Se guarda en Bs para tu banco
+                    total_usd: montoUSD,           // Registro analítico en USD
+                    monto_original: montoBsCalculado, // Conciliación bancaria en Bs.
                     moneda: 'VES',
                     metodo_pago: `PAGO_MOVIL (Ref: ${ref})`,
-                    status: 'pendiente_verificacion',
+                    status: 'pendiente_verificacion', // Asegura la revisión manual previa
                     estudiante_id: estId,
                     comprobante_url: publicUrl,
                     tasa_referencia: tasaGlobal
@@ -135,12 +144,13 @@
 
                 if (insertError) throw insertError;
 
+                // Redirección limpia tras finalizar el proceso
                 window.location.href = "exito.html"; 
 
             } catch (e) {
-                alert("Hubo un problema: " + e.message);
+                alert("Hubo un problema procesando el reporte: " + e.message);
                 btn.disabled = false;
-                btn.innerText = "Subir Comprobante";
+                btn.innerHTML = "Subir Comprobante";
             }
         }
     </script>

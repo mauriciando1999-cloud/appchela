@@ -236,7 +236,18 @@ window.guardarFacturaMasiva = async function() {
     const facRefEl = document.getElementById('fac-ref');
     const proveedor = (facProveedorEl ? facProveedorEl.value.trim() : '') || 'Proveedor Sin Nombre';
     const refFac = (facRefEl ? facRefEl.value.trim() : '') || `REC-${Date.now().toString().slice(-5)}`;
-    
+    const montoConIVA = costoTotalFactura * 1.16;
+
+if (costoTotalFactura > 0) {
+    await _sb.from('facturas').insert([{
+        proveedor: proveedor,
+        concepto: `Factura Ref: ${refFac}`,
+        monto_usd: montoConIVA, // Guardamos el monto total con IVA
+        fecha_vencimiento: new Date().toISOString().split('T')[0],
+        status: 'pendiente'
+    }]);
+}
+alert(`✅ Stock guardado. Factura registrada con IVA ($${montoConIVA.toFixed(2)})`);
     let errorValidacion = false;
     let costoTotalFactura = 0;
     const btn = document.getElementById('btn-save-factura');

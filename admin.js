@@ -196,6 +196,7 @@ function renderFacturasAgrupadas() {
 }
 
 // Ventana Dinámica para pago múltiple
+// admin.js - Función corregida y actualizada
 function abrirModalPagoProveedor(proveedor) {
     const facturas = state.facturas.filter(f => f.status === 'pendiente' && (f.proveedor || 'Sin Nombre') === proveedor);
     
@@ -204,7 +205,6 @@ function abrirModalPagoProveedor(proveedor) {
             <input type="checkbox" value="${f.id}" data-monto="${f.monto_usd}" checked onchange="recalcularTotalModal()" class="chk-factura w-4 h-4 text-indigo-600 bg-slate-900 border-slate-700 rounded focus:ring-indigo-500 focus:ring-2 mr-3">
             <div class="flex-1">
                 <p class="text-[10px] font-black text-white uppercase">${f.concepto}</p>
-                <p class="text-[8px] text-slate-500 font-bold">Vence: ${f.fecha_vencimiento || 'N/A'}</p>
             </div>
             <div class="text-right">
                 <p class="text-xs font-black text-red-400">$${parseFloat(f.monto_usd).toFixed(2)}</p>
@@ -212,73 +212,71 @@ function abrirModalPagoProveedor(proveedor) {
         </label>
     `).join('');
 
-    const modalHtml = `
+    // Declaramos modalHtml UNA SOLA VEZ usando backticks
+    let modalHtml = `
         <div id="modal-pago-multiple" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col justify-end p-4 pb-10 transition-all">
             <div class="bg-slate-900 w-full max-w-md mx-auto rounded-[2.5rem] border border-slate-800 p-6 shadow-2xl relative flex flex-col max-h-[85vh]">
                 <button onclick="document.getElementById('modal-pago-multiple').remove()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2 active:scale-90"><i class="fa-solid fa-xmark text-xl"></i></button>
                 
-                <h3 class="text-white font-black uppercase tracking-widest text-sm mb-2 mt-2 flex items-center gap-2">
-                    <i class="fa-solid fa-building-columns text-emerald-400"></i> Liquidar a Proveedor
-                </h3>
-                <p class="text-xs text-indigo-400 font-bold mb-4 uppercase"><i class="fa-solid fa-truck mr-1"></i> ${proveedor}</p>
+                <h3 class="text-white font-black uppercase tracking-widest text-sm mb-4">Liquidar a ${proveedor}</h3>
                 
                 <div class="flex-1 overflow-y-auto space-y-2 mb-4 pr-1 no-scrollbar">
                     ${facturasHtml}
                 </div>
 
-                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 mb-4 text-center">
-                    <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Monto a Liquidar</p>
-                    <div class="flex justify-center items-end gap-3">
-                        <p id="modal-total-usd" class="text-3xl font-black text-white">$0.00</p>
-                    </div>
-                    <p id="modal-total-bs" class="text-sm font-black text-emerald-400 mt-1 bg-emerald-900/20 inline-block px-3 py-1 rounded-lg border border-emerald-500/30">Bs. 0.00</p>
+                <!-- SELECTOR DE CUENTA (NUEVO) -->
+                <div class="mb-4">
+                    <label class="text-[9px] text-slate-500 font-black uppercase">Cuenta de Pago</label>
+                    <select id="cuenta-pago-origen" class="w-full bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-xs font-bold mt-1 outline-none">
+                        <option value="caja_chica">Caja Chica (Efectivo)</option>
+                        <option value="banesco_pm">Banesco PM</option>
+                        <option value="exterior_punto">Exterior Punto</option>
+                    </select>
                 </div>
 
-                <button onclick="procesarPagoMultiple('${proveedor}')" id="btn-confirma-pago-prov" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-[11px] active:scale-95 shadow-lg shadow-emerald-900/30 flex justify-center items-center gap-2 transition-transform shrink-0">
-                    <i class="fa-solid fa-check-double"></i> Registrar Pago
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 mb-4 text-center">
+                    <p id="modal-total-usd" class="text-2xl font-black text-white">$0.00</p>
+                </div>
+
+                <button onclick="procesarPagoMultiple('${proveedor}')" id="btn-confirma-pago-prov" class="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl text-xs uppercase active:scale-95 shadow-lg shadow-emerald-900/30">
+                    Registrar Pago
                 </button>
             </div>
         </div>
     `;
 
-    // Inyectar y calcular inicial
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     recalcularTotalModal();
 }
 
-window.recalcularTotalModal = function() {
-    let sumUsd = 0;
-    document.querySelectorAll('.chk-factura:checked').forEach(chk => {
-        sumUsd += parseFloat(chk.dataset.monto);
-    });
-    document.getElementById('modal-total-usd').innerText = `$${sumUsd.toFixed(2)}`;
-    document.getElementById('modal-total-bs').innerText = `Bs. ${(sumUsd * state.tasa).toFixed(2)}`;
-};
 
 async function procesarPagoMultiple(proveedor) {
     const checkboxes = document.querySelectorAll('.chk-factura:checked');
     const idsAPagar = Array.from(checkboxes).map(chk => chk.value);
+    const cuenta = document.getElementById('cuenta-pago-origen').value;
+    const montoTotal = document.getElementById('modal-total-usd').innerText.replace('$','');
 
-    if(idsAPagar.length === 0) return alert("Selecciona al menos una factura para pagar.");
-
-    const btn = document.getElementById('btn-confirma-pago-prov');
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
-    btn.disabled = true;
+    if(idsAPagar.length === 0) return alert("Selecciona al menos una factura.");
 
     try {
-        // Actualizar estatus masivamente en Supabase
+        // 1. Marcar facturas como pagadas
         await _sb.from('facturas').update({ status: 'pagado' }).in('id', idsAPagar);
         
-        alert(`✅ Se registraron los pagos para ${proveedor} con éxito.`);
+        // 2. Registrar el gasto en la tabla de banco (esto es lo que reduce tu saldo)
+        await _sb.from('pagos_banco').insert([{
+            banco: cuenta,
+            referencia: 'PAGO_PROV_' + proveedor,
+            monto: parseFloat(montoTotal),
+            usado: true // Esto marcará el egreso
+        }]);
+
+        alert(`✅ Pago registrado en ${cuenta}.`);
         document.getElementById('modal-pago-multiple').remove();
-        loadERP(); 
+        loadERP(); // Recarga el dashboard con los nuevos saldos
     } catch (e) {
-        alert("Error al procesar pago: " + e.message);
-        btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Registrar Pago';
-        btn.disabled = false;
+        alert("Error: " + e.message);
     }
 }
-
 // Mantenemos la creación manual de facturas/gastos extra por si acaso
 function abrirModalGasto() {
     document.getElementById('gasto-concepto').value = '';

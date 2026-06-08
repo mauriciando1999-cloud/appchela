@@ -26,30 +26,43 @@
         
         <div class="relative">
             <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-            <input type="text" id="search-deudor" oninput="renderDeudores()" placeholder="Buscar por nombre o representante..." 
+            <input type="text" id="search-deudor" oninput="renderDeudores()" placeholder="Buscar deudor..." 
                 class="w-full bg-slate-950 border border-slate-800 p-4 pl-10 rounded-2xl text-xs font-bold outline-none focus:border-indigo-500 transition-all">
         </div>
     </header>
 
     <main class="p-4">
-        <div class="grid grid-cols-2 gap-3 mb-6">
+        <!-- Tarjetas de Métricas -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
             <div class="bg-slate-900 p-4 rounded-3xl border border-slate-800 shadow-lg">
                 <p class="text-[8px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">Deuda Global</p>
                 <p id="total-deuda-global" class="text-xl font-black text-red-400">$0.00</p>
             </div>
             <div class="bg-slate-900 p-4 rounded-3xl border border-slate-800 shadow-lg">
                 <p class="text-[8px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">Por Cobrar</p>
-                <p class="text-xl font-black text-white"><span id="count-deudores">0</span> <span class="text-[10px] text-slate-500 uppercase">Alumnos</span></p>
+                <p class="text-xl font-black text-white"><span id="count-deudores">0</span> <span id="count-label" class="text-[10px] text-slate-500 uppercase">Alumnos</span></p>
             </div>
         </div>
 
+        <!-- Selector de Tipo (Tabs) -->
+        <div class="flex bg-slate-900 p-1 rounded-2xl border border-slate-800 mb-6 shadow-inner">
+            <button onclick="switchTab('alumnos')" id="tab-alumnos" class="flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl bg-indigo-600 text-white transition-all">
+                <i class="fa-solid fa-graduation-cap mr-1.5"></i> Alumnos
+            </button>
+            <button onclick="switchTab('personal')" id="tab-personal" class="flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl text-slate-400 hover:text-slate-200 transition-all">
+                <i class="fa-solid fa-user-tie mr-1.5"></i> Personal
+            </button>
+        </div>
+
+        <!-- Contenedor Dinámico de la Lista -->
         <div id="lista-deudores" class="space-y-3">
             <div class="text-center py-20 opacity-20 uppercase font-black tracking-widest text-xs">
-                Cargando lista de estudiantes...
+                Cargando registros...
             </div>
         </div>
     </main>
 
+    <!-- Modal de Abonos -->
     <div id="modal-abono" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col justify-end p-4 hidden">
         <div class="bg-slate-900 w-full max-w-md mx-auto rounded-[3rem] border border-slate-800 p-8 shadow-2xl">
             <div class="flex justify-between items-start mb-6">
@@ -85,30 +98,27 @@
         </div>
     </div>
 
+    <!-- Navegación Inferior -->
     <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 z-40 flex justify-around p-2 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
-    <a href="index.html" class="flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors">
-        <i class="fa-solid fa-cash-register text-xl mb-1"></i>
-        <span class="text-[8px] uppercase font-black tracking-widest mt-1">Venta</span>
-    </a>
-    
-    <a href="stock.html" class="flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors">
-        <i class="fa-solid fa-boxes-stacked text-xl mb-1"></i>
-        <span class="text-[8px] uppercase font-black tracking-widest mt-1">Stock</span>
-    </a>
-    
-    <a href="cobranza.html" class="flex-1 flex flex-col items-center py-2 text-indigo-500 border-t-2 border-indigo-500">
-        <i class="fa-solid fa-hand-holding-dollar text-xl mb-1"></i>
-        <span class="text-[8px] uppercase font-black tracking-widest mt-1">Cobros</span>
-    </a>
-    
-    <a href="admin.html" id="btn-admin" class="hidden flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors">
-        <i class="fa-solid fa-chart-pie text-xl mb-1"></i>
-        <span class="text-[8px] uppercase font-black tracking-widest mt-1">Admin</span>
-    </a>
-</nav>
+        <a href="index.html" class="flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors">
+            <i class="fa-solid fa-cash-register text-xl mb-1"></i>
+            <span class="text-[8px] uppercase font-black tracking-widest mt-1">Venta</span>
+        </a>
+        <a href="stock.html" class="flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors">
+            <i class="fa-solid fa-boxes-stacked text-xl mb-1"></i>
+            <span class="text-[8px] uppercase font-black tracking-widest mt-1">Stock</span>
+        </a>
+        <a href="cobranza.html" class="flex-1 flex flex-col items-center py-2 text-indigo-500 border-t-2 border-indigo-500">
+            <i class="fa-solid fa-hand-holding-dollar text-xl mb-1"></i>
+            <span class="text-[8px] uppercase font-black tracking-widest mt-1">Cobros</span>
+        </a>
+        <a href="admin.html" id="btn-admin" class="hidden flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors">
+            <i class="fa-solid fa-chart-pie text-xl mb-1"></i>
+            <span class="text-[8px] uppercase font-black tracking-widest mt-1">Admin</span>
+        </a>
+    </nav>
 
     <script src="config.js"></script>
     <script src="cobranza.js"></script>
-
 </body>
 </html>

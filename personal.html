@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="manifest" href="punto-venta.webmanifest">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Control, Finanzas y Cartelera de Personal</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; overflow-x: hidden; }
+        .step { display: none; }
+        .step.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        input, select { background: #0f172a !important; border: 1px solid #1e293b !important; color: white !important; transition: all 0.2s; }
+        input:focus, select:focus { border-color: #6366f1 !important; outline: none; box-shadow: 0 0 15px rgba(99, 102, 241, 0.2); }
+        .pin-field { letter-spacing: 0.5em; text-align: center; font-size: 1.5rem !important; font-weight: 900; }
+    </style>
+</head>
+
+<body class="p-4 flex justify-center items-start min-h-screen">
+    <div class="w-full max-w-md bg-slate-950/40 min-h-[90vh] rounded-[2.5rem] p-2 flex flex-col justify-between">
+        
+        <div class="flex-1">
+            
+            <!-- STEP 1: MENÚ PRINCIPAL -->
+            <div id="step-1" class="step active">
+                <section class="py-12 bg-slate-900/30 border border-slate-800/50 rounded-[2.5rem] mb-8 text-center px-4 mt-4 shadow-xl glass">
+                    <h2 class="text-white font-black uppercase text-lg tracking-tighter mb-4 italic">
+                        Control de Personal <span class="text-indigo-500 text-sm block not-italic font-medium tracking-normal mt-1 text-slate-400">Plataforma Escolar</span>
+                    </h2>
+                    <div class="flex justify-center mb-2">
+                        <div class="w-16 h-16 bg-indigo-600 rounded-full flex justify-center items-center shadow-lg shadow-indigo-900/40 border-4 border-slate-950">
+                            <i class="fa-solid fa-id-card-clip text-white text-xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 font-medium mt-2">Módulo de altas, consumos y cartelera informativa</p>
+                </section>
+                
+                <div class="space-y-4 px-2">
+                    <button onclick="nextStep(2)" class="w-full bg-indigo-600 p-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg active:scale-95 transition-all text-white">
+                        Registrar Nuevo Personal
+                    </button>
+                    <button onclick="nextStep('login')" class="w-full bg-slate-900 border border-slate-800 p-5 rounded-2xl font-black uppercase text-xs tracking-widest text-slate-400 active:scale-95 transition-all">
+                        Ingresar a mi Panel
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: FORMULARIO DE REGISTRO -->
+            <div id="step-2" class="step">
+                <div class="p-4">
+                    <button onclick="nextStep(1)" class="text-slate-500 hover:text-slate-300 transition-all mb-6 flex items-center gap-2 font-bold text-sm">
+                        <i class="fa-solid fa-arrow-left"></i> Volver
+                    </button>
+                    <h3 class="text-xl font-black mb-1 text-white">Datos del Trabajador</h3>
+                    <p class="text-xs text-slate-400 mb-6">Asigna las credenciales y el rol correspondiente dentro de la institución.</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Nombre Completo</label>
+                            <input type="text" id="reg-nombre" class="w-full p-4 rounded-xl" placeholder="Ej. María Alejandra Silva">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Teléfono de Contacto</label>
+                            <input type="tel" id="reg-phone" class="w-full p-4 rounded-xl" placeholder="Ej. 04241234567">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Rol Institucional</label>
+                            <select id="reg-rol" class="w-full p-4 rounded-xl text-white appearance-none cursor-pointer">
+                                <option value="Docente">Personal Docente</option>
+                                <option value="Administrativo">Personal Administrativo</option>
+                                <option value="Mantenimiento">Personal de Mantenimiento</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">PIN de Acceso (4 dígitos)</label>
+                            <input type="password" id="reg-pin" maxlength="4" inputmode="numeric" class="w-full p-4 rounded-xl pin-field" placeholder="••••">
+                        </div>
+                        
+                        <button id="btn-save" onclick="procesarRegistroPersonal()" class="w-full bg-indigo-600 p-4 rounded-xl font-bold text-sm tracking-wide mt-4 active:scale-95 transition-all">
+                            Finalizar Registro <i class="fa-solid fa-check ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP LOGIN: ACCESO AL PORTAL -->
+            <div id="step-login" class="step">
+                <div class="p-4">
+                    <button onclick="nextStep(1)" class="text-slate-500 hover:text-slate-300 transition-all mb-6 flex items-center gap-2 font-bold text-sm">
+                        <i class="fa-solid fa-arrow-left"></i> Volver
+                    </button>
+                    <h3 class="text-xl font-black mb-1 text-white">Identificación de Personal</h3>
+                    <p class="text-xs text-slate-400 mb-6">Introduce tu número telefónico registrado y tu código PIN.</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">Teléfono Registrado</label>
+                            <input type="tel" id="login-phone" class="w-full p-4 rounded-xl" placeholder="Ej. 04241234567">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-400 mb-2 tracking-wider">PIN de Seguridad</label>
+                            <input type="password" id="login-pin" maxlength="4" inputmode="numeric" class="w-full p-4 rounded-xl pin-field" placeholder="••••">
+                        </div>
+                        <button id="btn-login" onclick="accederPanel()" class="w-full bg-indigo-600 p-4 rounded-xl font-bold text-sm tracking-wide mt-4 active:scale-95 transition-all">
+                            Acceder al Panel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP DASHBOARD: PORTAL COMPLETO -->
+            <div id="step-dashboard" class="step">
+                <div class="p-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <span id="dashboard-rol" class="text-[10px] uppercase font-black tracking-widest text-indigo-400 block mb-0.5">Cargando...</span>
+                            <h3 id="dashboard-bienvenida" class="text-xl font-black text-white">Hola...</h3>
+                        </div>
+                        <button onclick="cerrarSesion()" class="w-10 h-10 bg-slate-900 border border-slate-800 rounded-xl flex justify-center items-center text-slate-400 active:scale-90 transition-all hover:text-red-400">
+                            <i class="fa-solid fa-right-from-bracket text-sm"></i>
+                        </button>
+                    </div>
+
+                    <!-- RECUADRO DE COMUNICADOS, AVISOS Y PUBLICIDAD DE LA DIRECCIÓN -->
+                    <div class="mb-5">
+                        <h4 class="text-[11px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-2 px-1">
+                            <i class="fa-solid fa-bullhorn text-indigo-400"></i> Cartelera Informativa y Publicidad
+                        </h4>
+                        <!-- Contenedor dinámico de anuncios de lectura -->
+                        <div id="contenedor-anuncios" class="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                            <div class="text-center py-4 text-slate-600 text-xs font-medium">No hay comunicados vigentes.</div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN CENTRAL DE FINANZAS DE MONEDERO Y LÍMITES -->
+                    <div class="p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/50 border border-slate-800 shadow-xl mb-6 glass">
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Mi Saldo Disponible</p>
+                                <h2 id="txt-saldo" class="text-2xl font-black text-emerald-400">$0.00</h2>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Límite Mensual</p>
+                                <h2 id="txt-limite" class="text-2xl font-black text-slate-200">$0.00</h2>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t border-slate-800/60 pt-4 space-y-3">
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1.5 tracking-wide">Ajustar Tope de Consumo Personal</label>
+                                <div class="flex gap-2">
+                                    <input type="number" id="input-limite" class="w-full px-3 py-2 rounded-lg text-xs font-bold" placeholder="Monto $">
+                                    <button onclick="modificarLimiteConsumo()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 text-white">
+                                        Fijar
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <button onclick="conectarPortalCobros()" class="w-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex justify-center items-center gap-2 hover:bg-emerald-500/20 transition-all">
+                                <i class="fa-solid fa-wallet"></i> Recargar Saldo / Pagar Cuenta
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TABS INTERNOS PARA HISTORIAL Y NÓMINA -->
+                    <div class="flex border-b border-slate-800/80 mb-4 text-xs font-bold">
+                        <button id="tab-historial" onclick="switchSubTab('historial')" class="flex-1 py-2 text-indigo-400 border-b-2 border-indigo-500 text-center uppercase tracking-wider">Mis Compras</button>
+                        <button id="tab-nomina" onclick="switchSubTab('nomina')" class="flex-1 py-2 text-slate-500 text-center uppercase tracking-wider">Personal Activo</button>
+                    </div>
+
+                    <!-- CONTENEDOR 1: HISTORIAL DE COMPRAS -->
+                    <div id="subtab-content-historial" class="space-y-2 max-h-[30vh] overflow-y-auto pr-1">
+                        <div class="text-center py-6 text-slate-500 text-xs">Cargando compras...</div>
+                    </div>
+                    
+                    <!-- CONTENEDOR 2: NÓMINA / COMPAÑEROS -->
+                    <div id="subtab-content-nomina" class="hidden space-y-3 max-h-[30vh] overflow-y-auto pr-1">
+                        <div id="lista-personal" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
+        const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
+        const _sb = supabase.createClient(SB_URL, SB_KEY);
+        
+        let localUser = null; 
+
+        window.onload = () => {
+            const savedStaffPhone = localStorage.getItem('staffPhone');
+            if (savedStaffPhone) reautenticarSesion(savedStaffPhone);
+        };
+
+        function nextStep(stepId) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById('step-' + stepId);
+            if(target) target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function switchSubTab(tabName) {
+            if(tabName === 'historial') {
+                document.getElementById('tab-historial').className = "flex-1 py-2 text-indigo-400 border-b-2 border-indigo-500 text-center uppercase tracking-wider";
+                document.getElementById('tab-nomina').className = "flex-1 py-2 text-slate-500 text-center uppercase tracking-wider";
+                document.getElementById('subtab-content-historial').classList.remove('hidden');
+                document.getElementById('subtab-content-nomina').classList.add('hidden');
+            } else {
+                document.getElementById('tab-historial').className = "flex-1 py-2 text-slate-500 text-center uppercase tracking-wider";
+                document.getElementById('tab-nomina').className = "flex-1 py-2 text-indigo-400 border-b-2 border-indigo-500 text-center uppercase tracking-wider";
+                document.getElementById('subtab-content-historial').classList.add('hidden');
+                document.getElementById('subtab-content-nomina').classList.remove('hidden');
+            }
+        }
+
+        // --- REGISTRO BLINDADO ---
+        async function procesarRegistroPersonal() {
+            const nombre = document.getElementById('reg-nombre').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+            const rol = document.getElementById('reg-rol').value;
+            const pin = document.getElementById('reg-pin').value.trim();
+
+            if(!nombre || !phone || !pin) return alert("⚠️ Rellena todos los campos.");
+            if(pin.length < 4) return alert("⚠️ El PIN debe ser de exactamente 4 dígitos.");
+
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true; 
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Protegiendo...';
+
+            try {
+                const { error } = await _sb.rpc('registrar_personal_seguro', {
+                    p_name: nombre,
+                    p_phone: phone,
+                    p_rol: rol,
+                    p_pin: pin
+                });
+                if (error) throw error;
+                localStorage.setItem('staffPhone', phone);
+                alert("✨ Registro exitoso. Inicia sesión con tus credenciales.");
+                nextStep('login');
+            } catch (err) { 
+                alert("Error: " + err.message); 
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Finalizar Registro <i class="fa-solid fa-check ml-2"></i>';
+            }
+        }
+
+        // --- LOGIN BLINDADO ---
+        async function accederPanel() {
+            const phone = document.getElementById('login-phone').value.trim();
+            const pin = document.getElementById('login-pin').value.trim();
+            const btn = document.getElementById('btn-login');
+
+            if(!phone || !pin) return alert("⚠️ Ingresa credenciales.");
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Autenticando...';
+
+            const { data, error } = await _sb.rpc('verificar_personal_login', { p_phone: phone, p_pin: pin });
+            
+            if(data && data.length > 0) {
+                localStorage.setItem('staffPhone', phone);
+                localUser = data[0];
+                inicializarDashboard();
+            } else {
+                alert("❌ Credenciales inválidas o acceso revocado.");
+                btn.disabled = false;
+                btn.innerHTML = 'Acceder al Panel';
+            }
+        }
+
+        async function reautenticarSesion(phone) {
+            const { data } = await _sb.from('vista_personal_publico').select('*').eq('phone', phone);
+            if(data && data.length > 0) {
+                localUser = data[0];
+                localUser.saldo = localUser.saldo || 0;
+                localUser.limite_consumo = localUser.limite_consumo || 100;
+                inicializarDashboard();
+            }
+        }
+
+        // --- INICIALIZAR DASHBOARD ---
+        async function inicializarDashboard() {
+            nextStep('dashboard');
+            
+            document.getElementById('dashboard-bienvenida').innerText = `Hola, ${localUser.name.split(' ')[0]}`;
+            document.getElementById('dashboard-rol').innerText = localUser.rol;
+            document.getElementById('txt-saldo').innerText = `$${parseFloat(localUser.saldo || 0).toFixed(2)}`;
+            document.getElementById('txt-limite').innerText = `$${parseFloat(localUser.limite_consumo || 0).toFixed(2)}`;
+            
+            cargarCarteleraAnuncios();
+            cargarHistorialCompras();
+            cargarNominaCompañeros();
+        }
+
+        // --- LEER ANUNCIOS Y PUBLICIDAD PUSHED BY YOU ---
+        async function cargarCarteleraAnuncios() {
+            const container = document.getElementById('contenedor-anuncios');
+            
+            const { data, error } = await _sb
+                .from('notificaciones')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if(error || !data || data.length === 0) {
+                container.innerHTML = `<div class="text-center py-4 text-slate-600 text-xs font-medium">No hay comunicados vigentes en el plantel.</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            data.forEach(anuncio => {
+                let borderStyle = 'border-slate-800 bg-slate-900/40';
+                let icon = '📢';
+                
+                if(anuncio.tipo === 'Urgente') {
+                    borderStyle = 'border-red-500/30 bg-red-500/5 text-red-200';
+                    icon = '⚠️';
+                } else if(anuncio.tipo === 'Publicidad') {
+                    borderStyle = 'border-amber-500/20 bg-amber-500/5 text-amber-200';
+                    icon = '🏷️';
+                }
+
+                container.innerHTML += `
+                    <div class="p-3 border rounded-xl text-xs ${borderStyle} glass">
+                        <div class="flex justify-between items-center mb-1 font-bold">
+                            <span>${icon} ${anuncio.titulo}</span>
+                            <span class="text-[9px] text-slate-500 font-medium">${new Date(anuncio.created_at).toLocaleDateString('es-VE')}</span>
+                        </div>
+                        <p class="text-slate-400 font-medium leading-relaxed">${anuncio.contenido}</p>
+                    </div>
+                `;
+            });
+        }
+
+        // --- CARGAR HISTORIAL COMPRAS ---
+        async function cargarHistorialCompras() {
+            const container = document.getElementById('subtab-content-historial');
+            try {
+                const { data, error } = await _sb
+                    .from('ventas')
+                    .select('*')
+                    .eq('personal_id', localUser.id)
+                    .order('created_at', { ascending: false });
+
+                if(error) throw error;
+                if(!data || data.length === 0) {
+                    container.innerHTML = `<div class="text-center py-8 text-slate-600 text-xs font-medium">No has realizado consumos todavía.</div>`;
+                    return;
+                }
+
+                container.innerHTML = '';
+                data.forEach(compra => {
+                    const fecha = new Date(compra.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
+                    container.innerHTML += `
+                        <div class="p-3 bg-slate-900/60 border border-slate-800/80 rounded-xl flex justify-between items-center text-xs">
+                            <div>
+                                <p class="font-bold text-slate-200">Consumo Canteen / Cafetería</p>
+                                <p class="text-[10px] text-slate-500 mt-0.5">${fecha}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-black text-indigo-400">-$${parseFloat(compra.total || 0).toFixed(2)}</p>
+                                <span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-bold uppercase">Procesado</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                container.innerHTML = `<div class="text-center py-8 text-red-400 text-xs font-semibold">No se pudo enlazar el historial de ventas.</div>`;
+            }
+        }
+
+        // --- CONTROL DE LÍMITE ---
+        async function modificarLimiteConsumo() {
+            const nuevoLimite = parseFloat(document.getElementById('input-limite').value);
+            if(isNaN(nuevoLimite) || nuevoLimite < 0) return alert("⚠️ Coloca un monto válido.");
+
+            try {
+                const { error } = await _sb.rpc('actualizar_mi_limite', {
+                    p_phone: localUser.phone,
+                    p_nuevo_limite: nuevoLimite
+                });
+                if(error) throw error;
+                localUser.limite_consumo = nuevoLimite;
+                document.getElementById('txt-limite').innerText = `$${nuevoLimite.toFixed(2)}`;
+                document.getElementById('input-limite').value = '';
+                alert("🎯 Límite de consumo actualizado con éxito.");
+            } catch(e) {
+                alert("Error actualizando límite: " + e.message);
+            }
+        }
+
+        function conectarPortalCobros() {
+            alert(`🔄 Conectando de forma segura al Portal de Cobros...\nIdentificador asignado: ${localUser.phone}\nProcederás a procesar tu recarga.`);
+        }
+
+        // --- CARGAR NÓMINA (VISTA PÚBLICA SIN PINS) ---
+        async function cargarNominaCompañeros() {
+            const container = document.getElementById('lista-personal');
+            container.innerHTML = '<div class="text-center py-4 text-xs text-slate-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Buscando nómina...</div>';
+            
+            const { data } = await _sb.from('vista_personal_publico').select('*');
+            if(!data) return;
+
+            container.innerHTML = '';
+            data.forEach(empleado => {
+                const esAdmin = localUser && localUser.rol === 'Administrativo';
+                const esPropioUsuario = localUser && localUser.id === empleado.id;
+                
+                let btnBloqueo = '';
+                if(esAdmin && !esPropioUsuario) {
+                    btnBloqueo = empleado.bloqueado 
+                        ? `<button onclick="cambiarEstadoAcceso('${empleado.id}', false)" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-all active:scale-95"><i class="fa-solid fa-unlock text-[8px]"></i> Admitir</button>`
+                        : `<button onclick="cambiarEstadoAcceso('${empleado.id}', true)" class="bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-all active:scale-95"><i class="fa-solid fa-ban text-[8px]"></i> Suspender</button>`;
+                }
+
+                const badgeStatus = empleado.bloqueado 
+                    ? `<span class="bg-red-500/10 text-red-400 border border-red-500/20 text-[9px] uppercase font-black px-2 py-0.5 rounded-md">Suspendido</span>`
+                    : `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] uppercase font-black px-2 py-0.5 rounded-md">Activo</span>`;
+
+                container.innerHTML += `
+                    <div class="p-3 bg-slate-900 border border-slate-800/80 rounded-xl flex flex-col gap-2 glass">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-bold text-xs text-slate-200">${empleado.name} ${esPropioUsuario ? '(Tú)' : ''}</p>
+                                <p class="text-[11px] font-medium text-slate-400 mt-0.5">
+                                    <span class="text-indigo-400 font-bold">${empleado.rol}</span> 
+                                    <span class="text-slate-700 mx-1">|</span> Telf: ${empleado.phone}
+                                </p>
+                            </div>
+                            <div>${badgeStatus}</div>
+                        </div>
+                        ${btnBloqueo ? `<div class="flex gap-2 justify-end border-t border-slate-800/30 pt-1.5">${btnBloqueo}</div>` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        async function cambiarEstadoAcceso(id, suspender) {
+            const { error } = await _sb.rpc('cambiar_estado_acceso_seguro', {
+                p_admin_phone: localUser.phone,
+                p_id_target: id,
+                p_bloquear: suspender
+            });
+            if (error) alert(error.message);
+            else cargarNominaCompañeros();
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem('staffPhone');
+            location.reload();
+        }
+    </script>
+</body>
+</html>

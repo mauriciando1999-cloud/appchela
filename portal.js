@@ -1,296 +1,199 @@
-/**
- * Chela Sport 1972 - Portal Familiar
- * Powered by Envolvia IA (v2.2)
- * Lógica de negocio, autenticación persistente y controles de crédito avanzados.
- */
-
-// --- 1. CONFIGURACIÓN E INICIALIZACIÓN ---
+// portal.js - Portal de Representantes | Chela Sport
 const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
 const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
-
-// Inicializar cliente de Supabase
 const _sb = supabase.createClient(SB_URL, SB_KEY);
 
-// Estado de sesión temporal en memoria reactiva
-let currentUser = { nombre: '', phone: '', pin: '' };
+// Estado global de la aplicación
+window.state = { 
+    estudiantes: [],
+    userId: null
+};
 
-
-// --- 2. CICLO DE VIDA DE LA APLICACIÓN ---
-window.onload = () => {
-    // Verificar si el representante ya tiene una sesión iniciada localmente
-    const savedPhone = localStorage.getItem('userPhone');
-    if (savedPhone) {
-        abrirDashboard(savedPhone);
+// --- 1. INICIALIZACIÓN Y SEGURIDAD ---
+window.onload = async () => {
+    try {
+        const { data: { user }, error } = await _sb.auth.getUser();
+        
+        // Si no hay sesión iniciada, lo devolvemos al login principal
+        if (error || !user) {
+            return window.location.href = 'index.html';
+        }
+        
+        window.state.userId = user.id;
+        await window.sync(user.id);
+    } catch (e) {
+        console.error("Error iniciando portal:", e);
     }
 };
 
+window.handleLogout = async function() {
+    await _sb.auth.signOut();
+    window.location.href = 'index.html';
+};
 
-// --- 3. ENRUTADOR / NAVEGACIÓN INTERNA ---
-function nextStep(stepId) {
-    // Ocultar todos los contenedores de pasos
-    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-    
-    // Mostrar el paso solicitado si existe
-    const target = document.getElementById('step-' + stepId);
-    if (target) {
-        target.classList.add('active');
-    }
-    // Forzar scroll al inicio para mejorar la UX en móviles
-    window.scrollTo(0, 0);
-}
-
-
-// --- 4. REPRODUCTOR DE INSTRUCCIONES ---
-function toggleAudio() {
-    const audio = document.getElementById('audio-instrucciones');
-    const btn = document.getElementById('btn-audio');
-    
-    if (audio.paused) {
-        audio.play().catch(e => {
-            console.warn("El audio fue bloqueado por las políticas del navegador hasta que interactúes con la app.");
-        });
-        btn.innerHTML = '<i class="fa-solid fa-pause text-white text-xl"></i>';
-    } else {
-        audio.pause();
-        btn.innerHTML = '<i class="fa-solid fa-play text-white text-xl ml-1"></i>';
-    }
-}
-
-
-// --- 5. LÓGICA DE REGISTRO DE FAMILIA ---
-
-/**
- * Paso 1: Valida los datos del representante y los retiene en memoria
- */
-function guardarDatosRepresentante() {
-    const nombre = document.getElementById('reg-nombre').value.trim();
-    const phone = document.getElementById('reg-phone').value.trim();
-    const pin = document.getElementById('reg-pin').value.trim();
-
-    if (!nombre || !phone || !pin) {
-        return alert("⚠️ Por favor rellena todos los campos del representante.");
-    }
-    if (pin.length < 4) {
-        return alert("⚠️ El PIN de seguridad debe contener exactamente 4 números.");
-    }
-
-    // Guardar datos temporalmente
-    currentUser = { nombre, phone, pin };
-    nextStep(3);
-}
-
-/**
- * Paso 2: Añadir inputs dinámicos en el DOM para registrar múltiples alumnos
- */
-function agregarCampoHijo() {
-    const container = document.getElementById('contenedor-hijos');
-    const totalHijos = container.querySelectorAll('input').length + 1;
-    
-    const div = document.createElement('div');
-    div.className = "flex gap-2 animation-fadeIn";
-    div.innerHTML = `
-        <input type="text" class="hijo-nombre w-full p-4 rounded-xl text-white" placeholder="Nombre del alumno ${totalHijos}">
-        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 rounded-xl active:scale-95 transition-all">
-            <i class="fa-solid fa-trash"></i>
-        </button>
-    `;
-    container.appendChild(div);
-}
-
-/**
- * Paso 3: Procesa la lista de alumnos e inserta en lote en Supabase
- */
-async function procesarRegistroFinal() {
-    const inputs = document.querySelectorAll('.hijo-nombre');
-    let listaHijos = [];
-    
-    inputs.forEach(i => { 
-        if (i.value.trim()) listaHijos.push(i.value.trim()); 
-    });
-    
-    if (listaHijos.length === 0) {
-        return alert("⚠️ Debes asignar el nombre de por lo menos un (1) alumno.");
-    }
-
-    const btn = document.getElementById('btn-save');
-    btn.disabled = true; 
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Guardando registros...';
-
+// --- 2. SINCRONIZACIÓN DE DATOS ---
+window.sync = async function(userId) {
     try {
-        // Enviar inserciones de forma concurrente para acelerar el proceso
-        const promesas = listaHijos.map(hijo => _sb.from('estudiantes').insert([{
-            name: hijo, 
-            representante: currentUser.nombre, 
-            phone: currentUser.phone, 
-            pin_seguridad: currentUser.pin, 
-            debt: 0, 
-            limite_credito: 100, 
-            bloqueado: false
-        }]));
+        // Consultamos solo los estudiantes que le pertenecen a este representante
+        const { data, error } = await _sb
+            .from('estudiantes')
+            .select('*')
+            .eq('representante_id', userId)
+            .order('name');
+            
+        if (error) throw error;
         
-        await Promise.all(promesas);
-        
-        // Login automático tras registro exitoso
-        localStorage.setItem('userPhone', currentUser.phone);
-        abrirDashboard(currentUser.phone);
-        
-    } catch (err) { 
-        alert("Ocurrió un error inesperado de red: " + err.message); 
-        btn.disabled = false; 
-        btn.innerHTML = 'Finalizar Registro y Entrar';
+        window.state.estudiantes = data || [];
+        window.render();
+    } catch (e) {
+        console.error("Error al sincronizar estudiantes:", e);
+        alert("Ocurrió un error al cargar la información. Revisa tu conexión.");
     }
-}
+};
 
+// --- 3. RENDERIZADO DEL PANEL PRINCIPAL ---
+window.render = function() {
+    const grid = document.getElementById('grid-estudiantes');
+    if (!grid) return console.warn("Falta el contenedor 'grid-estudiantes' en el HTML del portal.");
 
-// --- 6. ACCESO / CONTROL DE LOGIN ---
-async function acceder() {
-    const phone = document.getElementById('login-phone').value.trim();
-    const pin = document.getElementById('login-pin').value.trim();
-    const btn = document.getElementById('btn-login');
-
-    if (!phone || !pin) return alert("⚠️ Rellena todos tus datos de acceso.");
-
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Validando identidad...';
-
-    const { data, error } = await _sb.from('estudiantes')
-        .select('*')
-        .eq('phone', phone)
-        .eq('pin_seguridad', pin);
-    
-    if (error) {
-        alert("Error de conexión: " + error.message);
-        btn.disabled = false;
-        btn.innerHTML = 'Acceder al Dashboard';
+    if (window.state.estudiantes.length === 0) {
+        grid.innerHTML = `
+            <div class="text-center p-6 bg-slate-900 rounded-2xl border border-slate-800 text-slate-400 font-bold text-sm">
+                No tienes estudiantes vinculados a esta cuenta. Por favor, contacta a la administración.
+            </div>`;
         return;
     }
 
-    if (data && data.length > 0) {
-        // Guardar sesión persistente local
-        localStorage.setItem('userPhone', phone);
-        abrirDashboard(phone);
-    } else {
-        alert("❌ El número de teléfono o el PIN de seguridad ingresados son incorrectos.");
-        btn.disabled = false;
-        btn.innerHTML = 'Acceder al Dashboard';
-    }
-}
+    // Variable para ir sumando la deuda total familiar
+    let deudaTotalFamiliar = 0;
 
-
-// --- 7. PANEL DE CONTROL (DASHBOARD) ---
-async function abrirDashboard(phone) {
-    // Mover la UI a la pantalla de dashboard
-    nextStep('dashboard');
-    
-    const container = document.getElementById('lista-hijos');
-    container.innerHTML = '<div class="text-center py-6 text-slate-500 font-medium"><i class="fa-solid fa-circle-notch fa-spin mr-2 text-indigo-500"></i>Sincronizando portal...</div>';
-    
-    // Obtener todos los alumnos asociados a ese número telefónico
-    const { data, error } = await _sb.from('estudiantes').select('*').eq('phone', phone);
-    
-    if (error || !data || data.length === 0) {
-        container.innerHTML = '<p class="text-center text-red-400 py-4 text-xs font-bold">Error al sincronizar datos familiares o cuenta inexistente.</p>';
-        return;
-    }
-    
-    // Renderizar el nombre del representante titular en el saludo
-    document.getElementById('dashboard-bienvenida').innerText = `Hola, ${data[0].representante}`;
-    
-    container.innerHTML = '';
-    let acumuladorDeuda = 0;
-    
-    // Inyectar dinámicamente las tarjetas con controles interactivos
-    data.forEach(hijo => {
-        acumuladorDeuda += parseFloat(hijo.debt || 0);
+    grid.innerHTML = window.state.estudiantes.map(e => {
+        const limite = parseFloat(e.limite_credito || 100);
+        const deuda = parseFloat(e.debt || 0);
+        const excedido = deuda >= limite;
         
-        // Configurar botones de acción contextuales según estado de bloqueo
-        const btnBloqueo = hijo.bloqueado 
-            ? `<button onclick="cambiarEstadoBloqueo('${hijo.id}', false, '${phone}')" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-lock-open text-[10px]"></i> Activar</button>`
-            : `<button onclick="cambiarEstadoBloqueo('${hijo.id}', true, '${phone}')" class="bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-lock text-[10px]"></i> Bloquear</button>`;
-
-        const btnLimite = `<button onclick="modificarLimiteCredito('${hijo.id}', ${hijo.limite_credito || 100}, '${phone}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-pen text-[9px]"></i> Límite</button>`;
-
-        // Badge visual superior de estado
-        const statusBadge = hijo.bloqueado 
-            ? `<span class="bg-red-500/10 text-red-400 border border-red-500/20 text-[9px] uppercase font-black px-2 py-0.5 rounded-md tracking-wider">Bloqueado</span>`
-            : `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] uppercase font-black px-2 py-0.5 rounded-md tracking-wider">Activo</span>`;
-
-        container.innerHTML += `
-            <div class="p-4 bg-slate-900 border border-slate-900/60 rounded-2xl flex flex-col gap-3 shadow-inner glass">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="font-bold text-sm text-slate-100">${hijo.name}</p>
-                        <p class="text-xs font-semibold text-slate-400 mt-0.5">
-                            Deuda: <span class="${hijo.debt > 0 ? 'text-amber-400' : 'text-slate-400'}">$${hijo.debt || 0}</span> 
-                            <span class="text-slate-600 mx-1">|</span> 
-                            Límite: <span class="text-indigo-400">$${hijo.limite_credito || 100}</span>
-                        </p>
-                    </div>
-                    <div>
-                        ${statusBadge}
-                    </div>
+        deudaTotalFamiliar += deuda;
+        
+        return `
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden mb-4">
+            <!-- Barra superior indicadora de estado -->
+            <div class="absolute top-0 left-0 w-full h-1 ${e.bloqueado ? 'bg-red-500' : 'bg-emerald-500'}"></div>
+            
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Estudiante</p>
+                    <h2 class="text-lg font-black text-white uppercase">${e.name}</h2>
                 </div>
-                <!-- Barra de acciones rápidas para el representante -->
-                <div class="flex gap-2 justify-end border-t border-slate-800/60 pt-2.5">
-                    ${btnLimite}
-                    ${btnBloqueo}
+                <div class="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-center">
+                    <p class="text-[8px] text-slate-500 font-bold uppercase">Deuda</p>
+                    <p class="${excedido ? 'text-red-500' : 'text-emerald-400'} font-black text-sm">$${deuda.toFixed(2)}</p>
                 </div>
             </div>
+
+            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800 mb-4">
+                <div>
+                    <p class="text-[9px] text-slate-500 font-bold uppercase">Límite Permitido</p>
+                    <p class="text-white font-black text-xs">$${limite.toFixed(2)}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[9px] text-slate-500 font-bold uppercase">Estatus</p>
+                    <p class="${e.bloqueado ? 'text-red-500' : 'text-emerald-500'} font-black text-xs uppercase tracking-widest">${e.bloqueado ? 'BLOQUEADO' : 'ACTIVO'}</p>
+                </div>
+            </div>
+
+            <!-- BOTÓN DE HISTORIAL -->
+            <button onclick="verHistorialAlumno('${e.name}')" class="w-full bg-indigo-900/40 border border-indigo-500/50 hover:bg-indigo-600 text-indigo-400 hover:text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all flex justify-center items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left"></i> Ver Compras Recientes
+            </button>
+        </div>
         `;
-    });
+    }).join('');
     
-    // Actualizar el acumulador de la deuda consolidada de la familia
-    document.getElementById('total-deuda').innerText = `$${acumuladorDeuda.toFixed(2)}`;
-}
-
-
-// --- 8. ACCIONES ADMINISTRATIVAS DE CRÉDITO ---
-
-/**
- * Modifica de forma remota el estado lógico 'bloqueado' de un alumno específico
- */
-async function cambiarEstadoBloqueo(id, nuevoEstado, phone) {
-    const { error } = await _sb.from('estudiantes')
-        .update({ bloqueado: nuevoEstado })
-        .eq('id', id);
-
-    if (error) {
-        alert("⚠️ No se pudo actualizar el estado de bloqueo: " + error.message);
-    } else {
-        // Refrescar de forma reactiva la UI del Dashboard
-        abrirDashboard(phone);
+    // (Opcional) Si en tu diseño pusiste un texto grande con la deuda total de la familia:
+    const uiDeudaTotal = document.getElementById('deuda-total-familiar');
+    if (uiDeudaTotal) {
+        uiDeudaTotal.innerText = `$${deudaTotalFamiliar.toFixed(2)}`;
     }
-}
+};
 
-/**
- * Solicita una entrada numérica segura para cambiar la restricción de consumo máximo (limite_credito)
- */
-async function modificarLimiteCredito(id, limiteActual, phone) {
-    const nuevoLimite = prompt(`Establecer nuevo límite de crédito diario/semanal:\n(Valor actual: $${limiteActual})`, limiteActual);
+// --- 4. CONSULTA DEL HISTORIAL DE COMPRAS ---
+window.verHistorialAlumno = async function(nombreAlumno) {
+    const modal = document.getElementById('modal-historial-portal');
+    const contenedor = document.getElementById('lista-historial-portal');
     
-    // Controlar cancelación explícita por parte del cliente
-    if (nuevoLimite === null) return;
+    if(!modal || !contenedor) return console.error("Faltan los IDs del modal de historial en el HTML");
+
+    // Mostramos la ventana e inyectamos un icono de carga
+    modal.classList.remove('hidden');
+    document.getElementById('historial-nombre-alumno').innerText = nombreAlumno;
     
-    const limiteNumerico = parseFloat(nuevoLimite);
-    if (isNaN(limiteNumerico) || limiteNumerico < 0) {
-        return alert("⚠️ Operación inválida. Debes ingresar una cifra numérica válida y mayor o igual a 0.");
+    contenedor.innerHTML = `
+        <div class="flex flex-col items-center justify-center mt-20">
+            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-500 mb-3"></i>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Buscando tickets...</p>
+        </div>`;
+
+    try {
+        // Consultar a Supabase las compras asociadas a ese nombre
+        const { data, error } = await _sb
+            .from('ventas')
+            .select('created_at, total_usd, items, status, metodo_pago')
+            .eq('estudiante_nombre', nombreAlumno)
+            .order('created_at', { ascending: false })
+            .limit(15); // Traemos solo los últimos 15 movimientos
+
+        if (error) throw error;
+
+        // Si no hay compras
+        if (!data || data.length === 0) {
+            contenedor.innerHTML = `
+                <div class="text-center mt-20">
+                    <i class="fa-solid fa-box-open text-4xl text-slate-700 mb-3"></i>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">No hay compras registradas</p>
+                </div>`;
+            return;
+        }
+
+        // Si hay compras, dibujamos las tarjetas
+        contenedor.innerHTML = data.map(venta => {
+            const fecha = new Date(venta.created_at).toLocaleDateString('es-VE', { 
+                weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' 
+            });
+            
+            let detallesItems = "Sin detalles";
+            if (venta.items && Array.isArray(venta.items)) {
+                detallesItems = venta.items.map(i => `<span class="font-bold text-white">${i.qty}x</span> ${i.name}`).join('<br>');
+            }
+
+            const colorStatus = venta.status === 'completado' 
+                ? 'text-emerald-400 bg-emerald-400/10 border border-emerald-500/20' 
+                : 'text-amber-400 bg-amber-400/10 border border-amber-500/20';
+
+            const metodo = venta.metodo_pago ? venta.metodo_pago.replace('_', ' ') : 'N/A';
+
+            return `
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-sm">
+                <div class="flex justify-between items-start mb-3 border-b border-slate-800 pb-3">
+                    <div>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">${fecha}</p>
+                        <p class="text-lg font-black text-white leading-none">$${parseFloat(venta.total_usd).toFixed(2)}</p>
+                    </div>
+                    <span class="px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${colorStatus}">${venta.status}</span>
+                </div>
+                <div class="text-[11px] text-slate-400 leading-relaxed">
+                    ${detallesItems}
+                </div>
+                <div class="mt-3 pt-2 text-[9px] text-slate-500 font-bold uppercase tracking-widest text-right">
+                    Pagado vía: ${metodo}
+                </div>
+            </div>`;
+        }).join('');
+
+    } catch (e) {
+        console.error(e);
+        contenedor.innerHTML = `
+            <div class="bg-red-500/10 border border-red-500/30 p-4 rounded-xl text-center mt-4">
+                <p class="text-xs text-red-400 font-bold">Error al cargar historial: ${e.message}</p>
+            </div>`;
     }
-
-    const { error } = await _sb.from('estudiantes')
-        .update({ limite_credito: limiteNumerico })
-        .eq('id', id);
-
-    if (error) {
-        alert("⚠️ Falló la sincronización del nuevo límite en Supabase: " + error.message);
-    } else {
-        // Refrescar Dashboard con los nuevos balances
-        abrirDashboard(phone);
-    }
-}
-
-
-// --- 9. CIERRE DE SESIÓN SEGURO ---
-function cerrarSesion() {
-    localStorage.removeItem('userPhone');
-    location.reload(); // Recarga la página vacía para volver al paso 1
-}
+};

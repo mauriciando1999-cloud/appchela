@@ -22,6 +22,8 @@
         input { background: #0f172a !important; border: 1px solid #1e293b !important; color: white !important; transition: all 0.2s; }
         input:focus { border-color: #6366f1 !important; outline: none; box-shadow: 0 0 15px rgba(99, 102, 241, 0.2); }
         .pin-field { letter-spacing: 0.5em; text-align: center; font-size: 1.5rem !important; font-weight: 900; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 
@@ -147,8 +149,7 @@
                             <i class="fa-solid fa-bullhorn text-indigo-400 text-xs"></i>
                             <span class="text-[10px] uppercase font-black tracking-wider text-indigo-400">Anuncio Oficial</span>
                         </div>
-                        <p id="texto-anuncio" class="text-xs text-slate-300 font-medium leading-relaxed">
-                            </p>
+                        <p id="texto-anuncio" class="text-xs text-slate-300 font-medium leading-relaxed"></p>
                     </div>
 
                     <div class="p-6 rounded-3xl bg-gradient-to-br from-indigo-900/40 to-slate-900/60 border border-indigo-500/20 shadow-xl mb-4 relative overflow-hidden">
@@ -165,11 +166,26 @@
                     <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 px-1">Estado de Alumnos</h4>
                     
                     <div id="lista-hijos" class="space-y-3">
-                        </div>
+                        <!-- Estudiantes renderizados por JS -->
+                    </div>
                 </div>
             </div>
 
         </div>
+    </div>
+
+    <!-- MODAL DE HISTORIAL DE COMPRAS (Oculto por defecto) -->
+    <div id="modal-historial-portal" class="hidden fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex flex-col p-4 transition-all">
+        <header class="flex justify-between items-center mb-6 mt-4">
+            <div>
+                <h3 class="text-white font-black uppercase tracking-widest text-sm text-indigo-400"><i class="fa-solid fa-receipt mr-2"></i> Historial</h3>
+                <p id="historial-nombre-alumno" class="text-[10px] text-slate-400 font-bold mt-1 uppercase"></p>
+            </div>
+            <button onclick="this.closest('.fixed').classList.add('hidden')" class="text-slate-400 hover:text-white bg-slate-800 w-10 h-10 rounded-full flex justify-center items-center active:scale-90 border border-slate-700 transition-all shrink-0">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </header>
+        <div id="lista-historial-portal" class="flex-1 overflow-y-auto pb-10 no-scrollbar space-y-3"></div>
     </div>
 
     <script>
@@ -401,17 +417,19 @@
 
                 const btnLimite = `<button onclick="modificarLimiteCredito('${hijo.id}', ${hijo.limite_credito || 100}, '${phone}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 text-[11px] font-bold px-2.5 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-pen text-[9px]"></i> Límite</button>`;
 
-                // 🔥 BOTÓN REORIENTADO A PAGO.HTML
                 const btnPagar = deudaActual > 0
                     ? `<button onclick="procesarPago('${hijo.id}', ${deudaActual}, '${phone}', '${hijo.name}')" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 text-[11px] font-bold px-3 py-2 rounded-xl active:scale-95 transition-all flex items-center gap-1"><i class="fa-solid fa-receipt text-[9px]"></i> Pagar</button>`
                     : '';
+                    
+                // 🔥 EL NUEVO BOTÓN DEL HISTORIAL INYECTADO AQUÍ
+                const btnHistorial = `<button onclick="verHistorialAlumno('${hijo.name}')" class="w-full mt-3 bg-indigo-900/40 border border-indigo-500/50 hover:bg-indigo-600 text-indigo-400 hover:text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all flex justify-center items-center gap-2"><i class="fa-solid fa-clock-rotate-left"></i> Ver Compras Recientes</button>`;
 
                 const statusBadge = hijo.bloqueado 
                     ? `<span class="bg-red-500/10 text-red-400 border border-red-500/20 text-[9px] uppercase font-black px-2 py-0.5 rounded-md tracking-wider">Bloqueado</span>`
                     : `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] uppercase font-black px-2 py-0.5 rounded-md tracking-wider">Activo</span>`;
 
                 container.innerHTML += `
-                    <div class="p-4 bg-slate-900 border border-slate-800/60 rounded-2xl flex flex-col gap-3 shadow-inner glass">
+                    <div class="p-4 bg-slate-900 border border-slate-800/60 rounded-2xl flex flex-col gap-3 shadow-inner glass mb-3">
                         <div class="flex justify-between items-start">
                             <div>
                                 <p class="font-bold text-sm text-slate-100">${hijo.name}</p>
@@ -428,6 +446,7 @@
                             ${btnLimite}
                             ${btnBloqueo}
                         </div>
+                        ${btnHistorial}
                     </div>
                 `;
             });
@@ -435,7 +454,70 @@
             document.getElementById('total-deuda').innerText = `$${acumuladorDeuda.toFixed(2)}`;
         }
 
-        // 🔥 REDIRECCIÓN CORREGIDA HACIA PAGO.HTML EN LUGAR DE COBRANZA
+        // --- NUEVA FUNCIÓN PARA CARGAR EL HISTORIAL DE COMPRAS ---
+        async function verHistorialAlumno(nombreAlumno) {
+            const modal = document.getElementById('modal-historial-portal');
+            const contenedor = document.getElementById('lista-historial-portal');
+            
+            modal.classList.remove('hidden');
+            document.getElementById('historial-nombre-alumno').innerText = nombreAlumno;
+            contenedor.innerHTML = '<div class="flex flex-col items-center justify-center mt-20"><i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-500 mb-3"></i><p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Buscando tickets...</p></div>';
+
+            try {
+                const { data, error } = await _sb
+                    .from('ventas')
+                    .select('created_at, total_usd, items, status, metodo_pago')
+                    .eq('estudiante_nombre', nombreAlumno)
+                    .order('created_at', { ascending: false })
+                    .limit(15);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    contenedor.innerHTML = '<div class="text-center mt-20"><i class="fa-solid fa-box-open text-4xl text-slate-700 mb-3"></i><p class="text-xs font-bold text-slate-500 uppercase tracking-widest">No hay compras registradas</p></div>';
+                    return;
+                }
+
+                contenedor.innerHTML = data.map(venta => {
+                    const fecha = new Date(venta.created_at).toLocaleDateString('es-VE', { 
+                        weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' 
+                    });
+                    
+                    let detallesItems = "Sin detalles";
+                    if (venta.items && Array.isArray(venta.items)) {
+                        detallesItems = venta.items.map(i => `<span class="font-bold text-white">${i.qty}x</span> ${i.name}`).join('<br>');
+                    }
+
+                    const colorStatus = venta.status === 'completado' 
+                        ? 'text-emerald-400 bg-emerald-400/10 border border-emerald-500/20' 
+                        : 'text-amber-400 bg-amber-400/10 border border-amber-500/20';
+
+                    const metodo = venta.metodo_pago ? venta.metodo_pago.replace('_', ' ') : 'N/A';
+
+                    return `
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-sm">
+                        <div class="flex justify-between items-start mb-3 border-b border-slate-800 pb-3">
+                            <div>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">${fecha}</p>
+                                <p class="text-lg font-black text-white leading-none">$${parseFloat(venta.total_usd).toFixed(2)}</p>
+                            </div>
+                            <span class="px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${colorStatus}">${venta.status}</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 leading-relaxed">
+                            ${detallesItems}
+                        </div>
+                        <div class="mt-3 pt-2 text-[9px] text-slate-500 font-bold uppercase tracking-widest text-right">
+                            Pagado vía: ${metodo}
+                        </div>
+                    </div>`;
+                }).join('');
+
+            } catch (e) {
+                console.error(e);
+                contenedor.innerHTML = `<div class="bg-red-500/10 border border-red-500/30 p-4 rounded-xl text-center mt-4"><p class="text-xs text-red-400 font-bold">Error al cargar historial: ${e.message}</p></div>`;
+            }
+        }
+
         function procesarPago(id, deudaActual, phone, nombreEstudiante) {
             window.location.href = `pago.html?id=${id}&name=${encodeURIComponent(nombreEstudiante)}&debt=${deudaActual.toFixed(2)}&phone=${phone}`;
         }

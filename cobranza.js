@@ -123,7 +123,15 @@ function renderDeudores() {
 
         const nombreFilt = h.name || 'Usuario';
         const phoneFilt = h.phone || '';
-        const phoneClean = phoneFilt.replace(/\D/g,'');
+        
+        // --- LÓGICA DE NORMALIZACIÓN DE TELÉFONO (CORREGIDA) ---
+        let phoneClean = phoneFilt.replace(/\D/g, ''); 
+        if (phoneClean.startsWith('0')) {
+            phoneClean = '58' + phoneClean.substring(1);
+        } else if (phoneClean.length === 10) {
+            phoneClean = '58' + phoneClean;
+        }
+        // -----------------------------------------------------
 
         // Formatear descripciones y payloads basados en si es Alumno o Personal
         const subTexto = state.currentTab === 'alumnos' 
@@ -157,7 +165,7 @@ function renderDeudores() {
                     <p class="font-black text-sm text-red-400">$${debtNum.toFixed(2)}</p>
                 </div>
 
-                <button onclick="${phoneClean ? `window.open('${urlWhatsApp}', '_blank')` : `alert('Este registro no posee teléfono válido.')`}" class="bg-emerald-600 text-white w-9 h-9 rounded-full flex justify-center items-center active:scale-90 shadow-lg transition-transform">
+                <button onclick="${phoneClean.length >= 10 ? `window.open('${urlWhatsApp}', '_blank')` : `alert('Este registro no posee teléfono válido.')`}" class="bg-emerald-600 text-white w-9 h-9 rounded-full flex justify-center items-center active:scale-90 shadow-lg transition-transform">
                     <i class="fa-brands fa-whatsapp text-sm"></i>
                 </button>
 
@@ -180,7 +188,6 @@ function renderDeudores() {
     if (elTotal) elTotal.innerText = `$${totalDGlobal.toFixed(2)}`;
     if (elCount) elCount.innerText = countActiveDebtors;
 }
-
 // 6. GESTIÓN DE ABONOS (CON MUTACIÓN SEGÚN CONTEXTO)
 window.abrirModalAbono = function(id, nombre, deuda) {
     if(deuda <= 0) return;

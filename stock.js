@@ -230,103 +230,161 @@ window.cargarDatosProducto = function(input) {
 
 window.guardarFacturaMasiva = async function() {
     const items = document.querySelectorAll('.factura-item');
-    if(items.length === 0) return alert("Añade al menos un producto.");
-    
+
+    if (items.length === 0) {
+        return alert("⚠️ Añade al menos un producto.");
+    }
+
+    const btn = document.getElementById('btn-save-factura');
+
+    const aplicarIVA =
+        document.getElementById('check-iva')?.checked || false;
+
     const facProveedorEl = document.getElementById('fac-proveedor');
     const facRefEl = document.getElementById('fac-ref');
-    const proveedor = (facProveedorEl ? facProveedorEl.value.trim() : '') || 'Proveedor Sin Nombre';
-    const refFac = (facRefEl ? facRefEl.value.trim() : '') || `REC-${Date.now().toString().slice(-5)}`;
-    const montoConIVA = costoTotalFactura * 1.16;
 
-if (costoTotalFactura > 0) {
-    await _sb.from('facturas').insert([{
-        proveedor: proveedor,
-        concepto: `Factura Ref: ${refFac}`,
-        monto_usd: montoConIVA, // Guardamos el monto total con IVA
-        fecha_vencimiento: new Date().toISOString().split('T')[0],
-        status: 'pendiente'
-    }]);
-}
-alert(`✅ Stock guardado. Factura registrada con IVA ($${montoConIVA.toFixed(2)})`);
-    let errorValidacion = false;
+    const proveedor =
+        (facProveedorEl?.value.trim()) || 'Sin Proveedor';
+
+    const refFac =
+        (facRefEl?.value.trim()) ||
+        `REC-${Date.now().toString().slice(-5)}`;
+
     let costoTotalFactura = 0;
-    const btn = document.getElementById('btn-save-factura');
-    
-    // Validación
+    let errorValidacion = false;
+
+    // ==========================================
+    // CALCULAR TOTAL DE FACTURA
+    // ==========================================
     items.forEach(item => {
-        const nombre = item.querySelector('.f-nombre').value.trim();
         const qty = parseInt(item.querySelector('.f-qty').value);
-        const undsPaq = parseInt(item.querySelector('.f-und-paq').value);
         const cost = parseFloat(item.querySelector('.f-costo').value);
-        
-        if (!nombre || isNaN(qty) || qty <= 0 || isNaN(cost) || isNaN(undsPaq) || undsPaq <= 0) {
+
+        if (isNaN(qty) || isNaN(cost)) {
             errorValidacion = true;
+            return;
         }
+
+        costoTotalFactura += (cost * qty);
     });
 
-    if (errorValidacion) return alert("⚠️ Verifica que todos los campos (Nombre, Cantidad, Unidades por paquete y Costo) tengan valores válidos.");
+    if (errorValidacion) {
+        return alert("⚠️ Verifica que todos los campos tengan valores válidos.");
+    }
 
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
+    const totalFinal = aplicarIVA
+        ? (costoTotalFactura * 1.16)
+        : costoTotalFactura;
+
+    btn.innerHTML =
+        '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+
     btn.disabled = true;
 
     try {
-        for (let item of items) {
-            const name = item.querySelector('.f-nombre').value.trim().toUpperCase();
-            const tipo = item.querySelector('.f-tipo').value;
-            const undsPaq = parseInt(item.querySelector('.f-und-paq').value);
-            const qtyComprada = parseInt(item.querySelector('.f-qty').value);
-            const costoIngresado = parseFloat(item.querySelector('.f-costo').value);
-            
-            // LA MATEMÁTICA CLAVE:
-            const stockAAgregar = tipo === 'paquete' ? (qtyComprada * undsPaq) : qtyComprada;
-            const costoUnitarioReal = tipo === 'paquete' ? (costoIngresado / undsPaq) : costoIngresado;
-            const costoTotalFila = costoIngresado * qtyComprada; // Costo ingresado es lo que pagó por el item (unidad o paquete)
-            
-            costoTotalFactura += costoTotalFila;
 
-            const pExistente = state.products.find(p => p.name.toUpperCase() === name);
+        // ==========================================
+        // ACTUALIZAR INVENTARIO
+        // ==========================================
+        for (let item of items) {
+
+            const name =
+                item.querySelector('.f-nombre')
+                    .value
+                    .trim()
+                    .toUpperCase();
+
+            const tipo =
+                item.querySelector('.f-tipo').value;
+
+            const undsPaq =
+                parseInt(item.querySelector('.f-und-paq').value) || 1;
+
+            const qtyComprada =
+                parseInt(item.querySelector('.f-qty').value);
+
+            const costoIngresado =
+                parseFloat(item.querySelector('.f-costo').value);
+
+            const stockAAgregar =
+                tipo === 'paquete'
+                    ? (qtyComprada * undsPaq)
+                    : qtyComprada;
+
+            let costoBase =
+                tipo === 'paquete'
+                    ? (costoIngresado / undsPaq)
+                    : costoIngresado;
+
+            const costoUnitarioReal =
+                aplicarIVA
+                    ? (costoBase * 1.16)
+                    : costoBase;
+
+            const pExistente = state.products.find(
+                p => p.name.toUpperCase() === name
+            );
 
             if (pExistente) {
-    // Actualización: Solo con las columnas que existen en tu tabla (image_6cef5b.png)
-    await _sb.from('productos').update({ 
-        stock: pExistente.stock + stockAAgregar, 
-        cost: costoUnitarioReal,
-        proveedor: proveedor
-    }).eq('id', pExistente.id);
-} else {
-    // Inserción: Ajustado a las columnas presentes en tu tabla
-    await _sb.from('productos').insert([{ 
-        name: name, 
-        stock: stockAAgregar, 
-        cost: costoUnitarioReal, 
-        price: costoUnitarioReal * 1.4, // Precio sugerido +40%
-        categoria: 'Nuevos',           // Nota: Tienes columna 'categoria' y 'categoria' duplicada en la imagen, usa esta
-        proveedor: proveedor
-    }]);
-}
+
+                await _sb
+                    .from('productos')
+                    .update({
+                        stock: pExistente.stock + stockAAgregar,
+                        cost: costoUnitarioReal,
+                        proveedor: proveedor
+                    })
+                    .eq('id', pExistente.id);
+
+            } else {
+
+                await _sb
+                    .from('productos')
+                    .insert([{
+                        name: name,
+                        stock: stockAAgregar,
+                        cost: costoUnitarioReal,
+                        price: Number(costoUnitarioReal * 1.4).toFixed(2),
+                        categoria: 'Nuevos',
+                        proveedor: proveedor
+                    }]);
+            }
         }
 
-        // Crear cuenta por pagar para el Admin (STATUS PENDIENTE)
-        if (costoTotalFactura > 0) {
-            await _sb.from('facturas').insert([{
+        // ==========================================
+        // REGISTRAR FACTURA
+        // ==========================================
+        await _sb
+            .from('facturas')
+            .insert([{
                 proveedor: proveedor,
-                concepto: `Factura Ref: ${refFac}`,
-                monto_usd: costoTotalFactura,
-                fecha_vencimiento: new Date().toISOString().split('T')[0],
+                concepto: `Factura Ref: ${refFac} ${aplicarIVA ? '(Incluye IVA)' : ''}`,
+                monto_usd: totalFinal,
                 status: 'pendiente'
             }]);
-        }
 
-        alert(`✅ Stock guardado.\nFactura pendiente enviada a Admin por $${costoTotalFactura.toFixed(2)}`);
+        alert(
+            `✅ Stock y Factura registrados exitosamente.\n\nTotal: $${totalFinal.toFixed(2)}`
+        );
+
         cerrarModalFactura();
-        syncStock();
-    } catch (e) { 
-        alert("Error: " + e.message); 
-    } finally { 
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Procesar Factura'; 
-        btn.disabled = false; 
+
+        await syncStock();
+
+    } catch (e) {
+
+        console.error(e);
+
+        alert("❌ Error: " + e.message);
+
+    } finally {
+
+        btn.innerHTML =
+            '<i class="fa-solid fa-check"></i> Procesar Factura';
+
+        btn.disabled = false;
     }
-}
+};
 
 // ==========================================
 // 4. EDICIÓN CON IMAGEN (Bucket: fotos-productos)

@@ -153,6 +153,19 @@
                 btn.innerHTML = "Subir Comprobante";
             }
         }
+        // Esto debe ir en la lógica que confirma el pago exitoso:
+async function confirmarPago(personalId, montoPagado) {
+    // 1. Restar la deuda en la tabla personal
+    const { error } = await _sb.rpc('actualizar_deuda_personal', {
+        p_id: personalId,
+        p_monto: -montoPagado // El signo negativo resta la deuda
+    });
+    
+    if(!error) {
+        alert("Pago procesado con éxito");
+        window.location.href = "personal.html";
+    }
+}
     </script>
 </body>
 </html>

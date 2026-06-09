@@ -8,6 +8,7 @@
     <meta name="theme-color" content="#6366f1">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -15,7 +16,13 @@
         body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .fixed button {
+        position: relative;
+        z-index: 1000 !important;
+        pointer-events: auto !important;
+    }
     </style>
+
 </head>
 <body class="overflow-x-hidden pb-24 selection:bg-indigo-500/30">
 
@@ -51,6 +58,15 @@
                 </div>
                 <button onclick="document.getElementById('modal-tipo-cliente').classList.remove('hidden')" class="bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all">ASIGNAR</button>
             </div>
+<div id="active-buyer-banner" class="hidden mt-3 bg-slate-900 border border-slate-700 rounded-xl p-3 flex justify-between items-center">
+    <div>
+        <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-0.5">Vendiendo a:</p>
+        <p id="active-buyer-name" class="text-xs font-bold text-white uppercase"></p>
+        <p id="active-buyer-info" class="text-[10px] font-bold text-slate-400 mt-1"></p>
+    </div>
+    
+    <button onclick="limpiarCliente()" class="text-red-400 bg-red-400/10 w-8 h-8 rounded-full flex items-center justify-center border border-red-500/20 active:scale-90"><i class="fa-solid fa-xmark"></i></button>
+</div>
 
             <div class="relative mb-4"><i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"></i><input type="text" id="search" oninput="renderProducts()" placeholder="Buscar producto, talla o código..." class="w-full bg-slate-900 border border-slate-800 py-4 pl-12 pr-4 rounded-2xl outline-none focus:border-indigo-500 text-sm shadow-inner transition-colors"></div>
             <div class="flex overflow-x-auto gap-2 pb-4 no-scrollbar">
@@ -124,7 +140,30 @@
             <a href="cobranza.html" class="flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors"><i class="fa-solid fa-hand-holding-dollar text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Cobros</span></a>
         </nav>
     </div>
+    
+    <div id="modal-qr" class="hidden fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] w-full max-w-sm text-center">
+        <h2 class="text-xl font-black text-white mb-2">Pago Móvil</h2>
+        
+        <!-- Aquí mostramos el monto en Bs -->
+        <div class="bg-emerald-900/20 border border-emerald-500/30 p-2 rounded-xl mb-4">
+            <p class="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Total a pagar</p>
+            <p id="monto-bs-qr" class="text-lg font-black text-white">Bs. 0.00</p>
+        </div>
 
-    <script src="app.js"></script>
+        <!-- Aquí cargamos tu imagen qr.jpeg -->
+        <div class="bg-white p-3 rounded-2xl mb-4 flex justify-center">
+            <img src="qr.jpeg" alt="Código QR" class="w-48 h-48 object-contain">
+        </div>
+
+        <p class="text-xs text-slate-400 mb-4">Ingresa los 4 últimos dígitos de la referencia:</p>
+        <input type="number" id="ref-pago" placeholder="Ej: 1234" class="w-full bg-slate-950 border border-slate-700 text-white p-4 rounded-xl mb-4 text-center font-black text-xl outline-none focus:border-indigo-500">
+        <button onclick="confirmarReferencia()" class="w-full bg-indigo-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white active:scale-95 transition-all shadow-lg">
+            Confirmar y Verificar
+        </button>
+    </div>
+</div>
+
+    <script src="app.js?v=2.0"></script>
 </body>
 </html>

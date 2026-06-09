@@ -16,6 +16,16 @@ let state = {
 };
 let categoriaActual = 'Todos';
 
+// ==========================================
+// UTILIDADES DE SEGURIDAD
+// ==========================================
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 window.onload = async () => {
     try {
         const { data: { user } } = await _sb.auth.getUser();
@@ -82,8 +92,8 @@ function asignarCliente(id, nombre, tipo, bloqueado = false) {
     
     state.activeBuyer = { id, nombre, tipo, bloqueado };
     
-    // Actualizamos la UI visual
-    document.getElementById('ui-cliente-nombre').innerText = nombre;
+    // Actualizamos la UI visual con textContent para evitar XSS
+    document.getElementById('ui-cliente-nombre').textContent = nombre;
     document.getElementById('ui-cliente-nombre').classList.add('text-indigo-400');
     
     // Cerramos los modales
@@ -95,7 +105,7 @@ function asignarCliente(id, nombre, tipo, bloqueado = false) {
 
 function limpiarCliente() {
     state.activeBuyer = null;
-    document.getElementById('ui-cliente-nombre').innerText = "Venta al Público";
+    document.getElementById('ui-cliente-nombre').textContent = "Venta al Público";
     document.getElementById('ui-cliente-nombre').classList.remove('text-indigo-400');
     updateCartButtons();
 }
@@ -107,19 +117,24 @@ function updateCartButtons() {
     if (state.activeBuyer) {
         // Si hay un cliente pre-seleccionado, el carrito muestra UN SOLO botón grande de crédito
         const colorClass = state.activeBuyer.tipo === 'estudiante' ? 'bg-indigo-600' : 'bg-emerald-600';
+        const clienteNombreEscapado = escapeHtml(state.activeBuyer.nombre);
         container.innerHTML = `
             <div class="col-span-2">
-                <button onclick="procesarTransaccion('CREDITO', ${state.activeBuyer.id}, '${state.activeBuyer.tipo}')" 
+                <button data-client-id="${state.activeBuyer.id}" data-client-type="${state.activeBuyer.tipo}" onclick="procesarTransaccionDesdeBtn(this)" 
                         class="w-full ${colorClass} py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-lg flex justify-center items-center gap-2">
-                    <i class="fa-solid fa-file-invoice-dollar text-sm"></i> Cargar a cuenta de ${state.activeBuyer.nombre}
+                    <i class="fa-solid fa-file-invoice-dollar text-sm"></i> Cargar a cuenta de ${clienteNombreEscapado}
                 </button>
             </div>
         `;
     } else {
         // Si no hay cliente, el carrito muestra los botones de búsqueda manual tradicionales
         container.innerHTML = `
-            <button onclick="abrirModalCreditoVenta()" class="bg-indigo-900/40 border border-indigo-500 text-indigo-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-transform flex flex-col items-center justify-center gap-1"><i class="fa-solid fa-graduation-cap"></i> Buscar Estudiante</button>
-            <button onclick="abrirModalCreditoPersonal()" class="bg-emerald-900/40 border border-emerald-500 text-emerald-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-transform flex flex-col items-center justify-center gap-1"><i class="fa-solid fa-user-tie"></i> Buscar Personal</button>
+            <button onclick="abrirModalCreditoVenta()" class="bg-indigo-900/40 border border-indigo-500 text-indigo-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-md w-full">
+                <i class="fa-solid fa-graduation-cap"></i> Venta Crédito
+            </button>
+            <button onclick="abrirModalCreditoPersonal()" class="bg-emerald-900/40 border border-emerald-500 text-emerald-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-md w-full">
+                <i class="fa-solid fa-briefcase"></i> Personal
+            </button>
         `;
     }
 }
@@ -132,11 +147,13 @@ function renderCategories() {
     const filterContainer = document.querySelector('.flex.overflow-x-auto');
     if (!filterContainer) return;
     const categories = ['Todos', ...new Set(state.products.map(p => p.categoria || 'General'))];
-    filterContainer.innerHTML = categories.map(cat => `
-        <button onclick="filtrar('${cat}')" class="px-5 py-2.5 ${categoriaActual === cat ? 'bg-indigo-600 shadow-indigo-900/30' : 'bg-slate-800 border-slate-700 text-slate-300'} rounded-full text-[10px] font-black tracking-widest active:scale-95 transition-all shrink-0 shadow-lg border">
-            ${cat.toUpperCase()}
+    filterContainer.innerHTML = categories.map(cat => {
+        const catEscapada = escapeHtml(cat);
+        return `
+        <button onclick="filtrar('${catEscapada}')" class="px-5 py-2.5 ${categoriaActual === cat ? 'bg-indigo-600 shadow-indigo-900/30' : 'bg-slate-800 border-slate-700 text-slate-300'} rounded-full text-[10px] font-bold whitespace-nowrap active:scale-95 transition-all">
+            ${catEscapada.toUpperCase()}
         </button>
-    `).join('');
+    `}).join('');
 }
 
 function renderProducts() {
@@ -147,13 +164,16 @@ function renderProducts() {
 
     grid.innerHTML = prods.map(p => {
         const imgPath = p.image_url || `https://placehold.co/600x600/0f172a/6366f1?text=${encodeURIComponent(p.name)}`;
+        const nombreProductoEscapado = escapeHtml(p.name);
         return `
-        <div onclick="addToCart(${p.id})" class="relative bg-slate-900 border border-slate-800 rounded-[2rem] p-3 flex flex-col items-center shadow-lg active:scale-95 transition-transform cursor-pointer">
-            <div class="absolute top-3 right-3 z-10 px-2 py-0.5 rounded-full text-[9px] font-black ${p.stock <= 5 ? 'bg-red-500 animate-pulse text-white' : 'bg-slate-800 text-slate-300 border border-slate-700'}">${p.stock}</div>
+        <div onclick="addToCart(${p.id})" class="relative bg-slate-900 border border-slate-800 rounded-[2rem] p-3 flex flex-col items-center shadow-lg active:scale-95 transition-transform cursor-pointer group">
+            <div class="absolute top-3 right-3 z-10 px-2 py-0.5 rounded-full text-[9px] font-black ${p.stock <= 5 ? 'bg-red-500 animate-pulse text-white' : 'bg-slate-800 text-slate-300 border border-slate-700'}">
+                ${p.stock} uds
+            </div>
             <div class="w-full aspect-square rounded-[1.5rem] overflow-hidden mb-2 bg-slate-950 flex items-center justify-center">
                 <img src="${imgPath}" style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;" class="w-full h-full object-cover">
             </div>
-            <h3 class="text-[10px] font-bold text-slate-200 line-clamp-2 h-7 text-center mb-2 px-1 w-full">${p.name}</h3>
+            <h3 class="text-[10px] font-bold text-slate-200 line-clamp-2 h-7 text-center mb-2 px-1 w-full">${nombreProductoEscapado}</h3>
             <div class="w-full bg-indigo-900/30 border border-indigo-500/30 py-2 rounded-[1rem] text-center mt-auto">
                 <span class="text-xs font-black text-indigo-400">$${parseFloat(p.price).toFixed(2)}</span>
             </div>
@@ -197,10 +217,12 @@ function updateUI() {
     if(document.getElementById('total-vef')) document.getElementById('total-vef').innerText = `Bs. ${(total * state.tasa).toLocaleString('es-VE')}`;
     
     const list = document.getElementById('cart-list');
-    if(list) list.innerHTML = state.cart.map(i => `
+    if(list) list.innerHTML = state.cart.map(i => {
+        const nombreItemEscapado = escapeHtml(i.name);
+        return `
         <div class="flex items-center justify-between p-4 bg-slate-900 rounded-2xl border border-slate-800">
             <div class="flex-1 pr-2">
-                <p class="text-[10px] font-black uppercase text-white leading-tight mb-1">${i.name}</p>
+                <p class="text-[10px] font-black uppercase text-white leading-tight mb-1">${nombreItemEscapado}</p>
                 <p class="text-[10px] text-emerald-400 font-bold">$${(i.price * i.qty).toFixed(2)}</p>
             </div>
             <div class="flex items-center gap-3 bg-slate-950 p-1 rounded-full border border-slate-800">
@@ -209,7 +231,7 @@ function updateUI() {
                 <button onclick="adjustQty(${i.id}, 1)" class="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold active:bg-indigo-500">+</button>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 function abrirCarrito() { document.getElementById('modal-carrito').classList.remove('hidden'); }
@@ -218,6 +240,12 @@ function cerrarCarrito() { document.getElementById('modal-carrito').classList.ad
 // ==========================================
 // TRANSACCIÓN UNIFICADA Y SEGURA
 // ==========================================
+function procesarTransaccionDesdeBtn(btn) {
+    const clientId = parseInt(btn.dataset.clientId);
+    const clientType = btn.dataset.clientType;
+    procesarTransaccion('CREDITO', clientId, clientType);
+}
+
 async function procesarTransaccion(method, deudorId = null, tipoDeudor = 'estudiante') {
     if (!state.cart || state.cart.length === 0) return alert("El carrito está vacío.");
 
@@ -227,6 +255,7 @@ async function procesarTransaccion(method, deudorId = null, tipoDeudor = 'estudi
     
     let nombreDeudor = null;
     let statusVenta = method.includes('PAGO_MOVIL') ? 'pendiente' : 'completado';
+    let recargo = 0; // FIX: Declarar recargo fuera de condicionales
 
     // VALIDACIÓN PREVIA DE CRÉDITO
     if (method === 'CREDITO' && deudorId) {
@@ -236,21 +265,29 @@ async function procesarTransaccion(method, deudorId = null, tipoDeudor = 'estudi
         if (!deudor) return alert("Error: No se encontró al deudor.");
         nombreDeudor = deudor.name || deudor.nombre;
 
+        // FIX: Validar bloqueo para AMBOS tipos
+        if (deudor.bloqueado) {
+            const soloLlevaAgua = state.cart.every(item => item.name.toLowerCase().includes('agua') || item.categoria?.toLowerCase() === 'agua');
+            if (!soloLlevaAgua) return alert(`❌ VENTA BLOQUEADA\n\nEl representante de ${nombreDeudor} está bloqueado. Solo puede retirar AGUA.`);
+        }
+
+        // FIX: Aplicar validaciones específicas por tipo
         if (tipoDeudor === 'estudiante') {
-            if (deudor.bloqueado) {
-                const soloLlevaAgua = state.cart.every(item => item.name.toLowerCase().includes('agua') || item.categoria?.toLowerCase() === 'agua');
-                if (!soloLlevaAgua) return alert(`❌ VENTA BLOQUEADA\n\nEl representante de ${nombreDeudor} está bloqueado. Solo puede retirar AGUA.`);
-            }
-            const recargo = total * 0.10;
+            recargo = total * 0.10;
             const deudaActual = parseFloat(deudor.debt || 0);
             const limite = parseFloat(deudor.limite_credito || 100);
 
             if ((deudaActual + total + recargo) > limite) {
-                return alert(`❌ LÍMITE EXCEDIDO\n\nDeuda actual: $${deudaActual}\nEsta compra: $${(total+recargo).toFixed(2)}\nTotal proyectado: $${(deudaActual+total+recargo).toFixed(2)}\n\nEl límite máximo de este alumno es $${limite}.`);
+                return alert(`❌ LÍMITE EXCEDIDO\n\nDeuda actual: $${deudaActual.toFixed(2)}\nEsta compra: $${(total + recargo).toFixed(2)}\nTotal proyectado: $${(deudaActual + total + recargo).toFixed(2)}\n\nLímite disponible: $${limite.toFixed(2)}`);
             }
+        } else if (tipoDeudor === 'personal') {
+            // Para personal, aplicar recargo también pero sin límite estricto (logging solo)
+            recargo = total * 0.10;
+            const deudaActual = parseFloat(deudor.debt || 0);
+            console.log(`📊 Personal ${nombreDeudor}: Deuda actual $${deudaActual.toFixed(2)} + Nueva compra $${(total + recargo).toFixed(2)}`);
         }
 
-        const recargo = total * 0.10;
+        // FIX: Aplicar recargo una sola vez
         total += recargo;
         ganancia += recargo;
     }
@@ -277,7 +314,7 @@ async function procesarTransaccion(method, deudorId = null, tipoDeudor = 'estudi
             const tabla = (tipoDeudor === 'estudiante') ? 'estudiantes' : 'personal';
             const deudor = (tipoDeudor === 'estudiante') ? state.estudiantes.find(e => e.id == deudorId) : state.personal.find(e => e.id == deudorId);
             await _sb.from(tabla).update({ debt: parseFloat(deudor.debt || 0) + total }).eq('id', deudorId);
-            alert(`✅ Crédito procesado. Deuda asignada a ${nombreDeudor}`);
+            alert(`✅ Crédito procesado. Deuda asignada a ${nombreDeudor}\nMonto: $${total.toFixed(2)}`);
         } else { 
             alert("Venta procesada con éxito ✅"); 
         }
@@ -310,18 +347,26 @@ function filtrarModalEst() {
     const list = document.getElementById('lista-est-modal');
     if(!list) return;
     
-    // AHORA ESTOS BOTONES LLAMAN A "asignarCliente()" EN VEZ DE "procesarTransaccion()"
     list.innerHTML = state.estudiantes
         .filter(e => e.name?.toLowerCase().includes(q) || e.representante?.toLowerCase().includes(q))
-        .map(e => `
-        <div onclick="asignarCliente(${e.id}, '${e.name?.replace(/'/g, "\\'") || 'Sin Nombre'}', 'estudiante', ${e.bloqueado || false})" class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center active:bg-slate-800 cursor-pointer">
-            <div>
-                <p class="text-xs font-black uppercase text-white">${e.name || 'Sin Nombre'} ${e.bloqueado ? '<span class="text-red-500">(BLOQUEADO)</span>' : ''}</p>
-                <p class="text-[9px] text-slate-400 font-bold">Rep: ${e.representante || 'N/A'} | Deuda: $${parseFloat(e.debt || 0).toFixed(2)}</p>
+        .map(e => {
+            const nombreEscapado = escapeHtml(e.name || 'Sin Nombre');
+            const repEscapado = escapeHtml(e.representante || 'N/A');
+            const deudaEscapada = escapeHtml(parseFloat(e.debt || 0).toFixed(2));
+            const estadoBloqueado = e.bloqueado ? '<span class="text-red-500 text-[9px] font-bold">(BLOQUEADO)</span>' : '';
+            
+            return `
+            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-indigo-500 transition-colors" 
+                 data-est-id="${e.id}" data-est-name="${nombreEscapado}" data-est-blocked="${e.bloqueado || false}"
+                 onclick="asignarClienteDesdeModal(this, 'estudiante')">
+                <div>
+                    <p class="text-xs font-black uppercase text-white">${nombreEscapado} ${estadoBloqueado}</p>
+                    <p class="text-[9px] text-slate-400 font-bold">Rep: ${repEscapado} | Deuda: $${deudaEscapada}</p>
+                </div>
+                <div class="bg-indigo-600/20 text-indigo-400 px-3 py-1 rounded-lg text-[9px] font-black tracking-widest border border-indigo-500/30">SELECCIONAR</div>
             </div>
-            <div class="bg-indigo-600/20 text-indigo-400 px-3 py-1 rounded-lg text-[9px] font-black tracking-widest border border-indigo-500/30">SELECCIONAR</div>
-        </div>
-    `).join('');
+        `;
+        }).join('');
 }
 
 function filtrarModalPers() {
@@ -331,13 +376,33 @@ function filtrarModalPers() {
 
     list.innerHTML = state.personal
         .filter(p => p.name?.toLowerCase().includes(q))
-        .map(p => `
-        <div onclick="asignarCliente(${p.id}, '${p.name?.replace(/'/g, "\\'") || 'Sin Nombre'}', 'personal')" class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center active:bg-slate-800 cursor-pointer">
-            <div>
-                <p class="text-xs font-black uppercase text-white">${p.name || 'Sin Nombre'}</p>
-                <p class="text-[9px] text-slate-400 font-bold">Deuda: $${parseFloat(p.debt || 0).toFixed(2)}</p>
+        .map(p => {
+            const nombreEscapado = escapeHtml(p.name || 'Sin Nombre');
+            const deudaEscapada = escapeHtml(parseFloat(p.debt || 0).toFixed(2));
+            
+            return `
+            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-emerald-500 transition-colors"
+                 data-pers-id="${p.id}" data-pers-name="${nombreEscapado}"
+                 onclick="asignarClienteDesdeModal(this, 'personal')">
+                <div>
+                    <p class="text-xs font-black uppercase text-white">${nombreEscapado}</p>
+                    <p class="text-[9px] text-slate-400 font-bold">Deuda: $${deudaEscapada}</p>
+                </div>
+                <div class="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-lg text-[9px] font-black tracking-widest border border-emerald-500/30">SELECCIONAR</div>
             </div>
-            <div class="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-lg text-[9px] font-black tracking-widest border border-emerald-500/30">SELECCIONAR</div>
-        </div>
-    `).join('');
+        `;
+        }).join('');
+}
+
+function asignarClienteDesdeModal(elemento, tipo) {
+    if (tipo === 'estudiante') {
+        const id = parseInt(elemento.dataset.estId);
+        const nombre = elemento.dataset.estName;
+        const bloqueado = elemento.dataset.estBlocked === 'true';
+        asignarCliente(id, nombre, tipo, bloqueado);
+    } else if (tipo === 'personal') {
+        const id = parseInt(elemento.dataset.persId);
+        const nombre = elemento.dataset.persName;
+        asignarCliente(id, nombre, tipo, false);
+    }
 }

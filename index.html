@@ -17,12 +17,19 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .fixed button {
-        position: relative;
-        z-index: 1000 !important;
-        pointer-events: auto !important;
-    }
+            position: relative;
+            z-index: 1000 !important;
+            pointer-events: auto !important;
+        }
+        /* Efecto suave para cuando aparecen los clientes en la búsqueda */
+        #resultados-clientes-global:not(.hidden) {
+            animation: fadeInDown 0.2s ease-out forwards;
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
-
 </head>
 <body class="overflow-x-hidden pb-24 selection:bg-indigo-500/30">
 
@@ -42,6 +49,7 @@
     </div>
 
     <div id="app-content" class="hidden transition-opacity duration-300">
+        
         <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 p-4 sticky top-0 z-30 flex justify-between items-center shadow-sm">
             <h1 class="font-black text-white text-sm uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-store text-indigo-500"></i> Ventas</h1>
             <div class="flex items-center gap-3">
@@ -51,33 +59,54 @@
         </header>
 
         <main class="p-4">
+            
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-4 flex justify-between items-center shadow-sm">
                 <div>
                     <p class="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5"><i class="fa-solid fa-user-tag text-indigo-500 mr-1"></i> Cliente Actual</p>
                     <p id="ui-cliente-nombre" class="text-sm font-bold text-white truncate max-w-[180px]">Venta al Público</p>
                 </div>
-                <button onclick="document.getElementById('modal-tipo-cliente').classList.remove('hidden')" class="bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all">ASIGNAR</button>
+                <button onclick="document.getElementById('search').focus();" class="bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass"></i> ASIGNAR
+                </button>
             </div>
-<div id="active-buyer-banner" class="hidden mt-3 bg-slate-900 border border-slate-700 rounded-xl p-3 flex justify-between items-center">
-    <div>
-        <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-0.5">Vendiendo a:</p>
-        <p id="active-buyer-name" class="text-xs font-bold text-white uppercase"></p>
-        <p id="active-buyer-info" class="text-[10px] font-bold text-slate-400 mt-1"></p>
-    </div>
-    
-    <button onclick="limpiarCliente()" class="text-red-400 bg-red-400/10 w-8 h-8 rounded-full flex items-center justify-center border border-red-500/20 active:scale-90"><i class="fa-solid fa-xmark"></i></button>
-</div>
 
-            <div class="relative mb-4"><i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"></i><input type="text" id="search" oninput="renderProducts()" placeholder="Buscar producto, talla o código..." class="w-full bg-slate-900 border border-slate-800 py-4 pl-12 pr-4 rounded-2xl outline-none focus:border-indigo-500 text-sm shadow-inner transition-colors"></div>
+            <div id="active-buyer-banner" class="hidden mt-3 bg-slate-900 border border-slate-700 rounded-xl p-3 flex justify-between items-center mb-4">
+                <div>
+                    <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mb-0.5">Vendiendo a:</p>
+                    <p id="active-buyer-name" class="text-xs font-bold text-white uppercase"></p>
+                    <p id="active-buyer-info" class="text-[10px] font-bold text-slate-400 mt-1"></p>
+                </div>
+                <button onclick="limpiarCliente()" class="text-red-400 bg-red-400/10 w-8 h-8 rounded-full flex items-center justify-center border border-red-500/20 active:scale-90"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="relative mb-4">
+                <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                <input type="text" id="search" oninput="buscarGlobal()" placeholder="Buscar cliente o producto..." class="w-full bg-slate-900 border border-slate-800 py-4 pl-12 pr-24 rounded-2xl outline-none focus:border-indigo-500 text-sm shadow-inner transition-colors text-white">
+                
+                <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <button onclick="limpiarBuscador('search', buscarGlobal)" class="text-slate-500 hover:text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors active:scale-90">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                    <button id="btn-mic-main" onclick="iniciarReconocimientoVoz('search', buscarGlobal, 'btn-mic-main')" class="text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-sm">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="resultados-clientes-global" class="hidden mb-4 flex flex-col gap-2"></div>
+
             <div class="flex overflow-x-auto gap-2 pb-4 no-scrollbar">
                 <button onclick="filtrar('Todos')" class="px-5 py-2.5 bg-indigo-600 rounded-full text-[10px] font-black tracking-widest active:scale-95 transition-transform shrink-0 shadow-lg shadow-indigo-900/30">TODOS</button>
                 <button onclick="filtrar('Uniformes')" class="px-5 py-2.5 bg-slate-800 border border-slate-700 rounded-full text-[10px] font-black tracking-widest text-slate-300 active:scale-95 transition-transform shrink-0">UNIFORMES</button>
                 <button onclick="filtrar('Chucherias')" class="px-5 py-2.5 bg-slate-800 border border-slate-700 rounded-full text-[10px] font-black tracking-widest text-slate-300 active:scale-95 transition-transform shrink-0">CHUCHERÍAS</button>
             </div>
+            
             <div id="grid-productos" class="grid grid-cols-2 gap-3 mb-8"></div>
         </main>
 
-        <button id="floating-cart-btn" onclick="abrirCarrito()" class="hidden fixed bottom-24 right-4 z-40 bg-indigo-600 text-white p-3.5 rounded-full shadow-[0_10px_25px_rgba(79,70,229,0.5)] flex items-center gap-3 active:scale-90 border-[3px] border-slate-950 transition-transform"><i class="fa-solid fa-cart-shopping text-lg ml-1"></i><span id="total-resumen" class="font-black text-sm bg-slate-950 px-3 py-1 rounded-full mr-1">$0.00</span></button>
+        <button id="floating-cart-btn" onclick="abrirCarrito()" class="hidden fixed bottom-24 right-4 z-40 bg-indigo-600 text-white p-3.5 rounded-full shadow-[0_10px_25px_rgba(79,70,229,0.5)] flex items-center gap-3 active:scale-90 border-[3px] border-slate-950 transition-transform">
+            <i class="fa-solid fa-cart-shopping text-lg ml-1"></i><span id="total-resumen" class="font-black text-sm bg-slate-950 px-3 py-1 rounded-full mr-1">$0.00</span>
+        </button>
 
         <div id="modal-carrito" class="fixed inset-0 z-50 bg-slate-950 flex flex-col hidden transition-all">
             <header class="bg-slate-900 border-b border-slate-800 p-5 flex justify-between items-center">
@@ -99,39 +128,17 @@
                 
                 <button onclick="abrirModalPagoMovil()" class="w-full bg-cyan-600 hover:bg-cyan-500 mb-3 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-lg shadow-cyan-900/30 flex justify-center items-center gap-2 transition-transform"><i class="fa-solid fa-qrcode text-sm"></i> Generar QR Pago Móvil</button>
 
-                <div id="cart-credit-buttons" class="grid grid-cols-2 gap-3">
-                    </div>
+                <div id="cart-credit-buttons" class="grid grid-cols-2 gap-3"></div>
             </div>
         </div>
 
-        <div id="modal-tipo-cliente" class="hidden fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-sm flex flex-col p-4 justify-center items-center">
-            <div class="bg-slate-900 w-full max-w-sm border border-slate-800 p-6 rounded-[2rem] shadow-2xl">
-                <h3 class="font-black text-white text-center text-sm uppercase tracking-widest mb-6">¿A quién le vamos a cobrar?</h3>
-                <div class="space-y-3">
-                    <button onclick="limpiarCliente(); document.getElementById('modal-tipo-cliente').classList.add('hidden')" class="w-full bg-slate-800 hover:bg-slate-700 py-4 rounded-2xl font-black text-[10px] text-white uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2 border border-slate-700"><i class="fa-solid fa-users text-slate-400"></i> Público General</button>
-                    <button onclick="document.getElementById('modal-tipo-cliente').classList.add('hidden'); abrirModalCreditoVenta();" class="w-full bg-indigo-900/40 border border-indigo-500/50 py-4 rounded-2xl font-black text-[10px] text-indigo-400 uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-graduation-cap"></i> Estudiante</button>
-                    <button onclick="document.getElementById('modal-tipo-cliente').classList.add('hidden'); abrirModalCreditoPersonal();" class="w-full bg-emerald-900/40 border border-emerald-500/50 py-4 rounded-2xl font-black text-[10px] text-emerald-400 uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-user-tie"></i> Personal</button>
-                </div>
-                <button onclick="document.getElementById('modal-tipo-cliente').classList.add('hidden')" class="w-full mt-6 py-3 font-bold text-slate-500 text-[10px] uppercase tracking-widest">Cancelar</button>
-            </div>
+        <div id="modal-seleccion-credito" class="hidden">
+            <div id="lista-est-modal"></div>
+            <input type="text" id="search-est">
         </div>
-
-        <div id="modal-seleccion-credito" class="hidden fixed inset-0 z-[70] bg-slate-950 flex flex-col p-4">
-            <header class="flex justify-between items-center mb-6 mt-4">
-                <h3 class="text-white font-black uppercase tracking-widest text-sm text-indigo-400"><i class="fa-solid fa-graduation-cap"></i> Buscar Estudiante</h3>
-                <button onclick="document.getElementById('modal-seleccion-credito').classList.add('hidden')" class="text-slate-400 p-2"><i class="fa-solid fa-xmark text-2xl"></i></button>
-            </header>
-            <input type="text" id="search-est" placeholder="Buscar nombre o representante..." oninput="filtrarModalEst()" class="w-full bg-slate-900 border border-slate-800 p-4 rounded-2xl mb-4 text-sm outline-none focus:border-indigo-500 text-white">
-            <div id="lista-est-modal" class="flex-1 overflow-y-auto space-y-2 pb-10"></div>
-        </div>
-
-        <div id="modal-credito-personal" class="hidden fixed inset-0 z-[70] bg-slate-950 flex flex-col p-4">
-            <header class="flex justify-between items-center mb-6 mt-4">
-                <h3 class="text-white font-black uppercase tracking-widest text-sm text-emerald-400"><i class="fa-solid fa-user-tie"></i> Buscar Personal</h3>
-                <button onclick="document.getElementById('modal-credito-personal').classList.add('hidden')" class="text-slate-400 p-2"><i class="fa-solid fa-xmark text-2xl"></i></button>
-            </header>
-            <input type="text" id="search-pers" placeholder="Buscar empleado..." oninput="filtrarModalPers()" class="w-full bg-slate-900 border border-slate-800 p-4 rounded-2xl mb-4 text-sm outline-none focus:border-emerald-500 text-white">
-            <div id="lista-pers-modal" class="flex-1 overflow-y-auto space-y-2 pb-10"></div>
+        <div id="modal-credito-personal" class="hidden">
+            <div id="lista-pers-modal"></div>
+            <input type="text" id="search-pers">
         </div>
 
         <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 z-40 flex justify-around p-2 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
@@ -142,28 +149,26 @@
     </div>
     
     <div id="modal-qr" class="hidden fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] w-full max-w-sm text-center">
-        <h2 class="text-xl font-black text-white mb-2">Pago Móvil</h2>
-        
-        <!-- Aquí mostramos el monto en Bs -->
-        <div class="bg-emerald-900/20 border border-emerald-500/30 p-2 rounded-xl mb-4">
-            <p class="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Total a pagar</p>
-            <p id="monto-bs-qr" class="text-lg font-black text-white">Bs. 0.00</p>
-        </div>
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] w-full max-w-sm text-center">
+            <h2 class="text-xl font-black text-white mb-2">Pago Móvil</h2>
+            
+            <div class="bg-emerald-900/20 border border-emerald-500/30 p-2 rounded-xl mb-4">
+                <p class="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Total a pagar</p>
+                <p id="monto-bs-qr" class="text-lg font-black text-white">Bs. 0.00</p>
+            </div>
 
-        <!-- Aquí cargamos tu imagen qr.jpeg -->
-        <div class="bg-white p-3 rounded-2xl mb-4 flex justify-center">
-            <img src="qr.jpeg" alt="Código QR" class="w-48 h-48 object-contain">
-        </div>
+            <div class="bg-white p-3 rounded-2xl mb-4 flex justify-center">
+                <img src="qr.jpeg" alt="Código QR" class="w-48 h-48 object-contain">
+            </div>
 
-        <p class="text-xs text-slate-400 mb-4">Ingresa los 4 últimos dígitos de la referencia:</p>
-        <input type="number" id="ref-pago" placeholder="Ej: 1234" class="w-full bg-slate-950 border border-slate-700 text-white p-4 rounded-xl mb-4 text-center font-black text-xl outline-none focus:border-indigo-500">
-        <button onclick="confirmarReferencia()" class="w-full bg-indigo-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white active:scale-95 transition-all shadow-lg">
-            Confirmar y Verificar
-        </button>
+            <p class="text-xs text-slate-400 mb-4">Ingresa los 4 últimos dígitos de la referencia:</p>
+            <input type="number" id="ref-pago" placeholder="Ej: 1234" class="w-full bg-slate-950 border border-slate-700 text-white p-4 rounded-xl mb-4 text-center font-black text-xl outline-none focus:border-indigo-500">
+            <button onclick="confirmarReferencia()" class="w-full bg-indigo-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white active:scale-95 transition-all shadow-lg">
+                Confirmar y Verificar
+            </button>
+        </div>
     </div>
-</div>
 
-    <script src="app.js?v=2.0"></script>
+    <script src="app.js?v=3.0"></script>
 </body>
 </html>

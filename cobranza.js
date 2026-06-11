@@ -1,14 +1,15 @@
-// --- LÓGICA DE COBRANZAS Y RECORDATORIOS (SOPORTE ALUMNO / PERSONAL) ---
+// --- LÓGICA DE COBRANZAS Y RECORDATORIOS (SOPORTE ALUMNO / PERSONAL / PAGO UNIFICADO) ---
 
 let state = { 
     estudiantes: [], 
     personal: [],
-    currentTab: 'alumnos', // Control de vista activa
+    currentTab: 'alumnos', 
     userRole: 'vendedor',
     tasaBCV: 0 
 };
 
 let abonoTemporal = { id: null, deudaMax: 0 };
+window.ordenPendienteId = null;
 
 // 1. INICIALIZACIÓN Y SEGURIDAD
 window.onload = async () => {
@@ -46,7 +47,6 @@ async function getBCV() {
 
 // 3. SINCRONIZACIÓN MULTI-TABLA DE DATOS
 async function syncCobranzas() {
-    // Consulta Alumnos
     try {
         const { data, error } = await _sb
             .from('estudiantes')
@@ -54,22 +54,15 @@ async function syncCobranzas() {
             .order('name', { ascending: true });
         if (error) throw error;
         state.estudiantes = data || []; 
-    } catch (e) {
-        console.error("Error cargando estudiantes:", e);
-    }
+    } catch (e) { console.error("Error cargando estudiantes:", e); }
 
-    // Consulta Personal Interno
     try {
         const { data, error } = await _sb
             .from('personal')
             .select('*')
             .order('name', { ascending: true });
-        if (!error) {
-            state.personal = data || [];
-        }
-    } catch (e) {
-        console.error("Error cargando personal:", e);
-    }
+        if (!error) state.personal = data || [];
+    } catch (e) { console.error("Error cargando personal:", e); }
 
     renderDeudores(); 
 }
@@ -101,12 +94,10 @@ function renderDeudores() {
     const searchEl = document.getElementById('search-deudor');
     const search = searchEl ? searchEl.value.toLowerCase() : '';
     
-    // Calcular Deuda Absoluta (Global de verdad sumando Alumnos + Personal)
     let totalDGlobal = 0;
     state.estudiantes.forEach(e => totalDGlobal += parseFloat(e.debt || 0));
     state.personal.forEach(p => totalDGlobal += parseFloat(p.debt || 0));
 
-    // Seleccionar origen de datos según pestaña actual
     const targetDataset = state.currentTab === 'alumnos' ? state.estudiantes : state.personal;
 
     let filtered = targetDataset.filter(e => {
@@ -124,24 +115,14 @@ function renderDeudores() {
         const nombreFilt = h.name || 'Usuario';
         const phoneFilt = h.phone || '';
         
-        // --- LÓGICA DE NORMALIZACIÓN DE TELÉFONO (CORREGIDA) ---
         let phoneClean = phoneFilt.replace(/\D/g, ''); 
-        if (phoneClean.startsWith('0')) {
-            phoneClean = '58' + phoneClean.substring(1);
-        } else if (phoneClean.length === 10) {
-            phoneClean = '58' + phoneClean;
-        }
-        // -----------------------------------------------------
+        if (phoneClean.startsWith('0')) phoneClean = '58' + phoneClean.substring(1);
+        else if (phoneClean.length === 10) phoneClean = '58' + phoneClean;
 
-        // Formatear descripciones y payloads basados en si es Alumno o Personal
-        const subTexto = state.currentTab === 'alumnos' 
-            ? `Rep: ${h.representante || 'No indicado'}` 
-            : `Colaborador / Personal Interno`;
-
+        const subTexto = state.currentTab === 'alumnos' ? `Rep: ${h.representante || 'No indicado'}` : `Colaborador / Personal Interno`;
         const origin = window.location.origin;
         const linkPago = `${origin}/pago.html?tipo=${state.currentTab}&id=${h.id}&monto=${debtNum.toFixed(2)}`;
 
-        // Mensaje WhatsApp personalizado por contexto
         const msgTexto = state.currentTab === 'alumnos'
             ? `*RECORDATORIO DE PAGO - CHELA SPORT 1972* 🏦\n\nHola, *${h.representante || nombreFilt}*.\nEl saldo pendiente por concepto de proveeduría de *${nombreFilt}* es de *$${debtNum.toFixed(2)}*.\n\nReporta tu pago móvil aquí: \n${linkPago}\n\n¡Muchas gracias!`
             : `*NOTIFICACIÓN DE CUENTA - CHELA SPORT 1972* 📑\n\nEstimado(a) *${nombreFilt}*.\nTe notificamos que mantienes un saldo pendiente en cuenta de *$${debtNum.toFixed(2)}*.\n\nPuedes verificar o reportar abonos aquí: \n${linkPago}`;
@@ -188,7 +169,8 @@ function renderDeudores() {
     if (elTotal) elTotal.innerText = `$${totalDGlobal.toFixed(2)}`;
     if (elCount) elCount.innerText = countActiveDebtors;
 }
-// 6. GESTIÓN DE ABONOS (CON MUTACIÓN SEGÚN CONTEXTO)
+
+// 6. GESTIÓN DE ABONOS Y PAGOS UNIFICADOS
 window.abrirModalAbono = function(id, nombre, deuda) {
     if(deuda <= 0) return;
     abonoTemporal = { id, deudaMax: deuda };
@@ -210,54 +192,79 @@ window.cerrarModalAbono = function() {
     if (input) input.value = '';
 };
 
-window.confirmarAbono = async function() {
-    const btn = document.getElementById('btn-confirma-abono');
+// Esta función procesa el pago igual que app.js
+window.procesarAbono = async function(method) {
     const inputMonto = document.getElementById('input-monto-abono');
-    const selectMoneda = document.getElementById('select-moneda-abono');
+    if (!inputMonto) return;
     
-    if (!btn || !inputMonto || !selectMoneda) return;
+    let montoUSD = parseFloat(inputMonto.value);
     
-    let montoEscrito = parseFloat(inputMonto.value);
-    const moneda = selectMoneda.value;
-    
-    if (isNaN(montoEscrito) || montoEscrito <= 0) return alert("⚠️ Ingresa un monto válido.");
-
-    let montoUSD = moneda === 'VES' ? (montoEscrito / state.tasaBCV) : montoEscrito;
-
+    if (isNaN(montoUSD) || montoUSD <= 0) return alert("⚠️ Ingresa un monto válido.");
     if (montoUSD > abonoTemporal.deudaMax + 0.1) {
         return alert(`❌ El abono ($${montoUSD.toFixed(2)}) supera la deuda actual.`);
     }
 
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Procesando...';
-
     const targetTable = state.currentTab === 'alumnos' ? 'estudiantes' : 'personal';
-    const prefijoTag = state.currentTab === 'alumnos' ? '[Alumno]' : '[Personal]';
+    const nombreDeudor = document.getElementById('abono-nombre').innerText.replace('Abono: ', '');
+    const prefijoEtiqueta = state.currentTab === 'alumnos' ? '[Abono Alumno]' : '[Abono Personal]';
+    
+    const idOrden = 'ABO-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    let statusVenta = method.includes('PAGO_MOVIL') ? 'pendiente' : 'completado';
 
     try {
+        // 1. Reducir la Deuda Directamente
         const nuevaDeuda = Math.max(0, abonoTemporal.deudaMax - montoUSD);
-        
-        // Ejecuta actualización en la tabla correspondiente
         await _sb.from(targetTable).update({ debt: nuevaDeuda }).eq('id', abonoTemporal.id);
         
-        // Registra el log contable histórico en ventas
+        // 2. Registrar el Abono en Ventas para Arqueo de Caja (Sin generar ganancia extra)
         await _sb.from('ventas').insert([{
-            id_orden: `ABO-${Date.now().toString().slice(-6)}`,
+            id_orden: idOrden,
             total_usd: montoUSD,
-            metodo_pago: moneda === 'VES' ? 'PAGO_MOVIL' : 'EFECTIVO',
-            status: 'completado',
-            estudiante_nombre: `${prefijoTag} ${document.getElementById('abono-nombre').innerText.replace('Abono: ', '')}`
+            metodo_pago: method,
+            status: statusVenta,
+            estudiante_nombre: (targetTable === 'estudiantes') ? `${prefijoEtiqueta} ${nombreDeudor}` : null,
+            personal_id: (targetTable === 'personal') ? abonoTemporal.id : null,
+            items: [{ name: `Abono a la Deuda - ${nombreDeudor}`, price: montoUSD, qty: 1 }],
+            ganancia_total: 0 
         }]);
 
         cerrarModalAbono();
-        await syncCobranzas();
-        alert(`✅ Abono registrado exitosamente.`);
+
+        if (method === 'PAGO_MOVIL') {
+            window.ordenPendienteId = idOrden; 
+            const totalBs = (montoUSD * state.tasaBCV).toLocaleString('es-VE', { minimumFractionDigits: 2 });
+            document.getElementById('monto-bs-qr').innerText = `Bs. ${totalBs}`;
+            document.getElementById('modal-qr').classList.remove('hidden');
+        } else {
+            alert(`✅ Abono registrado y verificado correctamente.`);
+            await syncCobranzas();
+        }
         
     } catch (e) {
-        alert("Error al procesar abono: " + e.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = "Procesar Abono ✅";
+        alert("Error al procesar el abono: " + e.message);
+    }
+};
+
+window.confirmarReferencia = async function() {
+    const ref = document.getElementById('ref-pago').value;
+
+    if (ref.length !== 4) {
+        return alert("Ingresa los 4 dígitos exactos de la referencia.");
+    }
+
+    try {
+        await _sb.from('ventas')
+            .update({ referencia: ref, status: 'esperando_verificacion' })
+            .eq('id_orden', window.ordenPendienteId);
+
+        alert("✅ Referencia enviada. Esperando verificación administrativa.");
+        document.getElementById('modal-qr').classList.add('hidden');
+        document.getElementById('ref-pago').value = '';
+        window.ordenPendienteId = null;
+        
+        await syncCobranzas();
+    } catch (e) {
+        alert("Error al enviar referencia: " + e.message);
     }
 };
 

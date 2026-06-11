@@ -62,7 +62,7 @@
         </div>
     </main>
 
-    <!-- Modal de Abonos -->
+    <!-- Modal de Abonos y Pago -->
     <div id="modal-abono" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col justify-end p-4 hidden">
         <div class="bg-slate-900 w-full max-w-md mx-auto rounded-[3rem] border border-slate-800 p-8 shadow-2xl">
             <div class="flex justify-between items-start mb-6">
@@ -77,24 +77,40 @@
 
             <div class="space-y-4">
                 <div>
-                    <label class="text-[9px] text-slate-500 font-black uppercase ml-2 mb-1 block tracking-widest">Moneda del Abono</label>
-                    <select id="select-moneda-abono" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-2xl text-xs font-black uppercase text-indigo-400 outline-none">
-                        <option value="USD">🇺🇸 Dólares ($)</option>
-                        <option value="VES">🇻🇪 Bolívares (Bs)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="text-[9px] text-slate-500 font-black uppercase ml-2 mb-1 block tracking-widest">Monto Recibido</label>
+                    <label class="text-[9px] text-slate-500 font-black uppercase ml-2 mb-1 block tracking-widest">Monto a Abonar (USD)</label>
                     <input type="number" id="input-monto-abono" inputmode="decimal" placeholder="0.00" 
-                        class="w-full bg-slate-950 border border-slate-800 p-6 rounded-2xl text-center text-3xl font-black text-white outline-none focus:border-emerald-500 transition-all">
+                        class="w-full bg-slate-950 border border-slate-800 p-6 rounded-2xl text-center text-3xl font-black text-white outline-none focus:border-indigo-500 transition-all mb-4">
                 </div>
 
-                <button id="btn-confirma-abono" onclick="confirmarAbono()" 
-                    class="w-full bg-indigo-600 hover:bg-indigo-500 p-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-lg shadow-indigo-900/20 active:scale-95 transition-all">
-                    Procesar Abono ✅
-                </button>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <button onclick="procesarAbono('EFECTIVO')" class="bg-emerald-600 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-lg shadow-emerald-900/30 flex justify-center items-center gap-2"><i class="fa-solid fa-money-bill-wave text-sm"></i> Efectivo</button>
+                    <button onclick="procesarAbono('PUNTO')" class="bg-indigo-600 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-lg shadow-indigo-900/30 flex justify-center items-center gap-2"><i class="fa-solid fa-credit-card text-sm"></i> Punto</button>
+                </div>
+                
+                <button onclick="procesarAbono('PAGO_MOVIL')" class="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-lg shadow-cyan-900/30 flex justify-center items-center gap-2 transition-transform"><i class="fa-solid fa-qrcode text-sm"></i> Generar QR Pago Móvil</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL PAGO MÓVIL (QR) PARA COBRANZAS -->
+    <div id="modal-qr" class="hidden fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] w-full max-w-sm text-center">
+            <h2 class="text-xl font-black text-white mb-2">Pago Móvil</h2>
+            
+            <div class="bg-emerald-900/20 border border-emerald-500/30 p-2 rounded-xl mb-4">
+                <p class="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Total a pagar</p>
+                <p id="monto-bs-qr" class="text-lg font-black text-white">Bs. 0.00</p>
+            </div>
+
+            <div class="bg-white p-3 rounded-2xl mb-4 flex justify-center">
+                <img src="qr.jpeg" alt="Código QR" class="w-48 h-48 object-contain">
+            </div>
+
+            <p class="text-xs text-slate-400 mb-4">Ingresa los 4 últimos dígitos de la referencia:</p>
+            <input type="number" id="ref-pago" placeholder="Ej: 1234" class="w-full bg-slate-950 border border-slate-700 text-white p-4 rounded-xl mb-4 text-center font-black text-xl outline-none focus:border-indigo-500">
+            <button onclick="confirmarReferencia()" class="w-full bg-indigo-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white active:scale-95 transition-all shadow-lg">
+                Confirmar y Verificar
+            </button>
         </div>
     </div>
 

@@ -8,8 +8,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-[#020617] text-white p-4 font-sans">
-    <div class="max-w-md mx-auto bg-slate-900 rounded-[2.5rem] border border-slate-800 overflow-hidden shadow-2xl">
+<body class="bg-[#020617] text-white p-4 font-sans selection:bg-indigo-500/30 min-h-screen flex items-center justify-center">
+    
+    <div class="max-w-md w-full bg-slate-900 rounded-[2.5rem] border border-slate-800 overflow-hidden shadow-2xl">
         <div class="bg-indigo-600 p-8 text-center relative">
             <div id="bcv-floating" class="absolute top-4 right-4 bg-black/20 px-3 py-1 rounded-full text-[9px] font-black tracking-widest">
                 BCV: --
@@ -26,32 +27,23 @@
                 <p id="monto-bs" class="text-lg font-black text-slate-400 mt-1">Bs. 0.00</p>
             </div>
 
-            <div class="bg-black/30 p-5 rounded-2xl border border-slate-800">
-                <p class="text-[9px] text-indigo-400 font-black uppercase mb-3 text-center tracking-widest">Banesco Pago Móvil</p>
+            <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 shadow-inner">
+                <p class="text-[9px] text-indigo-400 font-black uppercase mb-3 text-center tracking-widest">Datos Pago Móvil</p>
                 <div class="space-y-2 text-[11px] font-mono">
-                    <div class="flex justify-between"><span class="text-slate-500">Banco:</span><span>0134 - Banesco</span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">Teléfono:</span><span>0412-2969255</span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">Cédula:</span><span>V-10383082</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Banco:</span><span class="text-white font-bold">0134 - Banesco</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Teléfono:</span><span class="text-white font-bold">0412-2969255</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Cédula:</span><span class="text-white font-bold">V-10383082</span></div>
                 </div>
             </div>
 
-            <div class="space-y-4">
+            <div class="space-y-6">
                 <div>
-                    <label class="text-[10px] text-slate-500 font-black uppercase ml-2 mb-1 block">Referencia (4 últimos)</label>
-                    <input type="text" id="ref" maxlength="4" placeholder="0000" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl text-center font-black text-xl text-white outline-none focus:border-indigo-500">
+                    <label class="text-[10px] text-slate-500 font-black uppercase ml-2 mb-2 block">Referencia Bancaria (Obligatorio)</label>
+                    <input type="text" id="ref" maxlength="6" inputmode="numeric" placeholder="Últimos 4 o 6 dígitos" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl text-center font-black text-2xl text-cyan-400 tracking-[0.2em] outline-none focus:border-indigo-500 transition-colors placeholder:text-slate-700">
                 </div>
 
-                <div>
-                    <label class="text-[10px] text-slate-500 font-black uppercase ml-2 mb-1 block">Captura del Comprobante</label>
-                    <input type="file" id="file-input" accept="image/*" class="hidden">
-                    <button onclick="document.getElementById('file-input').click()" class="w-full bg-slate-800 border border-slate-700 p-4 rounded-xl flex items-center justify-center gap-3 active:scale-95 transition-all">
-                        <i class="fa-solid fa-camera text-indigo-400"></i>
-                        <span id="file-name" class="text-xs font-bold text-slate-400">Elegir Archivo</span>
-                    </button>
-                </div>
-
-                <button onclick="enviarReporte()" id="btn-enviar" class="w-full bg-indigo-600 p-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-900/40 active:scale-95 transition-all">
-                    Subir Comprobante
+                <button onclick="enviarReporte()" id="btn-enviar" class="w-full bg-indigo-600 hover:bg-indigo-500 p-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-900/40 active:scale-95 transition-all flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> Enviar Reporte
                 </button>
             </div>
         </div>
@@ -62,23 +54,21 @@
         const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
         const _sb = supabase.createClient(SB_URL, SB_KEY);
 
-        // Mapeo unificado con fallback para evitar rupturas de nombres de variables
         const params = new URLSearchParams(window.location.search);
         const estId = params.get('id') || params.get('estudiante');
         const montoUSD = parseFloat(params.get('debt') || params.get('monto') || 0);
         const nombreUrl = params.get('name');
+        const tipoUsuario = params.get('tipo'); // Puede ser 'personal' o 'estudiante'
         let tasaGlobal = 0;
 
         // 1. CARGAR DATOS Y TASA BCV
         async function init() {
             document.getElementById('monto-usd').innerText = `$${montoUSD.toFixed(2)}`;
             
-            // Carga inmediata del nombre desde URL para experiencia de usuario instantánea
             if (nombreUrl) {
                 document.getElementById('nombre-estudiante').innerText = `Deuda: ${decodeURIComponent(nombreUrl)}`;
             }
             
-            // Traer tasa oficial BCV
             try {
                 const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
                 const data = await res.json();
@@ -89,83 +79,64 @@
                 console.error("Error obteniendo tasa cambiaria"); 
             }
 
-            // Fallback: Si por alguna razón no vino el nombre en la URL, lo busca en Supabase
             if(!nombreUrl && estId) {
-                const { data } = await _sb.from('estudiantes').select('name').eq('id', estId).single();
+                const tabla = tipoUsuario === 'personal' ? 'personal' : 'estudiantes';
+                const { data } = await _sb.from(tabla).select('name').eq('id', estId).single();
                 if(data) document.getElementById('nombre-estudiante').innerText = `Deuda: ${data.name}`;
             }
         }
         init();
 
-        document.getElementById('file-input').onchange = e => {
-            const file = e.target.files[0];
-            if(file) document.getElementById('file-name').innerText = file.name;
-        };
-
         // 2. ENVIAR REPORTE EN ESTADO PENDIENTE
         async function enviarReporte() {
             const ref = document.getElementById('ref').value.trim();
-            const file = document.getElementById('file-input').files[0];
             const btn = document.getElementById('btn-enviar');
 
-            if(ref.length < 4 || !file) return alert("⚠️ Ingresa los últimos 4 dígitos de la referencia y adjunta la foto.");
+            if(ref.length < 4) {
+                return alert("⚠️ Por favor, ingresa al menos los últimos 4 dígitos de la referencia de tu pago.");
+            }
             
             btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Subiendo...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Procesando...';
 
             try {
-                const fileExt = file.name.split('.').pop();
-                const fileName = `pago_${Date.now()}.${fileExt}`;
-                
-                // A. Subida al Bucket de Almacenamiento
-                const { error: uploadError } = await _sb.storage
-                    .from('comprobantes')
-                    .upload(fileName, file);
-
-                if (uploadError) throw uploadError;
-
-                // B. Obtener URL Pública del archivo subido
-                const { data: { publicUrl } } = _sb.storage.from('comprobantes').getPublicUrl(fileName);
-
-                // C. Registro en Ventas con estado 'pendiente_verificacion'
                 const montoBsCalculado = montoUSD * (tasaGlobal || 1);
+                const nombreParaBD = nombreUrl ? decodeURIComponent(nombreUrl) : document.getElementById('nombre-estudiante').innerText.replace('Deuda: ', '');
 
-                const { error: insertError } = await _sb.from('ventas').insert([{
-                    id_orden: `REP-${ref}-${Date.now().toString().slice(-4)}`,
-                    total_usd: montoUSD,           // Registro analítico en USD
-                    monto_original: montoBsCalculado, // Conciliación bancaria en Bs.
+                const payloadVenta = {
+                    // Usamos ABO- para que se clasifique como Abono en el historial de reportes
+                    id_orden: `ABO-${ref}-${Date.now().toString().slice(-4)}`,
+                    total_usd: montoUSD,           
+                    monto_original: montoBsCalculado, 
                     moneda: 'VES',
-                    metodo_pago: `PAGO_MOVIL (Ref: ${ref})`,
-                    status: 'pendiente_verificacion', // Asegura la revisión manual previa
-                    estudiante_id: estId,
-                    comprobante_url: publicUrl,
+                    metodo_pago: 'PAGO_MOVIL',
+                    referencia: ref, // Se envía directo a la columna de referencia para el Verificador Pro
+                    status: 'pendiente_verificacion', 
                     tasa_referencia: tasaGlobal
-                }]);
+                };
+
+                // Asignar el ID correcto según si es personal o estudiante
+                if (tipoUsuario === 'personal') {
+                    payloadVenta.personal_id = estId;
+                    payloadVenta.estudiante_nombre = `[Personal] ${nombreParaBD}`;
+                } else {
+                    payloadVenta.estudiante_id = estId;
+                    payloadVenta.estudiante_nombre = nombreParaBD;
+                }
+
+                const { error: insertError } = await _sb.from('ventas').insert([payloadVenta]);
 
                 if (insertError) throw insertError;
 
-                // Redirección limpia tras finalizar el proceso
-                window.location.href = "exito.html"; 
+                // Redirección inteligente enviando el tipo de usuario para volver a la pantalla correcta
+                window.location.href = `exito.html${tipoUsuario ? '?tipo=' + tipoUsuario : ''}`;
 
             } catch (e) {
                 alert("Hubo un problema procesando el reporte: " + e.message);
                 btn.disabled = false;
-                btn.innerHTML = "Subir Comprobante";
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar Reporte';
             }
         }
-        // Esto debe ir en la lógica que confirma el pago exitoso:
-async function confirmarPago(personalId, montoPagado) {
-    // 1. Restar la deuda en la tabla personal
-    const { error } = await _sb.rpc('actualizar_deuda_personal', {
-        p_id: personalId,
-        p_monto: -montoPagado // El signo negativo resta la deuda
-    });
-    
-    if(!error) {
-        alert("Pago procesado con éxito");
-        window.location.href = "personal.html";
-    }
-}
     </script>
 </body>
 </html>

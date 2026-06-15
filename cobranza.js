@@ -124,9 +124,9 @@ function renderDeudores() {
         const linkPago = `${origin}/pago.html?tipo=${state.currentTab}&id=${h.id}&monto=${debtNum.toFixed(2)}`;
 
         const msgTexto = state.currentTab === 'alumnos'
-            ? `*RECORDATORIO DE PAGO - CHELA SPORT 1972* 🏦\n\nHola, *${h.representante || nombreFilt}*.\nEl saldo pendiente por concepto de proveeduría de *${nombreFilt}* es de *$${debtNum.toFixed(2)}*.\n\nReporta tu pago móvil aquí: \n${linkPago}\n\n¡Muchas gracias!`
-            : `*NOTIFICACIÓN DE CUENTA - CHELA SPORT 1972* 📑\n\nEstimado(a) *${nombreFilt}*.\nTe notificamos que mantienes un saldo pendiente en cuenta de *$${debtNum.toFixed(2)}*.\n\nPuedes verificar o reportar abonos aquí: \n${linkPago}`;
-
+            ? `¡Hola, *${h.representante || nombreFilt}*! Esperamos que te encuentres muy bien. 👋\n\nTe escribimos desde la administración de Chela Sport 1972 para ayudarte a mantener al día la cuenta de *${nombreFilt}*. Actualmente, el saldo pendiente es de *$${debtNum.toFixed(2)}*.\n\nAgradecemos mucho tu apoyo para solventar este monto a la brevedad. Puedes realizar y reportar tu pago móvil de forma segura en este enlace:\n${linkPago}\n\n📌 *Nota importante:* Este enlace es de un solo uso. Para evitar confusiones en el sistema, una vez que reportes los 4 últimos dígitos de tu referencia, por favor no vuelvas a utilizar este link para futuros abonos.\n\n¡Muchas gracias por tu colaboración y confianza!`
+            
+            : `¡Hola, *${nombreFilt}*! Esperamos que estés muy bien. 👋\n\nTe contactamos desde la administración para ayudarte a mantener al día tu cuenta de la cantina. Al día de hoy, tienes un saldo pendiente de *$${debtNum.toFixed(2)}*.\n\nTe agradecemos tu apoyo para liquidar este monto. Puedes verificar tu estado y reportar tu abono rápidamente aquí:\n${linkPago}\n\n📌 *Nota importante:* Este enlace es de un solo uso. Una vez que registres el pago con tu número de referencia, el link perderá validez para futuros abonos.\n\n¡Gracias por tu gestión y que tengas un excelente día!`;
         const mensajeWa = encodeURIComponent(msgTexto);
         const urlWhatsApp = phoneClean ? `https://wa.me/${phoneClean}?text=${mensajeWa}` : '#';
 

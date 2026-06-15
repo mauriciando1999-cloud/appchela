@@ -47,7 +47,7 @@
             El saldo de tu cuenta se actualizará automáticamente en el portal una vez que el administrador verifique la transacción.
         </p>
 
-        <button onclick="window.location.href='portal.html'" class="w-full bg-slate-800 hover:bg-slate-700 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest border border-slate-700 active:scale-95 transition-all shadow-lg">
+        <button onclick="volverAlPortal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest border border-slate-700 active:scale-95 transition-all shadow-lg">
             Volver al Portal
         </button>
 
@@ -59,5 +59,19 @@
         </p>
     </footer>
 
+    <script>
+        function volverAlPortal() {
+            // Leer los parámetros de la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const tipoUsuario = urlParams.get('tipo');
+
+            // Redirigir según el tipo
+            if (tipoUsuario === 'personal') {
+                window.location.href = 'personal.html'; // Cambia esto si el archivo se llama diferente
+            } else {
+                window.location.href = 'portal.html';
+            }
+        }
+    </script>
 </body>
 </html>

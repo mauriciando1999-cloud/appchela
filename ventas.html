@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Historial de Ventas | Chela Sport 1972</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; overflow-x: hidden; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); }
+    </style>
+</head>
+<body class="pb-24 selection:bg-indigo-500/30">
+
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 p-4 sticky top-0 z-30 shadow-sm flex justify-between items-center">
+        <h1 class="font-black text-white text-sm uppercase tracking-widest flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-indigo-500"></i> Historial y Reportes
+        </h1>
+        <button onclick="window.location.href='index.html'" class="text-slate-400 hover:text-white bg-slate-800 w-8 h-8 rounded-full flex justify-center items-center transition-all border border-slate-700 active:scale-90">
+            <i class="fa-solid fa-arrow-left text-xs"></i>
+        </button>
+    </header>
+
+    <main class="p-4 max-w-3xl mx-auto">
+        
+        <!-- PESTAÑAS -->
+        <div class="flex gap-2 bg-slate-900 p-2 rounded-3xl border border-slate-800 shadow-lg mb-6">
+            <button id="tab-global" onclick="cambiarPestana('global')" class="flex-1 py-3 rounded-[1.5rem] bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-md">
+                <i class="fa-solid fa-globe mr-1"></i> Global
+            </button>
+            <button id="tab-cliente" onclick="cambiarPestana('cliente')" class="flex-1 py-3 rounded-[1.5rem] text-slate-400 hover:text-white hover:bg-slate-800 font-black text-[10px] uppercase tracking-widest transition-all">
+                <i class="fa-solid fa-user-tag mr-1"></i> Por Cliente
+            </button>
+        </div>
+
+        <!-- VISTA 1: HISTORIAL GLOBAL -->
+        <div id="vista-global" class="space-y-4">
+            <div class="flex justify-between items-end mb-4 px-1">
+                <div>
+                    <h2 class="text-xs font-black uppercase text-slate-400 tracking-widest">Últimas 50 transacciones</h2>
+                </div>
+                <button onclick="cargarVentasGlobales()" class="text-indigo-400 text-[10px] font-black uppercase tracking-widest active:scale-95"><i class="fa-solid fa-rotate mr-1"></i> Refrescar</button>
+            </div>
+            <div id="lista-global" class="space-y-3">
+                <!-- Se inyecta por JS -->
+            </div>
+        </div>
+
+        <!-- VISTA 2: POR CLIENTE Y WHATSAPP -->
+        <div id="vista-cliente" class="hidden space-y-4">
+            
+            <!-- Buscador de clientes -->
+            <div class="relative mb-4">
+                <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                <input type="text" id="search-cliente" oninput="buscarClientes()" placeholder="Buscar alumno o personal..." class="w-full bg-slate-900 border border-slate-800 py-4 pl-12 pr-4 rounded-2xl outline-none focus:border-indigo-500 text-sm shadow-inner transition-colors text-white">
+            </div>
+
+            <!-- Resultados de búsqueda -->
+            <div id="resultados-busqueda" class="space-y-2 mb-6 max-h-48 overflow-y-auto no-scrollbar hidden bg-slate-900/50 p-2 rounded-2xl border border-slate-800"></div>
+
+            <!-- Panel del Cliente Seleccionado -->
+            <div id="panel-cliente" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-indigo-500"></div>
+                
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <span id="badge-tipo" class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-[9px] font-black px-3 py-1 rounded-full uppercase italic mb-2 inline-block">Estudiante</span>
+                        <h2 id="cliente-nombre" class="text-xl font-black text-white uppercase tracking-tighter">Nombre Cliente</h2>
+                        <p id="cliente-rep" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Rep: --</p>
+                    </div>
+                    <button onclick="enviarReporteWhatsApp()" class="bg-emerald-600 hover:bg-emerald-500 text-white w-12 h-12 rounded-full flex justify-center items-center shadow-lg shadow-emerald-900/40 active:scale-90 transition-all">
+                        <i class="fa-brands fa-whatsapp text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-center">
+                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Comprado</p>
+                        <p id="cliente-total-usd" class="text-lg font-black text-emerald-400 mt-1">$0.00</p>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-center">
+                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Transacciones</p>
+                        <p id="cliente-total-tx" class="text-lg font-black text-indigo-400 mt-1">0</p>
+                    </div>
+                </div>
+
+                <h3 class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3 border-b border-slate-800 pb-2">Desglose de Consumos</h3>
+                <div id="lista-ventas-cliente" class="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                    <!-- Historial del cliente -->
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Navegación Inferior Estándar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 z-40 flex justify-around p-2 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
+        <a href="index.html" class="flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors"><i class="fa-solid fa-cash-register text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Venta</span></a>
+        <a href="stock.html" class="flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors"><i class="fa-solid fa-boxes-stacked text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Stock</span></a>
+        <a href="ventas.html" class="flex-1 flex flex-col items-center py-2 text-indigo-500 border-t-2 border-indigo-500"><i class="fa-solid fa-receipt text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Reportes</span></a>
+        <a href="cobranza.html" class="flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors"><i class="fa-solid fa-hand-holding-dollar text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Cobros</span></a>
+    </nav>
+
+    <script>
+        const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
+        const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
+        const _sb = supabase.createClient(SB_URL, SB_KEY);
+
+        let state = {
+            estudiantes: [],
+            personal: [],
+            clienteActual: null,
+            ventasClienteActual: []
+        };
+
+        window.onload = async () => {
+            const { data: { user } } = await _sb.auth.getUser();
+            if (!user) return window.location.href = 'index.html';
+            
+            cargarVentasGlobales();
+            cargarBasesDeDatos();
+        };
+
+        // --- NAVEGACIÓN TABS ---
+        function cambiarPestana(vista) {
+            const vGlobal = document.getElementById('vista-global');
+            const vCliente = document.getElementById('vista-cliente');
+            const tGlobal = document.getElementById('tab-global');
+            const tCliente = document.getElementById('tab-cliente');
+
+            if (vista === 'global') {
+                vGlobal.classList.remove('hidden');
+                vCliente.classList.add('hidden');
+                tGlobal.className = "flex-1 py-3 rounded-[1.5rem] bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-md";
+                tCliente.className = "flex-1 py-3 rounded-[1.5rem] text-slate-400 hover:text-white hover:bg-slate-800 font-black text-[10px] uppercase tracking-widest transition-all";
+            } else {
+                vGlobal.classList.add('hidden');
+                vCliente.classList.remove('hidden');
+                tCliente.className = "flex-1 py-3 rounded-[1.5rem] bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-md";
+                tGlobal.className = "flex-1 py-3 rounded-[1.5rem] text-slate-400 hover:text-white hover:bg-slate-800 font-black text-[10px] uppercase tracking-widest transition-all";
+            }
+        }
+
+        // --- CARGA DE DATOS ---
+        async function cargarBasesDeDatos() {
+            const [e, p] = await Promise.all([
+                _sb.from('estudiantes').select('*').order('name'),
+                _sb.from('personal').select('*').order('name')
+            ]);
+            state.estudiantes = e.data || [];
+            state.personal = p.data || [];
+        }
+
+        async function cargarVentasGlobales() {
+            const lista = document.getElementById('lista-global');
+            lista.innerHTML = '<div class="text-center py-10"><i class="fa-solid fa-circle-notch fa-spin text-indigo-500 text-3xl"></i></div>';
+
+            const { data, error } = await _sb.from('ventas')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error || !data || data.length === 0) {
+                lista.innerHTML = '<p class="text-center text-slate-500 font-bold text-xs uppercase">No hay ventas registradas</p>';
+                return;
+            }
+
+            lista.innerHTML = data.map(v => generarTarjetaVenta(v)).join('');
+        }
+
+        // --- LÓGICA DE BÚSQUEDA POR CLIENTE ---
+        function normalizar(texto) {
+            return (texto || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        function buscarClientes() {
+            const q = normalizar(document.getElementById('search-cliente').value.trim());
+            const contenedor = document.getElementById('resultados-busqueda');
+            
+            if (q.length < 2) {
+                contenedor.classList.add('hidden');
+                return;
+            }
+
+            const estFilt = state.estudiantes.filter(e => normalizar(e.name).includes(q) || normalizar(e.representante).includes(q)).slice(0, 3);
+            const perFilt = state.personal.filter(p => normalizar(p.name).includes(q)).slice(0, 2);
+
+            if (estFilt.length === 0 && perFilt.length === 0) {
+                contenedor.classList.add('hidden');
+                return;
+            }
+
+            contenedor.classList.remove('hidden');
+            let html = '';
+            
+            estFilt.forEach(e => {
+                html += `
+                <div onclick="seleccionarCliente('${e.id}', '${e.name.replace(/'/g, "\\'")}', 'estudiante', '${e.representante || ''}', '${e.phone || ''}')" 
+                     class="bg-indigo-950/40 p-3 rounded-xl border border-indigo-500/30 flex justify-between items-center cursor-pointer hover:bg-indigo-900/40 transition-colors mb-2">
+                    <div>
+                        <p class="text-xs font-black uppercase text-indigo-100"><i class="fa-solid fa-graduation-cap text-indigo-400 mr-1"></i> ${e.name}</p>
+                        <p class="text-[9px] text-indigo-300/70 font-bold">Rep: ${e.representante || 'N/A'}</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-indigo-500"></i>
+                </div>`;
+            });
+
+            perFilt.forEach(p => {
+                html += `
+                <div onclick="seleccionarCliente('${p.id}', '${p.name.replace(/'/g, "\\'")}', 'personal', '', '${p.phone || ''}')" 
+                     class="bg-emerald-950/40 p-3 rounded-xl border border-emerald-500/30 flex justify-between items-center cursor-pointer hover:bg-emerald-900/40 transition-colors mb-2">
+                    <div>
+                        <p class="text-xs font-black uppercase text-emerald-100"><i class="fa-solid fa-user-tie text-emerald-400 mr-1"></i> ${p.name}</p>
+                        <p class="text-[9px] text-emerald-300/70 font-bold">Personal</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-emerald-500"></i>
+                </div>`;
+            });
+
+            contenedor.innerHTML = html;
+        }
+
+        async function seleccionarCliente(id, nombre, tipo, representante, telefono) {
+            // Limpiar buscador
+            document.getElementById('search-cliente').value = '';
+            document.getElementById('resultados-busqueda').classList.add('hidden');
+            
+            // Guardar estado
+            state.clienteActual = { id, nombre, tipo, representante, telefono };
+            
+            // Actualizar UI del Panel
+            document.getElementById('panel-cliente').classList.remove('hidden');
+            document.getElementById('badge-tipo').innerText = tipo;
+            document.getElementById('cliente-nombre').innerText = nombre;
+            document.getElementById('cliente-rep').innerText = tipo === 'estudiante' ? `Rep: ${representante}` : `Contacto: ${telefono || 'Sin registrar'}`;
+            
+            const listaVentas = document.getElementById('lista-ventas-cliente');
+            listaVentas.innerHTML = '<div class="text-center py-4"><i class="fa-solid fa-circle-notch fa-spin text-indigo-500"></i></div>';
+
+            // Buscar compras en Supabase
+            let query = _sb.from('ventas').select('*').order('created_at', { ascending: false }).limit(20);
+            
+            // El POS guarda el nombre exacto en estudiante_nombre o el ID en personal_id
+            if (tipo === 'estudiante') query = query.eq('estudiante_nombre', nombre);
+            if (tipo === 'personal') query = query.eq('personal_id', id);
+
+            const { data, error } = await query;
+
+            if (error || !data || data.length === 0) {
+                document.getElementById('cliente-total-usd').innerText = '$0.00';
+                document.getElementById('cliente-total-tx').innerText = '0';
+                listaVentas.innerHTML = '<p class="text-[10px] text-slate-500 text-center font-bold uppercase py-4">No hay historial de compras.</p>';
+                state.ventasClienteActual = [];
+                return;
+            }
+
+            state.ventasClienteActual = data;
+            
+            // Calcular totales
+            const totalComprado = data.reduce((sum, v) => sum + parseFloat(v.total_usd || 0), 0);
+            document.getElementById('cliente-total-usd').innerText = `$${totalComprado.toFixed(2)}`;
+            document.getElementById('cliente-total-tx').innerText = data.length;
+
+            // Renderizar lista
+            listaVentas.innerHTML = data.map(v => generarTarjetaVenta(v, true)).join('');
+        }
+
+        // --- ENVIAR REPORTE POR WHATSAPP ---
+        function enviarReporteWhatsApp() {
+            const cliente = state.clienteActual;
+            const ventas = state.ventasClienteActual;
+
+            if (!cliente) return alert("Selecciona un cliente primero.");
+            if (!cliente.telefono) return alert("❌ Este cliente no tiene un número de teléfono registrado en la base de datos.");
+            if (ventas.length === 0) return alert("No hay consumos para reportar.");
+
+            // Formatear Teléfono (+58)
+            let phoneClean = cliente.telefono.replace(/\D/g, '');
+            if (phoneClean.startsWith('0')) phoneClean = '58' + phoneClean.substring(1);
+            else if (!phoneClean.startsWith('58') && phoneClean.length === 10) phoneClean = '58' + phoneClean;
+
+            // Construir Mensaje
+            const saludo = cliente.tipo === 'estudiante' 
+                ? `Hola *${cliente.representante}*, te saludamos de la administración de *Chela Sport 1972*. 🎒\n\nTe compartimos el historial reciente de consumos de tu representado *${cliente.nombre}*:\n`
+                : `Hola *${cliente.nombre}*, te saludamos de la administración de *Chela Sport 1972*. 💼\n\nTe compartimos tu historial reciente de consumos:\n`;
+
+            let detalleVentas = '';
+            let totalAcumulado = 0;
+            
+            // Tomamos las últimas 5 compras para no saturar el mensaje de WhatsApp
+            const comprasMostrar = ventas.slice(0, 5); 
+
+            comprasMostrar.forEach(v => {
+                const fecha = new Date(v.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' });
+                const monto = parseFloat(v.total_usd).toFixed(2);
+                totalAcumulado += parseFloat(v.total_usd);
+                
+                let resumenItems = 'Consumo general';
+                if (v.items && Array.isArray(v.items)) {
+                    resumenItems = v.items.map(i => `${i.qty}x ${i.name}`).join(', ');
+                }
+                
+                detalleVentas += `\n🗓️ *${fecha}* - $${monto}\n🛒 _${resumenItems}_\n`;
+            });
+
+            const pie = `\n🧾 *Total del periodo mostrado:* $${totalAcumulado.toFixed(2)}\n\nPuedes ver el detalle completo en cualquier momento ingresando a tu Portal Familiar.\n¡Feliz día!`;
+
+            const mensajeFinal = encodeURIComponent(saludo + detalleVentas + pie);
+            const urlWa = `https://wa.me/${phoneClean}?text=${mensajeFinal}`;
+
+            window.open(urlWa, '_blank');
+        }
+
+        // --- UTILIDADES UI ---
+        function generarTarjetaVenta(v, modoCompacto = false) {
+            const fecha = new Date(v.created_at).toLocaleString('es-VE', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
+            const monto = parseFloat(v.total_usd).toFixed(2);
+            let detalles = "Productos varios";
+            if (v.items && Array.isArray(v.items)) {
+                detalles = v.items.map(i => `<span class="font-bold text-slate-300">${i.qty}x</span> ${i.name}`).join(', ');
+            }
+            
+            const badgeMetodo = v.metodo_pago === 'CREDITO' 
+                ? '<span class="text-indigo-400 bg-indigo-400/10 border border-indigo-500/20 px-2 py-0.5 rounded-md text-[8px] font-black uppercase">Crédito</span>'
+                : `<span class="text-emerald-400 bg-emerald-400/10 border border-emerald-500/20 px-2 py-0.5 rounded-md text-[8px] font-black uppercase">${v.metodo_pago.replace('_',' ')}</span>`;
+
+            if (modoCompacto) {
+                return `
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 shadow-sm">
+                    <div class="flex justify-between items-start mb-1">
+                        <p class="text-[9px] font-bold text-slate-500">${fecha}</p>
+                        <p class="text-xs font-black text-white">$${monto}</p>
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-tight mb-2">${detalles}</p>
+                    ${badgeMetodo}
+                </div>`;
+            }
+
+            const nombre = v.estudiante_nombre || 'Venta Mostrador';
+            return `
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-sm">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <p class="text-xs font-black text-white uppercase">${nombre}</p>
+                        <p class="text-[9px] font-bold text-slate-500 mt-0.5">${fecha}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-lg font-black text-emerald-400 leading-none">$${monto}</p>
+                        <div class="mt-1">${badgeMetodo}</div>
+                    </div>
+                </div>
+                <div class="text-[10px] text-slate-400 leading-relaxed bg-slate-950 p-2 rounded-xl border border-slate-800/50">
+                    ${detalles}
+                </div>
+            </div>`;
+        }
+    </script>
+</body>
+</html>

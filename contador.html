@@ -8,11 +8,21 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #f8fafc; font-family: 'Inter', sans-serif; color: #1e293b; }
         .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
         .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        /* Magia para exportar a PDF / Imprimir limpio */
+        @media print {
+            body { background: white; }
+            .no-print, button, input { display: none !important; }
+            .card-shadow { box-shadow: none; border: 1px solid #e2e8f0; margin-bottom: 20px;}
+            header { background: white !important; color: black !important; border: 2px solid black; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-8">
@@ -46,7 +56,10 @@
                     <h3 class="text-[11px] font-black uppercase text-slate-400 tracking-widest">Disponibilidad y Conciliación</h3>
                     <p class="text-[10px] font-bold text-slate-300 uppercase">Verifica tus cuentas reales antes de pagar</p>
                 </div>
-                <div class="flex space-x-2">
+                <div class="flex flex-wrap gap-2 no-print">
+                    <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                        <i class="fa-solid fa-print"></i>
+                    </button>
                     <button onclick="actualizarSaldosSistema()" id="btn-sync-saldos" class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
                         <i class="fa-solid fa-rotate"></i>
                     </button>
@@ -64,7 +77,7 @@
                             <span class="text-[10px] font-black uppercase text-slate-400">Efectivo Físico ($)</span>
                         </div>
                         <div class="space-y-2 mb-4">
-                            <div class="flex justify-between text-xs"><span class="text-slate-400">Sistema:</span> <span id="sys-cash" class="font-bold text-lg">$0.00</span></div>
+                            <div class="flex justify-between text-xs"><span class="text-slate-400">Sistema:</span> <span id="sys-cash" class="font-bold text-lg text-slate-700">$0.00</span></div>
                         </div>
                     </div>
                     <div>
@@ -112,24 +125,34 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="bg-white p-8 rounded-[2.5rem] card-shadow border border-slate-100 flex flex-col">
-                <h3 class="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-6"><i class="fa-solid fa-chart-pie mr-2"></i>Utilidad Neta (Mensual)</h3>
-                <div class="space-y-6 flex-1">
+            <div class="bg-white p-8 rounded-[2.5rem] card-shadow border border-slate-100 flex flex-col relative overflow-hidden">
+                <h3 class="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-6 relative z-10"><i class="fa-solid fa-chart-pie mr-2 text-indigo-500"></i>Estado de Resultados</h3>
+                <div class="space-y-6 flex-1 relative z-10">
                     <div>
                         <span class="text-[10px] font-black text-slate-400 uppercase block mb-1">Ventas Brutas</span>
                         <div id="ventas-brutas" class="text-3xl font-black text-slate-800 tracking-tight">$0.00</div>
                     </div>
                     <div>
-                        <span class="text-[10px] font-black text-slate-400 uppercase block mb-1">Costo de Ventas</span>
+                        <span class="text-[10px] font-black text-slate-400 uppercase block mb-1">Costo de Insumos</span>
                         <div id="costo-insumos" class="text-xl font-bold text-red-500">-$0.00</div>
                     </div>
                     <div>
-                        <span class="text-[10px] font-black text-slate-400 uppercase block mb-1">Gastos Operativos (Fijos)</span>
-                        <div id="gastos-fijos" class="text-xl font-bold text-slate-400">-$855.00</div>
+                        <span class="text-[10px] font-black text-slate-400 uppercase block mb-1">Gastos Fijos y Facturas</span>
+                        <div id="gastos-fijos" class="text-xl font-bold text-orange-400">-$855.00</div>
                     </div>
                     <div class="pt-6 border-t border-dashed border-slate-200 mt-auto">
-                        <span class="text-[11px] font-black text-emerald-600 uppercase block mb-1">Utilidad Final</span>
+                        <span class="text-[11px] font-black text-emerald-600 uppercase block mb-1">Utilidad Neta</span>
                         <div id="utilidad-neta" class="text-4xl font-black text-emerald-500 tracking-tighter">$0.00</div>
+                        
+                        <div class="mt-4 no-print">
+                            <div class="flex justify-between text-[9px] font-black uppercase text-slate-400 mb-1">
+                                <span>Margen Operativo</span>
+                                <span id="margen-porcentaje">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                <div id="margen-barra" class="bg-emerald-500 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -139,8 +162,8 @@
                     <div>
                         <h3 class="text-[11px] font-black uppercase text-slate-400 tracking-widest">Facturas y Compromisos</h3>
                     </div>
-                    <button onclick="mostrarModalFactura()" class="bg-slate-900 hover:bg-indigo-600 text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
-                        <i class="fa-solid fa-file-invoice-dollar mr-2"></i>Nueva Factura
+                    <button onclick="mostrarModalFactura()" class="bg-slate-900 hover:bg-indigo-600 text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all no-print">
+                        <i class="fa-solid fa-plus mr-2"></i>Registrar
                     </button>
                 </div>
                 <div class="overflow-x-auto">
@@ -155,13 +178,13 @@
                         </thead>
                         <tbody id="lista-facturas" class="divide-y divide-slate-50"></tbody>
                     </table>
-                    <div id="empty-state" class="hidden py-12 text-center text-slate-300 uppercase text-xs font-bold">Sin facturas</div>
+                    <div id="empty-state" class="hidden py-12 text-center text-slate-300 uppercase text-xs font-bold">Sin facturas registradas</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="modal-factura" class="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-6 hidden">
+    <div id="modal-factura" class="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-6 hidden no-print">
         <div class="bg-white w-full max-w-lg rounded-[3rem] overflow-hidden shadow-2xl">
             <div class="bg-slate-900 p-8 text-white flex justify-between items-center">
                 <h2 class="text-xl font-black uppercase italic">Registrar Factura</h2>
@@ -181,7 +204,7 @@
         </div>
     </div>
 
-    <div id="modal-asistente-pago" class="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-asistente-pago" class="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-4 hidden no-print">
         <div class="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div class="bg-indigo-600 p-8 text-white flex justify-between items-center">
                 <div>
@@ -189,7 +212,6 @@
                     <p class="text-xs font-bold text-indigo-200 mt-1 flex items-baseline">
                         Fondos declarados: 
                         <span id="pago-fondos" class="text-emerald-300 font-black text-lg mx-2">$0.00</span>
-                        <span id="pago-fondos-bs" class="text-indigo-300 font-bold text-xs opacity-80">(0.00 Bs)</span>
                     </p>
                 </div>
                 <button onclick="cerrarAsistentePago()" class="text-indigo-200 hover:text-white text-4xl">&times;</button>
@@ -197,8 +219,7 @@
             
             <div class="p-6 overflow-y-auto flex-1 bg-slate-50 custom-scrollbar">
                 <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Selecciona facturas a pagar:</h3>
-                <div id="lista-pago-facturas" class="space-y-3">
-                    </div>
+                <div id="lista-pago-facturas" class="space-y-3"></div>
             </div>
             
             <div class="bg-white p-6 border-t border-slate-200 flex justify-between items-center">
@@ -215,9 +236,10 @@
             </div>
         </div>
     </div>
+
     <script>
         // ==========================================
-        // 1. CONFIGURACIÓN Y ESTADO GLOBAL
+        // 1. CONFIGURACIÓN
         // ==========================================
         const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
         const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
@@ -230,17 +252,10 @@
             try {
                 const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
                 const data = await res.json();
-                if (data && data.promedio) {
-                    state.tasa = parseFloat(data.promedio);
-                }
-            } catch (e) { 
-                console.warn("Fallo DolarAPI en contador, usando tasa local de respaldo."); 
-            }
+                if (data && data.promedio) state.tasa = parseFloat(data.promedio);
+            } catch (e) { console.warn("Fallo DolarAPI"); }
         }
 
-        // ==========================================
-        // 2. INICIALIZACIÓN (ARRANQUE)
-        // ==========================================
         window.onload = async () => {
             await getBCV(); 
             await detectarTendenciaDolar(); 
@@ -249,54 +264,52 @@
         };
 
         // ==========================================
-        // 3. MÓDULO: CONCILIACIÓN BANCARIA Y DIVISAS
+        // 2. CONCILIACIÓN Y CORRECCIÓN DE BUG
         // ==========================================
         async function actualizarSaldosSistema() {
             const btn = document.getElementById('btn-sync-saldos');
-            if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Calculando...';
+            if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             
             try {
-                await getBCV(); // Refresca la tasa
-                // Dentro de actualizarSaldosSistema():
-const { data: ventas } = await _sb
-    .from('ventas')
-    .select('total_usd, metodo_pago')
-    .eq('status', 'completada'); // <-- SOLO SUMAMOS LO VERIFICADOconst { data: ventas } = await _sb.from('ventas').select('total_usd, metodo_pago');
+                await getBCV(); 
+                
+                // BUG ARREGLADO: Consulta limpia y directa a Supabase
+                const { data: ventas, error } = await _sb
+                    .from('ventas')
+                    .select('total_usd, metodo_pago')
+                    .eq('status', 'completado'); // Se suma solo lo pagado/completado
+
+                if(error) throw error;
                 
                 let tCash = 0, tBanescoUsd = 0, tExteriorUsd = 0;
 
                 if (ventas) {
                     ventas.forEach(v => {
                         const monto = parseFloat(v.total_usd) || 0;
-                        if(v.metodo_pago === 'USD') tCash += monto;
-                        if(v.metodo_pago === 'BS') tBanescoUsd += monto;
+                        if(v.metodo_pago === 'EFECTIVO' || v.metodo_pago === 'USD') tCash += monto;
+                        if(v.metodo_pago === 'PAGO_MOVIL' || v.metodo_pago === 'BS') tBanescoUsd += monto;
                         if(v.metodo_pago === 'PUNTO') tExteriorUsd += monto;
                     });
                 }
 
-                // Inyectamos en el HTML
                 document.getElementById('sys-cash').innerText = `$${tCash.toFixed(2)}`;
                 document.getElementById('sys-banesco-bs').innerText = `${(tBanescoUsd * state.tasa).toLocaleString('es-VE')} Bs`;
                 document.getElementById('sys-banesco-usd').innerText = `${tBanescoUsd.toFixed(2)} USD`;
                 document.getElementById('sys-exterior-bs').innerText = `${(tExteriorUsd * state.tasa).toLocaleString('es-VE')} Bs`;
                 document.getElementById('sys-exterior-usd').innerText = `${tExteriorUsd.toFixed(2)} USD`;
 
-                // Guardamos en memoria
                 window.saldosSys = { 
                     cash: tCash, 
                     banesco: tBanescoUsd * state.tasa, 
                     exterior: tExteriorUsd * state.tasa 
                 };
 
-                // Actualizamos las diferencias si ya había números
-                checkDiferencia('cash');
-                checkDiferencia('banesco');
-                checkDiferencia('exterior');
+                ['cash', 'banesco', 'exterior'].forEach(checkDiferencia);
 
                 if(btn) btn.innerHTML = '<i class="fa-solid fa-rotate"></i>';
             } catch (err) {
                 console.error(err);
-                if(btn) btn.innerHTML = '<i class="fa-solid fa-rotate mr-2"></i>Error (Reintentar)';
+                if(btn) btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-red-400"></i>';
             }
         }
 
@@ -308,7 +321,6 @@ const { data: ventas } = await _sb
             if(!input || !diffEl) return;
 
             const realText = input.value;
-            
             if (realText === "") {
                 diffEl.classList.add('hidden');
                 if(previewEl) previewEl.classList.add('hidden');
@@ -319,7 +331,6 @@ const { data: ventas } = await _sb
             const sys = window.saldosSys[cuenta] || 0;
             const diferencia = real - sys;
 
-            // Mostrar Dólares Reales de lo que escribe el usuario
             if(cuenta === 'banesco' || cuenta === 'exterior') {
                 if(previewEl) {
                     const equivUsd = real / state.tasa;
@@ -328,11 +339,12 @@ const { data: ventas } = await _sb
                 }
             }
             
-            // Mostrar Diferencia de Cuadre
             diffEl.classList.remove('hidden');
-            if (Math.abs(diferencia) < 0.10) {
-                diffEl.innerText = "CUADRADO ✅";
-                diffEl.className = "text-[9px] font-black uppercase text-center py-2 rounded-lg bg-emerald-100 text-emerald-600 mt-2 block";
+            
+            // LA SORPRESA: Efecto de Cuadre Perfecto
+            if (Math.abs(diferencia) <= 0.5) {
+                diffEl.innerHTML = "<i class='fa-solid fa-certificate mr-1'></i> CUADRE PERFECTO";
+                diffEl.className = "text-[9px] font-black uppercase text-center py-2 rounded-lg bg-emerald-500 text-white mt-2 block shadow-lg shadow-emerald-500/40 animate-pulse";
             } else {
                 const sign = diferencia > 0 ? "+" : "";
                 diffEl.innerText = `Diferencia: ${sign}${diferencia.toFixed(2)}`;
@@ -341,7 +353,7 @@ const { data: ventas } = await _sb
         }
 
         // ==========================================
-        // 4. MÓDULO: REGISTRO FACTURAS SIMPLES
+        // 3. MÓDULO: REGISTRO FACTURAS
         // ==========================================
         function mostrarModalFactura() { document.getElementById('modal-factura').classList.remove('hidden'); }
         function cerrarModalFactura() { document.getElementById('modal-factura').classList.add('hidden'); }
@@ -349,8 +361,7 @@ const { data: ventas } = await _sb
         async function guardarFactura(e) {
             e.preventDefault();
             const btn = e.target.querySelector('button');
-            btn.innerText = "REGISTRANDO...";
-            btn.disabled = true;
+            btn.innerText = "REGISTRANDO..."; btn.disabled = true;
 
             const factura = {
                 proveedor: document.getElementById('f-proveedor').value,
@@ -362,16 +373,11 @@ const { data: ventas } = await _sb
             };
 
             const { error } = await _sb.from('facturas').insert([factura]);
-            if (error) {
-                alert("Error: " + error.message);
-            } else {
-                alert("Factura registrada ✅");
-                e.target.reset();
-                cerrarModalFactura();
-                renderContador();
-            }
-            btn.innerText = "Registrar Obligación";
-            btn.disabled = false;
+            if (!error) {
+                e.target.reset(); cerrarModalFactura(); renderContador();
+            } else alert("Error: " + error.message);
+            
+            btn.innerText = "Registrar Obligación"; btn.disabled = false;
         }
 
         async function renderContador() {
@@ -380,8 +386,7 @@ const { data: ventas } = await _sb
             const emptyState = document.getElementById('empty-state');
 
             if (!facturas || facturas.length === 0) {
-                tabla.innerHTML = "";
-                emptyState.classList.remove('hidden');
+                tabla.innerHTML = ""; emptyState.classList.remove('hidden');
             } else {
                 emptyState.classList.add('hidden');
                 tabla.innerHTML = facturas.map(f => `
@@ -390,9 +395,10 @@ const { data: ventas } = await _sb
                         <td class="py-4 font-mono font-bold">$${parseFloat(f.monto_usd).toFixed(2)}</td>
                         <td class="py-4 text-slate-400">${f.fecha_vencimiento}</td>
                         <td class="py-4 text-right">
-                            <button onclick="cambiarEstadoFactura(${f.id}, '${f.status}')" class="px-3 py-1 rounded-full text-[9px] font-black uppercase active:scale-95 transition-all ${f.status === 'pagado' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}">
+                            <button onclick="cambiarEstadoFactura(${f.id}, '${f.status}')" class="px-3 py-1 rounded-full text-[9px] font-black uppercase active:scale-95 transition-all ${f.status === 'pagado' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'} no-print">
                                 ${f.status}
                             </button>
+                            <span class="hidden print:inline font-bold ${f.status === 'pagado' ? 'text-emerald-600' : 'text-slate-400'}">${f.status.toUpperCase()}</span>
                         </td>
                     </tr>
                 `).join('');
@@ -406,135 +412,39 @@ const { data: ventas } = await _sb
             renderContador(); 
         }
 
-        /// ==========================================
-        // 5. ASISTENTE DE LIQUIDACIÓN DE PAGOS
         // ==========================================
-        async function abrirAsistentePago() {
-            const rCash = parseFloat(document.getElementById('real-cash').value) || 0;
-            const rBan = parseFloat(document.getElementById('real-banesco').value) || 0;
-            const rExt = parseFloat(document.getElementById('real-exterior').value) || 0;
-
-            const fondosUsdTotales = rCash + (rBan / state.tasa) + (rExt / state.tasa);
-
-            if(fondosUsdTotales <= 0) {
-                alert("⚠️ Primero escribe tus saldos reales en las tarjetas de bancos para saber con cuánto dinero cuentas.");
-                return;
-            }
-
-            // Inyectamos dólares y su equivalente en Bs en el encabezado
-            document.getElementById('pago-fondos').innerText = `$${fondosUsdTotales.toFixed(2)}`;
-            document.getElementById('pago-fondos-bs').innerText = `(${(fondosUsdTotales * state.tasa).toLocaleString('es-VE')} Bs)`;
-            
-            document.getElementById('modal-asistente-pago').classList.remove('hidden');
-
-            const lista = document.getElementById('lista-pago-facturas');
-            lista.innerHTML = '<p class="text-center text-slate-400 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></p>';
-
-            const { data: pendientes } = await _sb.from('facturas').select('*').eq('status', 'pendiente').order('fecha_vencimiento', { ascending: true });
-
-            if(!pendientes || pendientes.length === 0) {
-                lista.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-glass-cheers text-4xl text-emerald-300 mb-2"></i><p class="text-slate-500 font-black uppercase text-xs">No hay deudas pendientes</p></div>';
-                document.getElementById('btn-procesar-pago').disabled = true;
-                return;
-            }
-
-            document.getElementById('btn-procesar-pago').disabled = false;
-
-            lista.innerHTML = pendientes.map(f => `
-                <label class="flex items-center justify-between p-5 bg-white border-2 border-transparent shadow-sm rounded-[1.5rem] cursor-pointer hover:border-indigo-500 transition-all group">
-                    <div class="flex items-center space-x-4">
-                        <input type="checkbox" value="${f.id}" data-monto="${f.monto_usd}" onchange="recalcularPagoFacturas()" class="w-6 h-6 text-indigo-600 rounded-xl border-slate-300 focus:ring-indigo-500">
-                        <div>
-                            <p class="font-black text-slate-800 uppercase text-sm group-hover:text-indigo-600 transition-colors">${f.proveedor}</p>
-                            <p class="text-[10px] text-slate-400 font-bold uppercase">${f.concepto} &bull; Vence: ${f.fecha_vencimiento}</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <span class="font-black text-slate-800 text-lg block">$${parseFloat(f.monto_usd).toFixed(2)}</span>
-                        <span class="text-[10px] font-bold text-slate-400">${(parseFloat(f.monto_usd) * state.tasa).toLocaleString('es-VE')} Bs</span>
-                    </div>
-                </label>
-            `).join('');
-
-            recalcularPagoFacturas();
-        }
-
-        function cerrarAsistentePago() { document.getElementById('modal-asistente-pago').classList.add('hidden'); }
-
-        function recalcularPagoFacturas() {
-            const checkboxes = document.querySelectorAll('#lista-pago-facturas input[type="checkbox"]:checked');
-            let totalSelec = 0;
-            
-            checkboxes.forEach(cb => { totalSelec += parseFloat(cb.getAttribute('data-monto')); });
-            
-            const btn = document.getElementById('btn-procesar-pago');
-            const totalTxt = document.getElementById('pago-total-sel');
-            const totalTxtBs = document.getElementById('pago-total-sel-bs'); // Nuevo elemento para Bs
-            const fondos = parseFloat(document.getElementById('pago-fondos').innerText.replace('$',''));
-            
-            // Calculamos e inyectamos USD y Bs
-            totalTxt.innerText = `$${totalSelec.toFixed(2)}`;
-            totalTxtBs.innerText = `(${(totalSelec * state.tasa).toLocaleString('es-VE')} Bs)`;
-            
-            if(totalSelec > fondos) {
-                totalTxt.classList.replace('text-slate-800', 'text-red-500');
-                totalTxtBs.classList.replace('text-slate-400', 'text-red-400');
-                btn.innerHTML = 'FONDOS INSUFICIENTES ❌';
-                btn.classList.replace('bg-slate-900', 'bg-red-500');
-                btn.disabled = true;
-            } else {
-                totalTxt.classList.replace('text-red-500', 'text-slate-800');
-                totalTxtBs.classList.replace('text-red-400', 'text-slate-400');
-                btn.innerHTML = `Liquidar $${totalSelec.toFixed(2)} ✅`;
-                btn.classList.replace('bg-red-500', 'bg-slate-900');
-                btn.disabled = totalSelec === 0;
-            }
-        }
-
-        async function procesarPagoSeleccionadas() {
-            const checkboxes = document.querySelectorAll('#lista-pago-facturas input[type="checkbox"]:checked');
-            const idsPagados = Array.from(checkboxes).map(cb => cb.value);
-            
-            if(idsPagados.length === 0) return;
-
-            const btn = document.getElementById('btn-procesar-pago');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> PROCESANDO...';
-            btn.disabled = true;
-
-            try {
-                const { error } = await _sb.from('facturas').update({ status: 'pagado' }).in('id', idsPagados);
-                if(error) throw error;
-
-                alert(`¡Excelente! Se liquidaron ${idsPagados.length} facturas. 🎉`);
-                cerrarAsistentePago();
-                
-                document.getElementById('real-cash').value = "";
-                document.getElementById('real-banesco').value = "";
-                document.getElementById('real-exterior').value = "";
-                ['cash', 'banesco', 'exterior'].forEach(checkDiferencia); 
-                
-                renderContador(); 
-            } catch (err) {
-                alert("Error al pagar: " + err.message);
-                btn.innerHTML = 'Reintentar Pago';
-                btn.disabled = false;
-            }
-        }
-
-        // ==========================================
-        // 6. MÓDULO: UTILIDAD Y ANÁLISIS BCV
+        // 4. MÓDULO: ANÁLISIS DE UTILIDAD Y SALUD
         // ==========================================
         async function actualizarCalculosContables(facturas) {
-            const { data: ventas } = await _sb.from('ventas').select('total_usd, ganancia_total');
+            const { data: ventas } = await _sb.from('ventas').select('total_usd, ganancia_total').eq('status', 'completado');
+            
             const ingresoBruto = ventas?.reduce((s, v) => s + parseFloat(v.total_usd), 0) || 0;
             const utilidadBruta = ventas?.reduce((s, v) => s + parseFloat(v.ganancia_total || 0), 0) || 0;
             const gastosFacturas = facturas.filter(f => f.status === 'pagado').reduce((s, f) => s + parseFloat(f.monto_usd), 0);
             
             const costosFijos = 855; 
+            const utilidadNetaFinal = utilidadBruta - costosFijos - gastosFacturas;
 
             document.getElementById('ventas-brutas').innerText = `$${ingresoBruto.toFixed(2)}`;
             document.getElementById('costo-insumos').innerText = `-$${(ingresoBruto - utilidadBruta).toFixed(2)}`;
-            document.getElementById('utilidad-neta').innerText = `$${(utilidadBruta - costosFijos - gastosFacturas).toFixed(2)}`;
+            
+            // Sumamos los gastos fijos + facturas para mostrar el global de gastos operativos
+            document.getElementById('gastos-fijos').innerText = `-$${(costosFijos + gastosFacturas).toFixed(2)}`;
+            document.getElementById('utilidad-neta').innerText = `$${utilidadNetaFinal.toFixed(2)}`;
+
+            // LA SORPRESA: Termómetro de Salud Financiera (Margen Operativo)
+            const margen = ingresoBruto > 0 ? (utilidadNetaFinal / ingresoBruto) * 100 : 0;
+            document.getElementById('margen-porcentaje').innerText = `${margen.toFixed(1)}%`;
+            
+            const barra = document.getElementById('margen-barra');
+            barra.style.width = `${Math.min(Math.max(margen, 0), 100)}%`;
+            
+            // Si el margen baja del 15%, alerta visual (se pone rojo)
+            if(margen < 15 && margen > 0) {
+                barra.classList.replace('bg-emerald-500', 'bg-red-500');
+            } else {
+                barra.classList.replace('bg-red-500', 'bg-emerald-500');
+            }
         }
 
         async function detectarTendenciaDolar() {
@@ -542,9 +452,7 @@ const { data: ventas } = await _sb
             const header = document.getElementById('pago-alerta');
             const texto = document.getElementById('recomendacion-texto');
             const icono = document.getElementById('tendencia-icono');
-            const tasaTxt = document.getElementById('tasa-actual');
-
-            tasaTxt.innerText = `Bs. ${actual.toFixed(2)}`;
+            document.getElementById('tasa-actual').innerText = `Bs. ${actual.toFixed(2)}`;
 
             try {
                 const { data: historial } = await _sb.from('historial_tasas').select('*').order('fecha', { ascending: false }).limit(1);
@@ -561,13 +469,92 @@ const { data: ventas } = await _sb
                         icono.innerHTML = '<i class="fa-solid fa-check-double"></i>';
                     }
                 }
+            } catch (error) { console.warn("Aviso:", error.message); }
+        }
 
-                await _sb.from('historial_tasas').upsert(
-                    { fecha: new Date().toISOString().split('T')[0], valor_bcv: actual },
-                    { onConflict: 'fecha' }
-                );
-            } catch (error) {
-                console.warn("Aviso Historial Tasas:", error.message);
+        // ==========================================
+        // 5. ASISTENTE DE PAGO
+        // ==========================================
+        async function abrirAsistentePago() {
+            const rCash = parseFloat(document.getElementById('real-cash').value) || 0;
+            const rBan = parseFloat(document.getElementById('real-banesco').value) || 0;
+            const rExt = parseFloat(document.getElementById('real-exterior').value) || 0;
+            const fondosUsdTotales = rCash + (rBan / state.tasa) + (rExt / state.tasa);
+
+            if(fondosUsdTotales <= 0) return alert("⚠️ Primero escribe tus saldos reales para saber con cuánto dinero cuentas.");
+
+            document.getElementById('pago-fondos').innerText = `$${fondosUsdTotales.toFixed(2)}`;
+            document.getElementById('modal-asistente-pago').classList.remove('hidden');
+
+            const lista = document.getElementById('lista-pago-facturas');
+            lista.innerHTML = '<p class="text-center text-slate-400 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl"></i></p>';
+
+            const { data: pendientes } = await _sb.from('facturas').select('*').eq('status', 'pendiente').order('fecha_vencimiento', { ascending: true });
+
+            if(!pendientes || pendientes.length === 0) {
+                lista.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-glass-cheers text-4xl text-emerald-300 mb-2"></i><p class="text-slate-500 font-black uppercase text-xs">No hay deudas</p></div>';
+                document.getElementById('btn-procesar-pago').disabled = true;
+                return;
+            }
+
+            document.getElementById('btn-procesar-pago').disabled = false;
+            lista.innerHTML = pendientes.map(f => `
+                <label class="flex items-center justify-between p-5 bg-white border-2 border-transparent shadow-sm rounded-[1.5rem] cursor-pointer hover:border-indigo-500 transition-all group">
+                    <div class="flex items-center space-x-4">
+                        <input type="checkbox" value="${f.id}" data-monto="${f.monto_usd}" onchange="recalcularPagoFacturas()" class="w-6 h-6 text-indigo-600 rounded-xl border-slate-300">
+                        <div>
+                            <p class="font-black text-slate-800 uppercase text-sm">${f.proveedor}</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">${f.concepto}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-black text-slate-800 text-lg block">$${parseFloat(f.monto_usd).toFixed(2)}</span>
+                    </div>
+                </label>
+            `).join('');
+            recalcularPagoFacturas();
+        }
+
+        function cerrarAsistentePago() { document.getElementById('modal-asistente-pago').classList.add('hidden'); }
+
+        function recalcularPagoFacturas() {
+            const checkboxes = document.querySelectorAll('#lista-pago-facturas input[type="checkbox"]:checked');
+            let totalSelec = 0;
+            checkboxes.forEach(cb => { totalSelec += parseFloat(cb.getAttribute('data-monto')); });
+            
+            const btn = document.getElementById('btn-procesar-pago');
+            const totalTxt = document.getElementById('pago-total-sel');
+            const fondos = parseFloat(document.getElementById('pago-fondos').innerText.replace('$',''));
+            
+            totalTxt.innerText = `$${totalSelec.toFixed(2)}`;
+            document.getElementById('pago-total-sel-bs').innerText = `(${(totalSelec * state.tasa).toLocaleString('es-VE')} Bs)`;
+            
+            if(totalSelec > fondos) {
+                totalTxt.classList.replace('text-slate-800', 'text-red-500');
+                btn.innerHTML = 'FONDOS INSUFICIENTES ❌';
+                btn.classList.replace('bg-slate-900', 'bg-red-500'); btn.disabled = true;
+            } else {
+                totalTxt.classList.replace('text-red-500', 'text-slate-800');
+                btn.innerHTML = `Liquidar $${totalSelec.toFixed(2)} ✅`;
+                btn.classList.replace('bg-red-500', 'bg-slate-900'); btn.disabled = totalSelec === 0;
+            }
+        }
+
+        async function procesarPagoSeleccionadas() {
+            const checkboxes = document.querySelectorAll('#lista-pago-facturas input[type="checkbox"]:checked');
+            const idsPagados = Array.from(checkboxes).map(cb => cb.value);
+            if(idsPagados.length === 0) return;
+
+            const btn = document.getElementById('btn-procesar-pago');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> PROCESANDO...'; btn.disabled = true;
+
+            try {
+                await _sb.from('facturas').update({ status: 'pagado' }).in('id', idsPagados);
+                alert(`¡Excelente! Se liquidaron ${idsPagados.length} facturas. 🎉`);
+                cerrarAsistentePago(); renderContador(); 
+            } catch (err) {
+                alert("Error al pagar.");
+                btn.innerHTML = 'Reintentar'; btn.disabled = false;
             }
         }
     </script>

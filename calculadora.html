@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calculadora BCV | Chela Sport</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; overflow-x: hidden; }
+        /* Ocultar las flechitas de los inputs numéricos */
+        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+    </style>
+</head>
+<body class="selection:bg-emerald-500/30">
+
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 p-4 sticky top-0 z-30 shadow-sm flex justify-between items-center">
+        <h1 class="font-black text-white text-sm uppercase tracking-widest flex items-center gap-2">
+            <i class="fa-solid fa-calculator text-emerald-500"></i> Calculadora
+        </h1>
+        <button onclick="window.location.href='index.html'" class="text-slate-400 hover:text-white bg-slate-800 w-8 h-8 rounded-full flex justify-center items-center transition-all border border-slate-700 active:scale-90">
+            <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+    </header>
+
+    <main class="p-4 max-w-sm mx-auto mt-6">
+        
+        <!-- Tarjeta de la Tasa -->
+        <div class="bg-emerald-900/20 border border-emerald-500/30 p-6 rounded-[2rem] text-center mb-8 shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+            <p class="text-[10px] font-black uppercase text-emerald-400 tracking-widest mb-1">Tasa Oficial BCV</p>
+            <h2 id="tasa-display" class="text-4xl font-black text-white tracking-tighter">
+                <i class="fa-solid fa-circle-notch fa-spin text-emerald-500 text-2xl"></i>
+            </h2>
+        </div>
+
+        <!-- Controles Dinámicos -->
+        <div class="space-y-4">
+            
+            <!-- Input Dólares -->
+            <div class="relative group">
+                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-black text-slate-500 group-focus-within:text-emerald-400 transition-colors">$</div>
+                <input type="number" id="input-usd" oninput="calcularDesdeUSD()" placeholder="0.00" class="w-full bg-slate-900 border border-slate-800 py-6 pl-12 pr-12 rounded-[1.5rem] outline-none focus:border-emerald-500 text-3xl font-black text-white shadow-inner transition-colors">
+                <button onclick="copiarMonto('input-usd')" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white active:scale-90 p-2">
+                    <i class="fa-regular fa-copy"></i>
+                </button>
+                <div class="absolute -top-2 left-4 bg-[#020617] px-2 text-[9px] font-black uppercase tracking-widest text-slate-400">Dólares (USD)</div>
+            </div>
+
+            <!-- Ícono de conversión -->
+            <div class="flex justify-center py-2 opacity-50">
+                <i class="fa-solid fa-arrow-right-arrow-left fa-rotate-90 text-xl text-slate-500"></i>
+            </div>
+
+            <!-- Input Bolívares -->
+            <div class="relative group">
+                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-black text-slate-500 group-focus-within:text-cyan-400 transition-colors">Bs.</div>
+                <input type="number" id="input-bs" oninput="calcularDesdeBS()" placeholder="0.00" class="w-full bg-slate-900 border border-slate-800 py-6 pl-14 pr-12 rounded-[1.5rem] outline-none focus:border-cyan-500 text-3xl font-black text-white shadow-inner transition-colors">
+                <button onclick="copiarMonto('input-bs')" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white active:scale-90 p-2">
+                    <i class="fa-regular fa-copy"></i>
+                </button>
+                <div class="absolute -top-2 left-4 bg-[#020617] px-2 text-[9px] font-black uppercase tracking-widest text-slate-400">Bolívares (VES)</div>
+            </div>
+
+        </div>
+
+        <button onclick="limpiarCampos()" class="w-full mt-8 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs active:scale-95 transition-all">
+            <i class="fa-solid fa-eraser mr-2"></i> Limpiar Campos
+        </button>
+
+    </main>
+
+    <script>
+        let tasaActual = 0;
+
+        window.onload = async () => {
+            try {
+                const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+                const data = await res.json();
+                if (data && data.promedio) {
+                    tasaActual = parseFloat(data.promedio);
+                    document.getElementById('tasa-display').innerText = `Bs. ${tasaActual.toFixed(2)}`;
+                    
+                    // Si hacemos click y entra, enfocamos directamente el campo de USD
+                    document.getElementById('input-usd').focus();
+                }
+            } catch (e) {
+                document.getElementById('tasa-display').innerText = "Error API";
+                alert("No se pudo obtener la tasa oficial. Verifique su conexión.");
+            }
+        };
+
+        function calcularDesdeUSD() {
+            if (tasaActual === 0) return;
+            const inputUsd = document.getElementById('input-usd').value;
+            const inputBs = document.getElementById('input-bs');
+            
+            if (inputUsd === "") {
+                inputBs.value = "";
+                return;
+            }
+            
+            const usd = parseFloat(inputUsd);
+            inputBs.value = (usd * tasaActual).toFixed(2);
+        }
+
+        function calcularDesdeBS() {
+            if (tasaActual === 0) return;
+            const inputBs = document.getElementById('input-bs').value;
+            const inputUsd = document.getElementById('input-usd');
+            
+            if (inputBs === "") {
+                inputUsd.value = "";
+                return;
+            }
+            
+            const bs = parseFloat(inputBs);
+            inputUsd.value = (bs / tasaActual).toFixed(2);
+        }
+
+        function limpiarCampos() {
+            document.getElementById('input-usd').value = "";
+            document.getElementById('input-bs').value = "";
+            document.getElementById('input-usd').focus();
+        }
+
+        function copiarMonto(elementId) {
+            const monto = document.getElementById(elementId).value;
+            if (!monto) return;
+            
+            navigator.clipboard.writeText(monto).then(() => {
+                // Alerta visual súper rápida en el botón
+                const btn = event.currentTarget;
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check text-emerald-500"></i>';
+                setTimeout(() => btn.innerHTML = originalHTML, 1000);
+            });
+        }
+    </script>
+</body>
+</html>

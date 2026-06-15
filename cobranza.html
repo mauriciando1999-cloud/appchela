@@ -9,17 +9,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; overflow-x: hidden; }
         .hidden { display: none !important; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
     </style>
 </head>
 <body class="pb-24">
 
-    <header class="p-6 bg-slate-900/50 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40">
+    <header class="p-6 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800 sticky top-0 z-40 shadow-sm">
         <div class="flex justify-between items-center mb-4">
             <h1 class="text-xl font-black uppercase italic tracking-tighter">Cobranzas</h1>
-            <div id="bcv-val" class="bg-indigo-600/20 text-indigo-400 px-3 py-1 rounded-full text-[10px] font-black border border-indigo-500/30 tracking-widest">
+            <div id="bcv-val" class="bg-indigo-600/20 text-indigo-400 px-3 py-1 rounded-full text-[10px] font-black border border-indigo-500/30 tracking-widest shadow-sm">
                 BCV: --
             </div>
         </div>
@@ -27,7 +29,7 @@
         <div class="relative">
             <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
             <input type="text" id="search-deudor" oninput="renderDeudores()" placeholder="Buscar deudor..." 
-                class="w-full bg-slate-950 border border-slate-800 p-4 pl-10 rounded-2xl text-xs font-bold outline-none focus:border-indigo-500 transition-all">
+                class="w-full bg-slate-950 border border-slate-800 p-4 pl-10 rounded-2xl text-xs font-bold outline-none focus:border-indigo-500 transition-all text-white shadow-inner">
         </div>
     </header>
 
@@ -36,20 +38,20 @@
         <div class="grid grid-cols-2 gap-3 mb-4">
             <div class="bg-slate-900 p-4 rounded-3xl border border-slate-800 shadow-lg">
                 <p class="text-[8px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">Deuda Global</p>
-                <p id="total-deuda-global" class="text-xl font-black text-red-400">$0.00</p>
+                <p id="total-deuda-global" class="text-xl font-black text-red-400 tracking-tighter">$0.00</p>
             </div>
             <div class="bg-slate-900 p-4 rounded-3xl border border-slate-800 shadow-lg">
                 <p class="text-[8px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">Por Cobrar</p>
-                <p class="text-xl font-black text-white"><span id="count-deudores">0</span> <span id="count-label" class="text-[10px] text-slate-500 uppercase">Alumnos</span></p>
+                <p class="text-xl font-black text-white tracking-tighter"><span id="count-deudores">0</span> <span id="count-label" class="text-[10px] text-slate-500 uppercase">Alumnos</span></p>
             </div>
         </div>
 
         <!-- Selector de Tipo (Tabs) -->
         <div class="flex bg-slate-900 p-1 rounded-2xl border border-slate-800 mb-6 shadow-inner">
-            <button onclick="switchTab('alumnos')" id="tab-alumnos" class="flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl bg-indigo-600 text-white transition-all">
+            <button onclick="switchTab('alumnos')" id="tab-alumnos" class="flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl bg-indigo-600 text-white transition-all shadow-md">
                 <i class="fa-solid fa-graduation-cap mr-1.5"></i> Alumnos
             </button>
-            <button onclick="switchTab('personal')" id="tab-personal" class="flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl text-slate-400 hover:text-slate-200 transition-all">
+            <button onclick="switchTab('personal')" id="tab-personal" class="flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl text-slate-400 hover:text-slate-200 transition-all hover:bg-slate-800">
                 <i class="fa-solid fa-user-tie mr-1.5"></i> Personal
             </button>
         </div>
@@ -63,26 +65,36 @@
     </main>
 
     <!-- Modal de Abonos y Pago -->
-    <div id="modal-abono" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col justify-end p-4 hidden">
-        <div class="bg-slate-900 w-full max-w-md mx-auto rounded-[3rem] border border-slate-800 p-8 shadow-2xl">
+    <div id="modal-abono" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col justify-end p-4 hidden transition-all">
+        <div class="bg-slate-900 w-full max-w-md mx-auto rounded-[3rem] border border-slate-800 p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-indigo-500"></div>
+            
             <div class="flex justify-between items-start mb-6">
                 <div>
                     <h3 id="abono-nombre" class="text-white font-black uppercase text-sm tracking-tight leading-none mb-2">Abono: ---</h3>
                     <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">Deuda actual: <span id="abono-deuda-actual" class="text-red-400">$0.00</span></p>
                 </div>
-                <button onclick="cerrarModalAbono()" class="text-slate-500 hover:text-white transition-colors">
-                    <i class="fa-solid fa-circle-xmark text-2xl"></i>
+                <button onclick="cerrarModalAbono()" class="text-slate-500 hover:text-white transition-colors bg-slate-800 w-8 h-8 rounded-full flex justify-center items-center active:scale-90 border border-slate-700">
+                    <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
             </div>
 
             <div class="space-y-4">
-                <div>
+                <div class="relative">
                     <label class="text-[9px] text-slate-500 font-black uppercase ml-2 mb-1 block tracking-widest">Monto a Abonar (USD)</label>
-                    <input type="number" id="input-monto-abono" inputmode="decimal" placeholder="0.00" 
-                        class="w-full bg-slate-950 border border-slate-800 p-6 rounded-2xl text-center text-3xl font-black text-white outline-none focus:border-indigo-500 transition-all mb-4">
+                    <div class="relative group">
+                        <div class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-black text-slate-500 group-focus-within:text-emerald-400 transition-colors">$</div>
+                        <input type="number" id="input-monto-abono" inputmode="decimal" placeholder="0.00" oninput="calcularAbonoBs()"
+                            class="w-full bg-slate-950 border border-slate-800 py-5 pl-12 pr-4 rounded-2xl text-3xl font-black text-white outline-none focus:border-indigo-500 transition-all shadow-inner text-right">
+                    </div>
+                    <!-- NUEVO: Conversión Automática a Bolívares -->
+                    <div class="text-right mt-1 px-2">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Equivale a: </span>
+                        <span id="preview-monto-bs" class="text-xs font-black text-cyan-400">Bs. 0.00</span>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 mb-3">
+                <div class="grid grid-cols-2 gap-3 mb-3 pt-2 border-t border-slate-800">
                     <button onclick="procesarAbono('EFECTIVO')" class="bg-emerald-600 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-lg shadow-emerald-900/30 flex justify-center items-center gap-2"><i class="fa-solid fa-money-bill-wave text-sm"></i> Efectivo</button>
                     <button onclick="procesarAbono('PUNTO')" class="bg-indigo-600 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-lg shadow-indigo-900/30 flex justify-center items-center gap-2"><i class="fa-solid fa-credit-card text-sm"></i> Punto</button>
                 </div>
@@ -94,22 +106,29 @@
 
     <!-- MODAL PAGO MÓVIL (QR) PARA COBRANZAS -->
     <div id="modal-qr" class="hidden fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] w-full max-w-sm text-center">
-            <h2 class="text-xl font-black text-white mb-2">Pago Móvil</h2>
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] w-full max-w-sm text-center shadow-2xl relative overflow-hidden">
+            <button onclick="document.getElementById('modal-qr').classList.add('hidden')" class="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-800 w-8 h-8 rounded-full flex justify-center items-center active:scale-90 transition-all border border-slate-700">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
             
-            <div class="bg-emerald-900/20 border border-emerald-500/30 p-2 rounded-xl mb-4">
-                <p class="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Total a pagar</p>
-                <p id="monto-bs-qr" class="text-lg font-black text-white">Bs. 0.00</p>
+            <h2 class="text-xl font-black text-white mb-2 uppercase italic tracking-tight"><i class="fa-solid fa-qrcode text-indigo-500 mr-2"></i>Pago Móvil</h2>
+            
+            <div class="bg-emerald-900/20 border border-emerald-500/30 p-3 rounded-xl mb-4 mt-4">
+                <p class="text-[10px] text-emerald-400 font-black uppercase tracking-widest mb-0.5">Monto Exacto a Transferir</p>
+                <p id="monto-bs-qr" class="text-2xl font-black text-white tracking-tighter">Bs. 0.00</p>
             </div>
 
-            <div class="bg-white p-3 rounded-2xl mb-4 flex justify-center">
-                <img src="qr.jpeg" alt="Código QR" class="w-48 h-48 object-contain">
+            <div class="bg-white p-3 rounded-2xl mb-4 flex justify-center mx-auto max-w-[200px] shadow-lg">
+                <img src="qr.jpeg" alt="Código QR Banesco" class="w-full h-auto object-contain">
             </div>
 
-            <p class="text-xs text-slate-400 mb-4">Ingresa los 4 últimos dígitos de la referencia:</p>
-            <input type="number" id="ref-pago" placeholder="Ej: 1234" class="w-full bg-slate-950 border border-slate-700 text-white p-4 rounded-xl mb-4 text-center font-black text-xl outline-none focus:border-indigo-500">
-            <button onclick="confirmarReferencia()" class="w-full bg-indigo-600 py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white active:scale-95 transition-all shadow-lg">
-                Confirmar y Verificar
+            <div class="text-left mb-4">
+                <label class="text-[10px] text-slate-500 font-black uppercase ml-2 mb-1 block">Últimos dígitos (Referencia)</label>
+                <input type="text" id="ref-pago" inputmode="numeric" maxlength="6" placeholder="Ej: 1234" class="w-full bg-slate-950 border border-slate-700 text-white p-4 rounded-xl text-center font-black text-xl outline-none focus:border-indigo-500 tracking-[0.2em] placeholder:tracking-normal placeholder:font-bold">
+            </div>
+            
+            <button onclick="confirmarReferencia()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white active:scale-95 transition-all shadow-lg shadow-indigo-900/40">
+                Verificar Pago
             </button>
         </div>
     </div>
@@ -124,17 +143,34 @@
             <i class="fa-solid fa-boxes-stacked text-xl mb-1"></i>
             <span class="text-[8px] uppercase font-black tracking-widest mt-1">Stock</span>
         </a>
+        <a href="ventas.html" class="flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors">
+            <i class="fa-solid fa-receipt text-xl mb-1"></i>
+            <span class="text-[8px] uppercase font-black tracking-widest mt-1">Reportes</span>
+        </a>
         <a href="cobranza.html" class="flex-1 flex flex-col items-center py-2 text-indigo-500 border-t-2 border-indigo-500">
             <i class="fa-solid fa-hand-holding-dollar text-xl mb-1"></i>
             <span class="text-[8px] uppercase font-black tracking-widest mt-1">Cobros</span>
-        </a>
-        <a href="admin.html" id="btn-admin" class="hidden flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors">
-            <i class="fa-solid fa-chart-pie text-xl mb-1"></i>
-            <span class="text-[8px] uppercase font-black tracking-widest mt-1">Admin</span>
         </a>
     </nav>
 
     <script src="config.js"></script>
     <script src="cobranza.js"></script>
+    
+    <script>
+        // Lógica súper rápida para la calculadora en vivo dentro del Modal de Abono
+        function calcularAbonoBs() {
+            const inputUsd = document.getElementById('input-monto-abono').value;
+            const previewBs = document.getElementById('preview-monto-bs');
+            
+            if (!inputUsd || isNaN(inputUsd) || !window.state || !window.state.tasa) {
+                previewBs.innerText = "Bs. 0.00";
+                return;
+            }
+            
+            const usd = parseFloat(inputUsd);
+            const bs = usd * window.state.tasa;
+            previewBs.innerText = `Bs. ${bs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+    </script>
 </body>
 </html>

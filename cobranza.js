@@ -236,18 +236,18 @@ async function ejecutarAbonoDB(id_deudor, nombre_deudor, monto, metodo, referenc
         const tabla = window.state.currentTab === 'alumnos' ? 'estudiantes' : 'personal';
         const statusVenta = metodo === 'PAGO_MOVIL' ? 'esperando_verificacion' : 'completado';
         
-        // Forzamos los valores a negativo usando -Math.abs() para evitar errores si el usuario ya ingresa un número negativo
-const payloadVenta = {
-    id_orden: idOrden,
-    total_usd: -Math.abs(monto),
-    monto_original: -Math.abs(montoBs),
-    moneda: 'VES',
-    metodo_pago: metodo,
-    referencia: referencia || null,
-    status: statusVenta,
-    tasa_referencia: window.state.tasa,
-    items: [{ name: `Abono de deuda (${metodo.replace('_', ' ')})`, price: -Math.abs(monto), qty: 1 }]
-};
+        // CORRECCIÓN: Enviamos los montos siempre en POSITIVO a la base de datos
+        const payloadVenta = {
+            id_orden: idOrden,
+            total_usd: monto, 
+            monto_original: montoBs, 
+            moneda: 'VES',
+            metodo_pago: metodo,
+            referencia: referencia || null,
+            status: statusVenta,
+            tasa_referencia: window.state.tasa,
+            items: [{ name: `Abono de deuda (${metodo.replace('_', ' ')})`, price: monto, qty: 1 }]
+        };
 
         if (window.state.currentTab === 'alumnos') {
             payloadVenta.estudiante_id = id_deudor;

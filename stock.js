@@ -99,24 +99,24 @@ window.renderStock = function() {
 
 
 // ==========================================
-// 3. FACTURA MÚLTIPLE (Ingreso de Mercancía)
+// 3. FACTURA MÚLTIPLE (Ingreso de Mercancía Inteligente)
 // ==========================================
 window.abrirModalFactura = function() {
     const container = document.getElementById('factura-filas');
     const proveedoresUnicos = [...new Set(state.products.map(p => p.proveedor).filter(Boolean))];
 
     container.innerHTML = `
-        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 mb-4 grid grid-cols-2 gap-3">
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 mb-4 grid grid-cols-2 gap-3 shadow-inner">
             <div>
-                <label class="text-[9px] text-slate-500 uppercase font-black">Proveedor</label>
-                <input type="text" id="fac-proveedor" list="proveedores-list" placeholder="Ej. Textilera C.A." class="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-xs outline-none focus:border-indigo-500 font-bold uppercase">
+                <label class="text-[9px] text-slate-500 uppercase font-black tracking-widest ml-1 mb-1 block">Proveedor</label>
+                <input type="text" id="fac-proveedor" list="proveedores-list" placeholder="Ej. Textilera C.A." class="w-full bg-slate-900 border border-slate-700 text-white p-3 rounded-xl text-xs outline-none focus:border-indigo-500 font-bold uppercase transition-colors">
                 <datalist id="proveedores-list">
                     ${proveedoresUnicos.map(prov => `<option value="${prov}"></option>`).join('')}
                 </datalist>
             </div>
             <div>
-                <label class="text-[9px] text-slate-500 uppercase font-black">N° Factura / Ref</label>
-                <input type="text" id="fac-ref" placeholder="Opcional" class="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded-lg text-xs outline-none focus:border-indigo-500 font-bold">
+                <label class="text-[9px] text-slate-500 uppercase font-black tracking-widest ml-1 mb-1 block">N° Factura / Ref</label>
+                <input type="text" id="fac-ref" placeholder="Opcional" class="w-full bg-slate-900 border border-slate-700 text-white p-3 rounded-xl text-xs outline-none focus:border-indigo-500 font-bold transition-colors">
             </div>
         </div>
         <div id="filas-dinamicas" class="space-y-4"></div>
@@ -134,22 +134,47 @@ window.cerrarModalFactura = function() {
     document.getElementById('modal-factura').classList.add('hidden'); 
 }
 
-// Función auxiliar para cambiar la vista cuando eligen "Paquete"
+// -----------------------------------------------------
+// MATEMÁTICAS EN VIVO: Manejo de Paquetes vs Unidades
+// -----------------------------------------------------
+
 window.togglePaquete = function(select) {
     const row = select.closest('.factura-item');
     const inputUndPaq = row.querySelector('.f-und-paq');
-    const lblCant = row.querySelector('.lbl-cant');
+    const inputCosto = row.querySelector('.f-costo');
+    const baseCost = parseFloat(inputCosto.dataset.baseCost || 0);
 
     if(select.value === 'paquete') {
         inputUndPaq.disabled = false;
         inputUndPaq.classList.replace('text-slate-500', 'text-amber-400');
-        if(!inputUndPaq.value || inputUndPaq.value === '1') inputUndPaq.value = ''; // Vacía para escribir
-        lblCant.innerText = 'Paqs';
+        inputUndPaq.classList.replace('bg-slate-900', 'bg-slate-950');
+        if(!inputUndPaq.value || inputUndPaq.value === '1') inputUndPaq.value = ''; 
+        
+        // Multiplica el costo automáticamente al abrir el paquete
+        calcularCostoSugerido(inputUndPaq);
     } else {
         inputUndPaq.disabled = true;
         inputUndPaq.value = '1';
         inputUndPaq.classList.replace('text-amber-400', 'text-slate-500');
-        lblCant.innerText = 'Unds';
+        inputUndPaq.classList.replace('bg-slate-950', 'bg-slate-900');
+        
+        // Regresa al costo unitario original
+        if(baseCost > 0) inputCosto.value = baseCost.toFixed(2);
+    }
+}
+
+// Multiplica el costo unitario por la cantidad del paquete
+window.calcularCostoSugerido = function(input) {
+    const row = input.closest('.factura-item');
+    const selectTipo = row.querySelector('.f-tipo');
+    const inputCosto = row.querySelector('.f-costo');
+    const baseCost = parseFloat(inputCosto.dataset.baseCost || 0);
+    
+    if(selectTipo.value === 'paquete' && baseCost > 0) {
+        const trae = parseInt(input.value) || 0;
+        if(trae > 0) {
+            inputCosto.value = (baseCost * trae).toFixed(2);
+        }
     }
 }
 
@@ -159,233 +184,188 @@ window.agregarFilaFactura = function() {
     const container = document.getElementById('filas-dinamicas');
     const row = document.createElement('div');
     row.id = `factura-fila-${id}`;
-    row.className = 'factura-item bg-slate-900 border border-slate-800 p-3 rounded-2xl flex flex-col gap-2 relative';
+    row.className = 'factura-item bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col gap-3 relative shadow-sm';
     
     row.innerHTML = `
         <div class="w-full relative">
-            <input type="text" list="prods-datalist" onchange="cargarDatosProducto(this)" class="f-nombre w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl text-[11px] outline-none focus:border-indigo-500 font-bold uppercase" placeholder="BUSCAR O CREAR PRODUCTO...">
-            <p class="info-producto text-[9px] text-indigo-400 font-bold mt-1 px-1 hidden"></p>
+            <input type="text" list="prods-datalist" onchange="cargarDatosProducto(this)" class="f-nombre w-full bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-[12px] outline-none focus:border-indigo-500 font-black uppercase transition-colors" placeholder="🔎 BUSCAR O CREAR PRODUCTO...">
+            <p class="info-producto text-[9px] font-bold mt-1.5 px-1 hidden tracking-widest"></p>
         </div>
-        <div class="flex gap-2 w-full">
-            <div class="flex-1">
-                <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1">Tipo</p>
-                <select onchange="togglePaquete(this)" class="f-tipo w-full bg-slate-950 border border-slate-700 text-indigo-300 p-2 rounded-xl text-[10px] font-black text-center outline-none uppercase">
-                    <option value="unidad">Unidad</option>
-                    <option value="paquete">Paquete</option>
+        <div class="flex gap-2 w-full items-end">
+            <div class="w-12 shrink-0">
+                <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1 tracking-widest">Tipo</p>
+                <select onchange="togglePaquete(this)" class="f-tipo w-full bg-slate-950 border border-slate-700 text-indigo-300 p-3 rounded-xl text-[9px] font-black text-center outline-none uppercase transition-colors px-0">
+                    <option value="unidad">Und</option>
+                    <option value="paquete">Paq</option>
                 </select>
             </div>
-            <div class="flex-1">
-                <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1">Trae</p>
-                <input type="number" class="f-und-paq w-full bg-slate-950 border border-slate-700 text-slate-500 p-2 rounded-xl text-[11px] font-black text-center outline-none disabled:opacity-40 disabled:bg-slate-900" placeholder="1" disabled value="1">
+            <div class="w-12 shrink-0">
+                <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1 tracking-widest">Trae</p>
+                <input type="number" oninput="calcularCostoSugerido(this)" class="f-und-paq w-full bg-slate-900 border border-slate-700 text-slate-500 p-3 rounded-xl text-[11px] font-black text-center outline-none disabled:opacity-50 transition-colors px-1" placeholder="1" disabled value="1">
             </div>
-            <div class="flex-1">
-                <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1">Cant <span class="lbl-cant text-emerald-500">Unds</span></p>
-                <input type="number" class="f-qty w-full bg-slate-950 border border-slate-700 text-emerald-400 p-2 rounded-xl text-[11px] font-black text-center outline-none" placeholder="0">
+            <div class="flex-[0.8] relative">
+                <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1 tracking-widest">Cant</p>
+                <input type="number" class="f-qty w-full bg-slate-950 border border-slate-700 text-white p-3 rounded-xl text-[12px] font-black text-center outline-none focus:border-indigo-500 transition-colors" placeholder="0">
             </div>
-            <div class="flex-1">
-                <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1">Costo $</p>
-                <input type="number" step="0.01" class="f-costo w-full bg-slate-950 border border-slate-700 text-red-400 p-2 rounded-xl text-[11px] font-black text-center outline-none" placeholder="0.00">
+            <div class="flex-1 relative">
+                <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1 tracking-widest">Costo $</p>
+                <input type="number" step="0.01" class="f-costo w-full bg-slate-950 border border-red-900/30 text-red-400 p-3 rounded-xl text-[12px] font-black text-center outline-none focus:border-red-500 transition-colors" placeholder="0.00" data-base-cost="0">
             </div>
-            <button onclick="document.getElementById('factura-fila-${id}').remove()" class="absolute -right-2 -top-2 bg-red-500/20 border border-red-500 text-red-500 w-6 h-6 rounded-full flex items-center justify-center text-[10px] active:scale-90 transition-transform"><i class="fa-solid fa-xmark"></i></button>
+            <div class="flex-1 relative">
+                <p class="text-[8px] text-slate-500 uppercase font-black text-center mb-1 tracking-widest">P.Venta $</p>
+                <input type="number" step="0.01" class="f-precio w-full bg-slate-950 border border-emerald-900/30 text-emerald-400 p-3 rounded-xl text-[12px] font-black text-center outline-none focus:border-emerald-500 transition-colors" placeholder="0.00">
+            </div>
+            
+            <button onclick="document.getElementById('factura-fila-${id}').remove()" class="absolute -right-2 -top-2 bg-red-500 hover:bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] active:scale-90 transition-all shadow-lg border-2 border-slate-900"><i class="fa-solid fa-xmark"></i></button>
         </div>
     `;
     container.appendChild(row);
 }
 
+// -----------------------------------------------------
+// AUTO-RELLENADO AL SELECCIONAR PRODUCTO EXISTENTE
+// -----------------------------------------------------
 window.cargarDatosProducto = function(input) {
     const nombre = input.value.trim().toUpperCase();
     const prod = state.products.find(p => p.name.toUpperCase() === nombre);
+    
     const row = input.closest('.factura-item');
     const infoP = row.querySelector('.info-producto');
     const selectTipo = row.querySelector('.f-tipo');
-    const inputUndPaq = row.querySelector('.f-und-paq');
     const inputCosto = row.querySelector('.f-costo');
+    const inputPrecio = row.querySelector('.f-precio');
+    const facProveedorEl = document.getElementById('fac-proveedor');
 
     if (prod) {
-        infoP.innerHTML = `P. Venta: $${parseFloat(prod.price).toFixed(2)} | Costo Unit Ant: $${parseFloat(prod.cost || 0).toFixed(2)}`;
-        infoP.classList.remove('hidden');
+        // Confirmación visual
+        infoP.innerHTML = `<i class="fa-solid fa-check-circle mr-1"></i> Producto Existente (Se actualizará stock/precio)`;
+        infoP.className = 'info-producto text-[9px] text-emerald-400 font-bold mt-1.5 px-1 tracking-widest';
         
-        // AUTOCOMPLETADO INTELIGENTE
-        if (prod.tipo_unidad === 'paquete') {
-            selectTipo.value = 'paquete';
-            inputUndPaq.value = prod.unidades_por_paquete || 1;
-            
-            // Si el costo está vacío, sugerimos el costo del paquete completo basado en la compra anterior
-            if (!inputCosto.value && prod.cost) {
-                inputCosto.value = (parseFloat(prod.cost) * parseInt(inputUndPaq.value)).toFixed(2);
-            }
-        } else {
-            selectTipo.value = 'unidad';
-            inputUndPaq.value = 1;
-            if (!inputCosto.value) inputCosto.value = prod.cost || '';
-        }
-        togglePaquete(selectTipo); // Actualiza colores y bloqueos visuales
-    } else {
-        infoP.innerHTML = `✨ Producto Nuevo (Se registrará)`;
-        infoP.classList.remove('hidden');
+        // Guarda en la memoria oculta el costo base unitario para el multiplicador
+        inputCosto.dataset.baseCost = prod.cost || 0;
+        
+        // RELLENO AUTOMÁTICO DE LOS SLOTS EDITABLES
         selectTipo.value = 'unidad';
+        inputCosto.value = parseFloat(prod.cost || 0).toFixed(2);
+        inputPrecio.value = parseFloat(prod.price || 0).toFixed(2);
+        
+        togglePaquete(selectTipo);
+        
+        // Sugiere el proveedor del producto si el general de la factura estaba vacío
+        if(prod.proveedor && !facProveedorEl.value) {
+            facProveedorEl.value = prod.proveedor;
+        }
+    } else {
+        // Es un producto totalmente nuevo
+        infoP.innerHTML = `✨ Nuevo Producto (Se creará en base de datos)`;
+        infoP.className = 'info-producto text-[9px] text-indigo-400 font-bold mt-1.5 px-1 tracking-widest';
+        
+        inputCosto.dataset.baseCost = 0;
+        selectTipo.value = 'unidad';
+        inputCosto.value = '';
+        inputPrecio.value = '';
         togglePaquete(selectTipo);
     }
 }
 
+// -----------------------------------------------------
+// AUDITORÍA Y REGISTRO EN LA BASE DE DATOS
+// -----------------------------------------------------
 window.guardarFacturaMasiva = async function() {
     const items = document.querySelectorAll('.factura-item');
 
-    if (items.length === 0) {
-        return alert("⚠️ Añade al menos un producto.");
-    }
+    if (items.length === 0) return alert("⚠️ Añade al menos un producto.");
 
     const btn = document.getElementById('btn-save-factura');
-
-    const aplicarIVA =
-        document.getElementById('check-iva')?.checked || false;
-
+    const aplicarIVA = document.getElementById('check-iva')?.checked || false;
     const facProveedorEl = document.getElementById('fac-proveedor');
     const facRefEl = document.getElementById('fac-ref');
 
-    const proveedor =
-        (facProveedorEl?.value.trim()) || 'Sin Proveedor';
-
-    const refFac =
-        (facRefEl?.value.trim()) ||
-        `REC-${Date.now().toString().slice(-5)}`;
+    const proveedor = (facProveedorEl?.value.trim()) || 'Sin Proveedor';
+    const refFac = (facRefEl?.value.trim()) || `REC-${Date.now().toString().slice(-5)}`;
 
     let costoTotalFactura = 0;
     let errorValidacion = false;
 
-    // ==========================================
-    // CALCULAR TOTAL DE FACTURA
-    // ==========================================
+    // Validación matemática previa
     items.forEach(item => {
         const qty = parseInt(item.querySelector('.f-qty').value);
         const cost = parseFloat(item.querySelector('.f-costo').value);
+        const precio = parseFloat(item.querySelector('.f-precio').value);
 
-        if (isNaN(qty) || isNaN(cost)) {
+        if (isNaN(qty) || isNaN(cost) || isNaN(precio) || qty <= 0 || cost < 0 || precio < 0) {
             errorValidacion = true;
             return;
         }
-
         costoTotalFactura += (cost * qty);
     });
 
-    if (errorValidacion) {
-        return alert("⚠️ Verifica que todos los campos tengan valores válidos.");
-    }
+    if (errorValidacion) return alert("⚠️ Verifica que Cantidad, Costo y P. Venta tengan números válidos en todas las filas.");
 
-    const totalFinal = aplicarIVA
-        ? (costoTotalFactura * 1.16)
-        : costoTotalFactura;
+    const totalFinal = aplicarIVA ? (costoTotalFactura * 1.16) : costoTotalFactura;
 
-    btn.innerHTML =
-        '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
-
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Auditando e Ingresando...';
     btn.disabled = true;
 
     try {
-
-        // ==========================================
-        // ACTUALIZAR INVENTARIO
-        // ==========================================
         for (let item of items) {
+            const name = item.querySelector('.f-nombre').value.trim().toUpperCase();
+            const tipo = item.querySelector('.f-tipo').value;
+            const undsPaq = parseInt(item.querySelector('.f-und-paq').value) || 1;
+            const qtyComprada = parseInt(item.querySelector('.f-qty').value);
+            const costoIngresado = parseFloat(item.querySelector('.f-costo').value); 
+            const precioVentaFinal = parseFloat(item.querySelector('.f-precio').value); 
 
-            const name =
-                item.querySelector('.f-nombre')
-                    .value
-                    .trim()
-                    .toUpperCase();
+            // Matemáticas de Distribución de Inventario
+            const stockAAgregar = tipo === 'paquete' ? (qtyComprada * undsPaq) : qtyComprada;
+            let costoBase = tipo === 'paquete' ? (costoIngresado / undsPaq) : costoIngresado; 
+            
+            const costoUnitarioReal = aplicarIVA ? (costoBase * 1.16) : costoBase;
 
-            const tipo =
-                item.querySelector('.f-tipo').value;
-
-            const undsPaq =
-                parseInt(item.querySelector('.f-und-paq').value) || 1;
-
-            const qtyComprada =
-                parseInt(item.querySelector('.f-qty').value);
-
-            const costoIngresado =
-                parseFloat(item.querySelector('.f-costo').value);
-
-            const stockAAgregar =
-                tipo === 'paquete'
-                    ? (qtyComprada * undsPaq)
-                    : qtyComprada;
-
-            let costoBase =
-                tipo === 'paquete'
-                    ? (costoIngresado / undsPaq)
-                    : costoIngresado;
-
-            const costoUnitarioReal =
-                aplicarIVA
-                    ? (costoBase * 1.16)
-                    : costoBase;
-
-            const pExistente = state.products.find(
-                p => p.name.toUpperCase() === name
-            );
+            const pExistente = state.products.find(p => p.name.toUpperCase() === name);
 
             if (pExistente) {
-
-                await _sb
-                    .from('productos')
-                    .update({
-                        stock: pExistente.stock + stockAAgregar,
-                        cost: costoUnitarioReal,
-                        proveedor: proveedor
-                    })
-                    .eq('id', pExistente.id);
-
+                // Actualiza stock, ajusta el costo unitario Y ACTULIZA EL PRECIO DE VENTA
+                await _sb.from('productos').update({
+                    stock: pExistente.stock + stockAAgregar,
+                    cost: costoUnitarioReal,
+                    price: precioVentaFinal, 
+                    proveedor: proveedor
+                }).eq('id', pExistente.id);
             } else {
-
-                await _sb
-                    .from('productos')
-                    .insert([{
-                        name: name,
-                        stock: stockAAgregar,
-                        cost: costoUnitarioReal,
-                        price: Number(costoUnitarioReal * 1.4).toFixed(2),
-                        categoria: 'Nuevos',
-                        proveedor: proveedor
-                    }]);
+                // Registra el producto por primera vez usando el precio de venta colocado por el usuario
+                await _sb.from('productos').insert([{
+                    name: name,
+                    stock: stockAAgregar,
+                    cost: costoUnitarioReal,
+                    price: precioVentaFinal, 
+                    categoria: 'Nuevos',
+                    proveedor: proveedor
+                }]);
             }
         }
 
-        // ==========================================
-        // REGISTRAR FACTURA
-        // ==========================================
-        await _sb
-            .from('facturas')
-            .insert([{
-                proveedor: proveedor,
-                concepto: `Factura Ref: ${refFac} ${aplicarIVA ? '(Incluye IVA)' : ''}`,
-                monto_usd: totalFinal,
-                status: 'pendiente'
-            }]);
+        // Guarda el respaldo de la factura global en la BD
+        await _sb.from('facturas').insert([{
+            proveedor: proveedor,
+            concepto: `Factura Ref: ${refFac} ${aplicarIVA ? '(Incluye IVA)' : ''}`,
+            monto_usd: totalFinal,
+            status: 'pendiente' 
+        }]);
 
-        alert(
-            `✅ Stock y Factura registrados exitosamente.\n\nTotal: $${totalFinal.toFixed(2)}`
-        );
-
+        alert(`✅ Stock y Factura registrados exitosamente.\n\nTotal Invertido: $${totalFinal.toFixed(2)}`);
+        
         cerrarModalFactura();
-
         await syncStock();
 
     } catch (e) {
-
         console.error(e);
-
-        alert("❌ Error: " + e.message);
-
+        alert("❌ Error de red: " + e.message);
     } finally {
-
-        btn.innerHTML =
-            '<i class="fa-solid fa-check"></i> Procesar Factura';
-
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Procesar Factura';
         btn.disabled = false;
     }
 };
-
 // ==========================================
 // 4. EDICIÓN CON IMAGEN (Bucket: fotos-productos)
 // ==========================================

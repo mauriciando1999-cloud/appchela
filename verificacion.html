@@ -279,11 +279,10 @@
                 }).join('');
             } catch (err) { alert("Error de red: " + err.message); }
         }
-
+// ==========================================
+        // 5. LÓGICA DE APROBACIÓN ESTRICTA (Y DISTRIBUCIÓN FAMILIAR BLINDADA)
         // ==========================================
-        // 5. LÓGICA DE APROBACIÓN ESTRICTA
-        // ==========================================
-        async function procesarPagoSeguro(idFila, idOrden, estudianteIdStr, montoUsd, nuevoEstado) {
+       async function procesarPagoSeguro(idFila, idOrden, estudianteIdStr, montoUsd, nuevoEstado) {
             const accion = nuevoEstado === 'completado' ? 'APROBAR' : 'RECHAZAR';
             if(!confirm(`¿Estás seguro de ${accion} este pago por $${montoUsd}?`)) return;
 
@@ -292,26 +291,69 @@
             try {
                 let query = _sb.from('ventas').update({ status: nuevoEstado });
                 
-                if (idFila && idFila !== 'undefined' && idFila !== 'null') {
-                    query = query.eq('id', idFila);
-                } else if (idOrden && idOrden !== 'undefined' && idOrden !== 'null') {
-                    query = query.eq('id_orden', idOrden);
-                } else {
-                    throw new Error("ID del pago extraviado. Operación abortada por seguridad.");
-                }
-
-                if (nuevoEstado === 'completado' && estudianteIdStr && estudianteIdStr !== 'undefined' && estudianteIdStr !== 'null') {
-                    const { data: estData } = await _sb.from('estudiantes').select('debt').eq('id', estudianteIdStr).single();
-                    if (estData) {
-                        const nuevaDeuda = Math.max(0, parseFloat(estData.debt || 0) - montoUsd);
-                        await _sb.from('estudiantes').update({ debt: nuevaDeuda }).eq('id', estudianteIdStr);
-                    }
-                }
+                if (idFila && idFila !== 'undefined' && idFila !== 'null') query = query.eq('id', idFila);
+                else if (idOrden && idOrden !== 'undefined' && idOrden !== 'null') query = query.eq('id_orden', idOrden);
+                else throw new Error("ID del pago extraviado.");
 
                 const { error } = await query;
                 if (error) throw error;
 
-                cargarPendientes(); // Recarga automáticamente
+                // SI EL PAGO FUE APROBADO, SE COBRA LA DEUDA
+                if (nuevoEstado === 'completado') {
+                    
+                    // Traemos la venta exacta para revisar si es Familiar
+                    const { data: venta } = await _sb.from('ventas').select('*').eq('id', idFila).single();
+                    
+                    if (venta && venta.estudiante_nombre && venta.estudiante_nombre.includes('[FAMILIA]')) {
+                        // 1. Extraer el nombre del representante limpiando la etiqueta "[FAMILIA]"
+                        const repNombre = venta.estudiante_nombre.replace('[FAMILIA]', '').trim();
+                        
+                        // 2. Extraer teléfono oculto
+                        let phoneFamilia = null;
+                        try {
+                            const itemsParsed = typeof venta.items === 'string' ? JSON.parse(venta.items) : venta.items;
+                            phoneFamilia = itemsParsed && itemsParsed.length > 0 ? itemsParsed[0].phone : null;
+                        } catch(e) {}
+                        
+                        // 3. Traer toda la base de datos de estudiantes (Es rapidísimo y 100% infalible)
+                        const { data: todosEstudiantes } = await _sb.from('estudiantes').select('*');
+                        let saldoRestante = parseFloat(montoUsd);
+                        
+                        if (todosEstudiantes) {
+                            // Filtrar solo a los hijos que pertenezcan a este representante (por Teléfono O Nombre)
+                            const hijosDeLaFamilia = todosEstudiantes.filter(h => {
+                                const coincideTelefono = phoneFamilia && h.phone === phoneFamilia;
+                                const coincideNombre = h.representante && h.representante.toLowerCase().includes(repNombre.toLowerCase());
+                                return coincideTelefono || coincideNombre;
+                            });
+
+                            // Filtrar estrictamente a los que sí deben dinero
+                            const hijosConDeuda = hijosDeLaFamilia.filter(h => parseFloat(h.debt || 0) > 0);
+
+                            // 4. Matemáticas puras: Repartir el abono hijo por hijo hasta que se agote
+                            for (let h of hijosConDeuda) {
+                                if (saldoRestante <= 0.01) break; // Si ya se repartió todo, detenerse
+                                
+                                const deudaHijo = parseFloat(h.debt || 0);
+                                const aDescontar = Math.min(deudaHijo, saldoRestante);
+                                saldoRestante -= aDescontar;
+                                
+                                const nuevaDeuda = Math.max(0, deudaHijo - aDescontar);
+                                await _sb.from('estudiantes').update({ debt: nuevaDeuda }).eq('id', h.id);
+                            }
+                        }
+                    } 
+                    // Si es un pago individual normal de un solo hijo o personal
+                    else if (estudianteIdStr && estudianteIdStr !== 'undefined' && estudianteIdStr !== 'null') {
+                        const { data: estData } = await _sb.from('estudiantes').select('debt').eq('id', estudianteIdStr).single();
+                        if (estData) {
+                            const nuevaDeuda = Math.max(0, parseFloat(estData.debt || 0) - parseFloat(montoUsd));
+                            await _sb.from('estudiantes').update({ debt: nuevaDeuda }).eq('id', estudianteIdStr);
+                        }
+                    }
+                }
+
+                cargarPendientes();
 
             } catch (e) {
                 alert("❌ Error crítico: " + e.message);
@@ -319,7 +361,6 @@
                 document.body.style.cursor = 'default';
             }
         }
-
         // ==========================================
         // 6. NOTIFICACIONES REALTIME
         // ==========================================

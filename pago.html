@@ -8,15 +8,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-[#020617] text-white p-4 font-sans selection:bg-indigo-500/30 min-h-screen flex items-center justify-center">
+<body class="bg-[#020617] text-white p-4 font-sans min-h-screen flex items-center justify-center">
     
     <div class="max-w-md w-full bg-slate-900 rounded-[2.5rem] border border-slate-800 overflow-hidden shadow-2xl">
         <div class="bg-indigo-600 p-8 text-center relative">
-            <div id="bcv-floating" class="absolute top-4 right-4 bg-black/20 px-3 py-1 rounded-full text-[9px] font-black tracking-widest">
-                BCV: --
-            </div>
+            <div id="bcv-floating" class="absolute top-4 right-4 bg-black/20 px-3 py-1 rounded-full text-[9px] font-black tracking-widest">BCV: --</div>
             <i class="fa-solid fa-university text-3xl mb-4"></i>
-            <h1 class="text-xl font-black uppercase tracking-widest">Reporte de Pago</h1>
+            <h1 id="titulo-pago" class="text-xl font-black uppercase tracking-widest">Reporte de Pago</h1>
             <p id="nombre-estudiante" class="text-[10px] font-bold opacity-80 uppercase mt-1">Cargando...</p>
         </div>
 
@@ -39,11 +37,11 @@
             <div class="space-y-6">
                 <div>
                     <label class="text-[10px] text-slate-500 font-black uppercase ml-2 mb-2 block">Referencia Bancaria (Obligatorio)</label>
-                    <input type="text" id="ref" maxlength="6" inputmode="numeric" placeholder="Últimos 4 o 6 dígitos" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl text-center font-black text-2xl text-cyan-400 tracking-[0.2em] outline-none focus:border-indigo-500 transition-colors placeholder:text-slate-700">
+                    <input type="text" id="ref" maxlength="6" inputmode="numeric" placeholder="Últimos 4 o 6 dígitos" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl text-center font-black text-2xl text-cyan-400 tracking-[0.2em] outline-none focus:border-indigo-500">
                 </div>
 
-                <button onclick="enviarReporte()" id="btn-enviar" class="w-full bg-indigo-600 hover:bg-indigo-500 p-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-900/40 active:scale-95 transition-all flex justify-center items-center gap-2">
-                    <i class="fa-solid fa-paper-plane"></i> Enviar Reporte
+                <button onclick="enviarReporte()" id="btn-enviar" class="w-full bg-indigo-600 hover:bg-indigo-500 p-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-900/40 active:scale-95 transition-all">
+                    <i class="fa-solid fa-paper-plane mr-2"></i> Enviar Reporte
                 </button>
             </div>
         </div>
@@ -55,17 +53,24 @@
         const _sb = supabase.createClient(SB_URL, SB_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const estId = params.get('id') || params.get('estudiante');
-        const montoUSD = parseFloat(params.get('debt') || params.get('monto') || 0);
+        const estId = params.get('id');
+        const montoUSD = parseFloat(params.get('debt') || 0);
         const nombreUrl = params.get('name');
-        const tipoUsuario = params.get('tipo'); // Puede ser 'personal' o 'estudiante'
+        const tipoUsuario = params.get('tipo'); 
+        
+        // AQUÍ ESTÁ LA MAGIA QUE FALTABA:
+        const isBulk = params.get('bulk') === 'true'; 
+        const phoneParam = params.get('phone');
+        
         let tasaGlobal = 0;
 
-        // 1. CARGAR DATOS Y TASA BCV
         async function init() {
             document.getElementById('monto-usd').innerText = `$${montoUSD.toFixed(2)}`;
             
-            if (nombreUrl) {
+            if (isBulk) {
+                document.getElementById('titulo-pago').innerText = "Abono Familiar";
+                document.getElementById('nombre-estudiante').innerText = `Familia: ${decodeURIComponent(nombreUrl)}`;
+            } else if (nombreUrl) {
                 document.getElementById('nombre-estudiante').innerText = `Deuda: ${decodeURIComponent(nombreUrl)}`;
             }
             
@@ -75,48 +80,38 @@
                 tasaGlobal = data.promedio;
                 document.getElementById('bcv-floating').innerText = `BCV: ${tasaGlobal.toFixed(2)}`;
                 document.getElementById('monto-bs').innerText = `Bs. ${(montoUSD * tasaGlobal).toFixed(2)}`;
-            } catch (e) { 
-                console.error("Error obteniendo tasa cambiaria"); 
-            }
-
-            if(!nombreUrl && estId) {
-                const tabla = tipoUsuario === 'personal' ? 'personal' : 'estudiantes';
-                const { data } = await _sb.from(tabla).select('name').eq('id', estId).single();
-                if(data) document.getElementById('nombre-estudiante').innerText = `Deuda: ${data.name}`;
-            }
+            } catch (e) { }
         }
         init();
 
-        // 2. ENVIAR REPORTE EN ESTADO PENDIENTE
         async function enviarReporte() {
             const ref = document.getElementById('ref').value.trim();
             const btn = document.getElementById('btn-enviar');
 
-            if(ref.length < 4) {
-                return alert("⚠️ Por favor, ingresa al menos los últimos 4 dígitos de la referencia de tu pago.");
-            }
-            
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Procesando...';
+            if(ref.length < 4) return alert("⚠️ Ingresa los últimos dígitos de la referencia.");
+            btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Procesando...';
 
             try {
                 const montoBsCalculado = montoUSD * (tasaGlobal || 1);
-                const nombreParaBD = nombreUrl ? decodeURIComponent(nombreUrl) : document.getElementById('nombre-estudiante').innerText.replace('Deuda: ', '');
+                const nombreParaBD = decodeURIComponent(nombreUrl);
 
+                // Ocultamos el teléfono dentro de "items" para que el verificador lo lea
                 const payloadVenta = {
-                    // Usamos ABO- para que se clasifique como Abono en el historial de reportes
                     id_orden: `ABO-${ref}-${Date.now().toString().slice(-4)}`,
                     total_usd: montoUSD,           
                     monto_original: montoBsCalculado, 
                     moneda: 'VES',
                     metodo_pago: 'PAGO_MOVIL',
-                    referencia: ref, // Se envía directo a la columna de referencia para el Verificador Pro
+                    referencia: ref, 
                     status: 'pendiente_verificacion', 
-                    tasa_referencia: tasaGlobal
+                    tasa_referencia: tasaGlobal,
+                    items: [{ name: isBulk ? "Abono Conjunto Familiar" : "Abono de Deuda", price: montoUSD, qty: 1, phone: phoneParam }]
                 };
 
-                // Asignar el ID correcto según si es personal o estudiante
-                if (tipoUsuario === 'personal') {
+                // Asignación inteligente para la Base de Datos
+                if (isBulk) {
+                    payloadVenta.estudiante_nombre = `[FAMILIA] ${nombreParaBD}`;
+                } else if (tipoUsuario === 'personal') {
                     payloadVenta.personal_id = estId;
                     payloadVenta.estudiante_nombre = `[Personal] ${nombreParaBD}`;
                 } else {
@@ -125,16 +120,14 @@
                 }
 
                 const { error: insertError } = await _sb.from('ventas').insert([payloadVenta]);
-
                 if (insertError) throw insertError;
 
-                // Redirección inteligente enviando el tipo de usuario para volver a la pantalla correcta
-                window.location.href = `exito.html${tipoUsuario ? '?tipo=' + tipoUsuario : ''}`;
+                // Envia al éxito
+                window.location.href = "exito.html";
 
             } catch (e) {
-                alert("Hubo un problema procesando el reporte: " + e.message);
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar Reporte';
+                alert("Hubo un problema: " + e.message);
+                btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> Enviar Reporte';
             }
         }
     </script>

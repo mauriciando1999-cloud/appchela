@@ -17,11 +17,7 @@ window.categoriaActual = 'Todos';
 window.ordenPendienteId = null;
 
 // ==========================================
-<<<<<<< HEAD
-// INICIALIZACIÓN
-// ==========================================
-=======
-// UTILIDADES DE SEGURIDAD
+// UTILIDADES Y SEGURIDAD
 // ==========================================
 function escapeHtml(text) {
     if (!text) return '';
@@ -30,7 +26,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
->>>>>>> f833ffe0c00f3fc30b82d14f401a685dcf175d35
 window.onload = async () => {
     try {
         const { data: { user } } = await _sb.auth.getUser();
@@ -90,13 +85,12 @@ window.sync = async function() {
 }
 
 // ==========================================
-// BUSCADOR UNIVERSAL Y ASIGNACIÓN DIRECTA (CERO FRICCIÓN)
+// BUSCADOR UNIVERSAL Y ASIGNACIÓN DIRECTA
 // ==========================================
 window.buscarGlobal = function() {
     const q = document.getElementById('search')?.value.toLowerCase().trim() || '';
-    const container = document.getElementById('resultados-clientes-global'); // Asegúrate de usar este ID en tu HTML principal
+    const container = document.getElementById('resultados-clientes-global');
     
-    // Si la búsqueda es muy corta, solo filtramos productos
     if (q.length < 2) {
         if(container) {
             container.innerHTML = '';
@@ -106,7 +100,6 @@ window.buscarGlobal = function() {
         return;
     }
 
-    // Buscamos coincidencias en clientes (Máximo 2 de cada uno para no tapar toda la pantalla)
     const estMatches = window.state.estudiantes.filter(e => e.name?.toLowerCase().includes(q) || e.representante?.toLowerCase().includes(q)).slice(0, 2);
     const persMatches = window.state.personal.filter(p => p.name?.toLowerCase().includes(q)).slice(0, 2);
 
@@ -119,7 +112,7 @@ window.buscarGlobal = function() {
             <div onclick="asignarClienteDirecto(${e.id}, '${e.name?.replace(/'/g, "\\'") || ''}', 'estudiante', ${e.bloqueado || false}, ${e.debt || 0}, ${e.limite_credito || 100})" 
                  class="bg-indigo-900/40 p-3 rounded-2xl border border-indigo-500/50 flex justify-between items-center active:scale-95 transition-all cursor-pointer shadow-sm mb-2">
                 <div>
-                    <p class="text-xs font-black uppercase text-white">${e.name}</p>
+                    <p class="text-xs font-black uppercase text-white">${escapeHtml(e.name)}</p>
                     <p class="text-[9px] text-indigo-300 font-bold">Estudiante</p>
                 </div>
                 <div class="bg-indigo-600 text-white px-3 py-1.5 rounded-xl text-[9px] font-black tracking-widest shadow-md">ASIGNAR</div>
@@ -130,7 +123,7 @@ window.buscarGlobal = function() {
             <div onclick="asignarClienteDirecto(${p.id}, '${p.name?.replace(/'/g, "\\'") || ''}', 'personal', false, ${p.debt || 0}, ${p.limite_consumo || 100})" 
                  class="bg-emerald-900/40 p-3 rounded-2xl border border-emerald-500/50 flex justify-between items-center active:scale-95 transition-all cursor-pointer shadow-sm mb-2">
                 <div>
-                    <p class="text-xs font-black uppercase text-white">${p.name}</p>
+                    <p class="text-xs font-black uppercase text-white">${escapeHtml(p.name)}</p>
                     <p class="text-[9px] text-emerald-300 font-bold">Personal</p>
                 </div>
                 <div class="bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-[9px] font-black tracking-widest shadow-md">ASIGNAR</div>
@@ -145,13 +138,12 @@ window.buscarGlobal = function() {
         }
     }
 
-    window.renderProducts(); // Filtra los productos simultáneamente
+    window.renderProducts();
 }
 
 window.asignarClienteDirecto = function(id, nombre, tipo, bloqueado, deuda, limite) {
     window.asignarCliente(id, nombre, tipo, bloqueado, deuda, limite);
     
-    // Magia de Cero Fricción: Limpiamos el buscador y ocultamos los resultados al instante
     const searchInput = document.getElementById('search');
     const container = document.getElementById('resultados-clientes-global');
     if (searchInput) searchInput.value = '';
@@ -169,10 +161,9 @@ window.asignarCliente = function(id, nombre, tipo, bloqueado = false, deuda = 0,
     
     window.state.activeBuyer = { id, nombre, tipo, bloqueado, deuda, limite };
     
-<<<<<<< HEAD
     const clienteNombre = document.getElementById('ui-cliente-nombre');
     if (clienteNombre) {
-        clienteNombre.innerText = nombre;
+        clienteNombre.textContent = nombre;
         clienteNombre.classList.add('text-indigo-400');
     }
     
@@ -181,13 +172,8 @@ window.asignarCliente = function(id, nombre, tipo, bloqueado = false, deuda = 0,
     const uiInfo = document.getElementById('active-buyer-info');
     
     if(banner) banner.classList.remove('hidden');
-    if(uiNombre) uiNombre.innerText = nombre;
+    if(uiNombre) uiNombre.textContent = nombre;
     if(uiInfo) uiInfo.innerHTML = `Límite: <span class="text-white">$${limite}</span> | Deuda: <span class="${deuda > limite ? 'text-red-500 font-black' : 'text-emerald-400'}">$${parseFloat(deuda).toFixed(2)}</span>`;
-=======
-    // Actualizamos la UI visual con textContent para evitar XSS
-    document.getElementById('ui-cliente-nombre').textContent = nombre;
-    document.getElementById('ui-cliente-nombre').classList.add('text-indigo-400');
->>>>>>> f833ffe0c00f3fc30b82d14f401a685dcf175d35
     
     document.getElementById('modal-seleccion-credito')?.classList.add('hidden');
     document.getElementById('modal-credito-personal')?.classList.add('hidden');
@@ -195,65 +181,46 @@ window.asignarCliente = function(id, nombre, tipo, bloqueado = false, deuda = 0,
     window.updateCartButtons();
 }
 
-<<<<<<< HEAD
 window.limpiarCliente = function() {
     window.state.activeBuyer = null;
     const uiNombre = document.getElementById('ui-cliente-nombre');
     if (uiNombre) {
-        uiNombre.innerText = "Venta al Público";
+        uiNombre.textContent = "Venta al Público";
         uiNombre.classList.remove('text-indigo-400');
     }
     document.getElementById('active-buyer-banner')?.classList.add('hidden');
     window.updateCartButtons();
-=======
-function limpiarCliente() {
-    state.activeBuyer = null;
-    document.getElementById('ui-cliente-nombre').textContent = "Venta al Público";
-    document.getElementById('ui-cliente-nombre').classList.remove('text-indigo-400');
-    updateCartButtons();
->>>>>>> f833ffe0c00f3fc30b82d14f401a685dcf175d35
 }
 
 window.updateCartButtons = function() {
     const container = document.getElementById('cart-credit-buttons');
     if(!container) return;
 
-<<<<<<< HEAD
     if (window.state.activeBuyer) {
         const colorClass = window.state.activeBuyer.tipo === 'estudiante' ? 'bg-indigo-600' : 'bg-emerald-600';
+        const clienteNombreEscapado = escapeHtml(window.state.activeBuyer.nombre);
         container.innerHTML = `
             <div class="col-span-2">
                 <button onclick="procesarTransaccion('CREDITO')" 
                         class="w-full ${colorClass} py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-lg flex justify-center items-center gap-2">
-                    <i class="fa-solid fa-file-invoice-dollar text-sm"></i> Cargar a cuenta de ${window.state.activeBuyer.nombre}
-=======
-    if (state.activeBuyer) {
-        // Si hay un cliente pre-seleccionado, el carrito muestra UN SOLO botón grande de crédito
-        const colorClass = state.activeBuyer.tipo === 'estudiante' ? 'bg-indigo-600' : 'bg-emerald-600';
-        const clienteNombreEscapado = escapeHtml(state.activeBuyer.nombre);
-        container.innerHTML = `
-            <div class="col-span-2">
-                <button data-client-id="${state.activeBuyer.id}" data-client-type="${state.activeBuyer.tipo}" onclick="procesarTransaccionDesdeBtn(this)" 
-                        class="w-full ${colorClass} py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-lg flex justify-center items-center gap-2">
                     <i class="fa-solid fa-file-invoice-dollar text-sm"></i> Cargar a cuenta de ${clienteNombreEscapado}
->>>>>>> f833ffe0c00f3fc30b82d14f401a685dcf175d35
                 </button>
             </div>
         `;
     } else {
         container.innerHTML = `
-            <button onclick="abrirModalCreditoVenta()" class="bg-indigo-900/40 border border-indigo-500 text-indigo-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-md w-full">
-                <i class="fa-solid fa-graduation-cap"></i> Venta Crédito
+            <button onclick="abrirModalCreditoVenta()" class="bg-indigo-900/40 border border-indigo-500 text-indigo-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-md w-full flex flex-col items-center justify-center gap-1">
+                <i class="fa-solid fa-graduation-cap"></i> Buscar Estudiante
             </button>
-            <button onclick="abrirModalCreditoPersonal()" class="bg-emerald-900/40 border border-emerald-500 text-emerald-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-md w-full">
-                <i class="fa-solid fa-briefcase"></i> Personal
+            <button onclick="abrirModalCreditoPersonal()" class="bg-emerald-900/40 border border-emerald-500 text-emerald-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-md w-full flex flex-col items-center justify-center gap-1">
+                <i class="fa-solid fa-briefcase"></i> Buscar Personal
             </button>
         `;
     }
 }
 
 // ==========================================
-// BÚSQUEDA POR VOZ ULTRA RÁPIDA Y ANTI-RUIDO
+// BÚSQUEDA POR VOZ
 // ==========================================
 window.limpiarBuscador = function(inputId, callback) {
     const input = document.getElementById(inputId);
@@ -295,7 +262,6 @@ window.iniciarReconocimientoVoz = function(inputId, callback, btnId) {
         input.value = transcript.replace(/\.$/, '');
         if(callback) callback();
 
-        // Anti-ruido: Corta automáticamente al confirmar la palabra
         if (event.results[0].isFinal) recognition.stop();
     };
 
@@ -324,19 +290,12 @@ window.filtrar = function(categoria) {
 window.renderCategories = function() {
     const filterContainer = document.querySelector('.flex.overflow-x-auto');
     if (!filterContainer) return;
-<<<<<<< HEAD
     const categories = ['Todos', ...new Set(window.state.products.map(p => p.categoria || 'General'))];
-    filterContainer.innerHTML = categories.map(cat => `
-        <button onclick="filtrar('${cat}')" class="px-5 py-2.5 ${window.categoriaActual === cat ? 'bg-indigo-600 shadow-indigo-900/30' : 'bg-slate-800 border-slate-700 text-slate-300'} rounded-full text-[10px] font-black tracking-widest active:scale-95 transition-all shrink-0 shadow-lg border">
-            ${cat.toUpperCase()}
-=======
-    const categories = ['Todos', ...new Set(state.products.map(p => p.categoria || 'General'))];
     filterContainer.innerHTML = categories.map(cat => {
         const catEscapada = escapeHtml(cat);
         return `
-        <button onclick="filtrar('${catEscapada}')" class="px-5 py-2.5 ${categoriaActual === cat ? 'bg-indigo-600 shadow-indigo-900/30' : 'bg-slate-800 border-slate-700 text-slate-300'} rounded-full text-[10px] font-bold whitespace-nowrap active:scale-95 transition-all">
+        <button onclick="filtrar('${catEscapada}')" class="px-5 py-2.5 ${window.categoriaActual === cat ? 'bg-indigo-600 shadow-indigo-900/30' : 'bg-slate-800 border-slate-700 text-slate-300'} rounded-full text-[10px] font-black tracking-widest active:scale-95 transition-all shrink-0 shadow-lg border">
             ${catEscapada.toUpperCase()}
->>>>>>> f833ffe0c00f3fc30b82d14f401a685dcf175d35
         </button>
     `}).join('');
 }
@@ -353,7 +312,7 @@ window.renderProducts = function() {
         return `
         <div onclick="addToCart(${p.id})" class="relative bg-slate-900 border border-slate-800 rounded-[2rem] p-3 flex flex-col items-center shadow-lg active:scale-95 transition-transform cursor-pointer group">
             <div class="absolute top-3 right-3 z-10 px-2 py-0.5 rounded-full text-[9px] font-black ${p.stock <= 5 ? 'bg-red-500 animate-pulse text-white' : 'bg-slate-800 text-slate-300 border border-slate-700'}">
-                ${p.stock} uds
+                ${p.stock}
             </div>
             <div class="w-full aspect-square rounded-[1.5rem] overflow-hidden mb-2 bg-slate-950 flex items-center justify-center">
                 <img src="${imgPath}" onerror="this.src='https://placehold.co/600x600/0f172a/6366f1?text=Sin+Imagen'" style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;" class="w-full h-full object-cover">
@@ -407,13 +366,9 @@ window.updateUI = function() {
     if(document.getElementById('total-vef')) document.getElementById('total-vef').innerText = `Bs. ${(total * window.state.tasa).toLocaleString('es-VE')}`;
     
     const list = document.getElementById('cart-list');
-<<<<<<< HEAD
-    if(list) list.innerHTML = window.state.cart.map(i => `
-=======
-    if(list) list.innerHTML = state.cart.map(i => {
+    if(list) list.innerHTML = window.state.cart.map(i => {
         const nombreItemEscapado = escapeHtml(i.name);
         return `
->>>>>>> f833ffe0c00f3fc30b82d14f401a685dcf175d35
         <div class="flex items-center justify-between p-4 bg-slate-900 rounded-2xl border border-slate-800">
             <div class="flex-1 pr-2">
                 <p class="text-[10px] font-black uppercase text-white leading-tight mb-1">${nombreItemEscapado}</p>
@@ -438,19 +393,8 @@ window.abrirModalPagoMovil = function() {
 // ==========================================
 // TRANSACCIÓN UNIFICADA Y SEGURA
 // ==========================================
-<<<<<<< HEAD
 window.procesarTransaccion = async function(method, paramDeudorId = null, paramTipoDeudor = null) {
     if (!window.state.cart || window.state.cart.length === 0) return alert("El carrito está vacío.");
-=======
-function procesarTransaccionDesdeBtn(btn) {
-    const clientId = parseInt(btn.dataset.clientId);
-    const clientType = btn.dataset.clientType;
-    procesarTransaccion('CREDITO', clientId, clientType);
-}
-
-async function procesarTransaccion(method, deudorId = null, tipoDeudor = 'estudiante') {
-    if (!state.cart || state.cart.length === 0) return alert("El carrito está vacío.");
->>>>>>> f833ffe0c00f3fc30b82d14f401a685dcf175d35
 
     let total = window.state.cart.reduce((s, i) => s + (i.price * i.qty), 0);
     let ganancia = window.state.cart.reduce((s, i) => s + ((i.price - (i.cost || 0)) * i.qty), 0);
@@ -460,7 +404,6 @@ async function procesarTransaccion(method, deudorId = null, tipoDeudor = 'estudi
     let tipoDeudor = paramTipoDeudor;
     let nombreDeudor = null;
     let statusVenta = method.includes('PAGO_MOVIL') ? 'pendiente' : 'completado';
-    let recargo = 0; // FIX: Declarar recargo fuera de condicionales
 
     if (method === 'CREDITO') {
         const deudorActual = deudorId || (window.state.activeBuyer ? window.state.activeBuyer.id : null);
@@ -474,49 +417,24 @@ async function procesarTransaccion(method, deudorId = null, tipoDeudor = 'estudi
         if (!deudor) return alert("Error: No se encontró al deudor.");
         nombreDeudor = deudor.name || deudor.nombre;
 
-<<<<<<< HEAD
-        if (tipoActual === 'estudiante') {
-            if (deudor.bloqueado) {
-                const soloLlevaAgua = window.state.cart.every(item => item.name.toLowerCase().includes('agua') || item.categoria?.toLowerCase() === 'agua');
-                if (!soloLlevaAgua) return alert(`❌ VENTA BLOQUEADA\n\nEl representante de ${nombreDeudor} está bloqueado. Solo puede retirar AGUA.`);
-            }
-            const recargo = total * 0.10;
-            const deudaActual = parseFloat(deudor.debt || 0);
-            const limite = parseFloat(deudor.limite_credito || 100);
-
-            if ((deudaActual + total + recargo) > limite) return alert(`❌ LÍMITE EXCEDIDO. Máximo: $${limite}.`);
-            total += recargo;
-            ganancia += recargo;
-        }
-        deudorId = deudorActual;
-        tipoDeudor = tipoActual;
-=======
-        // FIX: Validar bloqueo para AMBOS tipos
         if (deudor.bloqueado) {
-            const soloLlevaAgua = state.cart.every(item => item.name.toLowerCase().includes('agua') || item.categoria?.toLowerCase() === 'agua');
-            if (!soloLlevaAgua) return alert(`❌ VENTA BLOQUEADA\n\nEl representante de ${nombreDeudor} está bloqueado. Solo puede retirar AGUA.`);
+            const soloLlevaAgua = window.state.cart.every(item => item.name.toLowerCase().includes('agua') || item.categoria?.toLowerCase() === 'agua');
+            if (!soloLlevaAgua) return alert(`❌ VENTA BLOQUEADA\n\nEl usuario ${nombreDeudor} está bloqueado. Solo puede retirar AGUA.`);
         }
 
-        // FIX: Aplicar validaciones específicas por tipo
-        if (tipoDeudor === 'estudiante') {
-            recargo = total * 0.10;
+        if (tipoActual === 'estudiante') {
+            const recargo = total * 0.10;
             const deudaActual = parseFloat(deudor.debt || 0);
             const limite = parseFloat(deudor.limite_credito || 100);
 
             if ((deudaActual + total + recargo) > limite) {
                 return alert(`❌ LÍMITE EXCEDIDO\n\nDeuda actual: $${deudaActual.toFixed(2)}\nEsta compra: $${(total + recargo).toFixed(2)}\nTotal proyectado: $${(deudaActual + total + recargo).toFixed(2)}\n\nLímite disponible: $${limite.toFixed(2)}`);
             }
-        } else if (tipoDeudor === 'personal') {
-            // Para personal, aplicar recargo también pero sin límite estricto (logging solo)
-            recargo = total * 0.10;
-            const deudaActual = parseFloat(deudor.debt || 0);
-            console.log(`📊 Personal ${nombreDeudor}: Deuda actual $${deudaActual.toFixed(2)} + Nueva compra $${(total + recargo).toFixed(2)}`);
+            total += recargo;
+            ganancia += recargo;
         }
-
-        // FIX: Aplicar recargo una sola vez
-        total += recargo;
-        ganancia += recargo;
->>>>>>> f833ffe0c00f3fc30b82d14f401a685dcf175d35
+        deudorId = deudorActual;
+        tipoDeudor = tipoActual;
     }
 
     try {
@@ -541,7 +459,6 @@ async function procesarTransaccion(method, deudorId = null, tipoDeudor = 'estudi
             const tabla = (tipoDeudor === 'estudiante') ? 'estudiantes' : 'personal';
             const deudor = (tipoDeudor === 'estudiante') ? window.state.estudiantes.find(e => e.id == deudorId) : window.state.personal.find(e => e.id == deudorId);
             await _sb.from(tabla).update({ debt: parseFloat(deudor.debt || 0) + total }).eq('id', deudorId);
-<<<<<<< HEAD
             alert(`✅ Crédito procesado.`);
         } 
         else if (method === 'PAGO_MOVIL') {
@@ -549,9 +466,6 @@ async function procesarTransaccion(method, deudorId = null, tipoDeudor = 'estudi
             const totalBs = (total * window.state.tasa).toLocaleString('es-VE', { minimumFractionDigits: 2 });
             document.getElementById('monto-bs-qr').innerText = `Bs. ${totalBs}`;
             document.getElementById('modal-qr').classList.remove('hidden');
-=======
-            alert(`✅ Crédito procesado. Deuda asignada a ${nombreDeudor}\nMonto: $${total.toFixed(2)}`);
->>>>>>> f833ffe0c00f3fc30b82d14f401a685dcf175d35
         } else { 
             alert("Venta procesada con éxito ✅"); 
         }
@@ -569,7 +483,8 @@ window.confirmarReferencia = async function() {
     if (ref.length !== 4) return alert("Ingresa los 4 dígitos de la referencia.");
 
     try {
-        await _sb.from('ventas').update({ referencia: ref, status: 'esperando_verificacion' }).eq('id_orden', window.ordenPendienteId);
+        // CORRECCIÓN PARA EL CAJERO: Aquí también le decimos que guarde en ref_pago
+        await _sb.from('ventas').update({ ref_pago: ref, status: 'esperando_verificacion' }).eq('id_orden', window.ordenPendienteId);
         alert("✅ Referencia enviada. Esperando verificación.");
         document.getElementById('modal-qr').classList.add('hidden');
         document.getElementById('ref-pago').value = '';
@@ -595,17 +510,7 @@ window.filtrarModalEst = function() {
     const list = document.getElementById('lista-est-modal');
     if(!list) return;
     
-<<<<<<< HEAD
     list.innerHTML = window.state.estudiantes
-        .filter(e => e.name?.toLowerCase().includes(q) || e.representante?.toLowerCase().includes(q))
-        .map(e => `
-        <div onclick="asignarCliente(${e.id}, '${e.name?.replace(/'/g, "\\'") || 'Sin Nombre'}', 'estudiante', ${e.bloqueado || false}, ${e.debt || 0}, ${e.limite_credito || 100})" 
-             class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center active:bg-slate-800 cursor-pointer">
-            <div>
-                <p class="text-xs font-black uppercase text-white">${e.name || 'Sin Nombre'}</p>
-                <p class="text-[9px] text-slate-400 font-bold">Deuda: $${parseFloat(e.debt || 0).toFixed(2)} | Límite: $${e.limite_credito || 100}</p>
-=======
-    list.innerHTML = state.estudiantes
         .filter(e => e.name?.toLowerCase().includes(q) || e.representante?.toLowerCase().includes(q))
         .map(e => {
             const nombreEscapado = escapeHtml(e.name || 'Sin Nombre');
@@ -615,14 +520,12 @@ window.filtrarModalEst = function() {
             
             return `
             <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-indigo-500 transition-colors" 
-                 data-est-id="${e.id}" data-est-name="${nombreEscapado}" data-est-blocked="${e.bloqueado || false}"
-                 onclick="asignarClienteDesdeModal(this, 'estudiante')">
+                 onclick="window.asignarCliente(${e.id}, '${e.name?.replace(/'/g, "\\'") || 'Sin Nombre'}', 'estudiante', ${e.bloqueado || false}, ${e.debt || 0}, ${e.limite_credito || 100})">
                 <div>
                     <p class="text-xs font-black uppercase text-white">${nombreEscapado} ${estadoBloqueado}</p>
                     <p class="text-[9px] text-slate-400 font-bold">Rep: ${repEscapado} | Deuda: $${deudaEscapada}</p>
                 </div>
                 <div class="bg-indigo-600/20 text-indigo-400 px-3 py-1 rounded-lg text-[9px] font-black tracking-widest border border-indigo-500/30">SELECCIONAR</div>
->>>>>>> f833ffe0c00f3fc30b82d14f401a685dcf175d35
             </div>
         `;
         }).join('');
@@ -641,8 +544,7 @@ window.filtrarModalPers = function() {
             
             return `
             <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-emerald-500 transition-colors"
-                 data-pers-id="${p.id}" data-pers-name="${nombreEscapado}"
-                 onclick="asignarClienteDesdeModal(this, 'personal')">
+                 onclick="window.asignarCliente(${p.id}, '${p.name?.replace(/'/g, "\\'") || 'Sin Nombre'}', 'personal', false, ${p.debt || 0}, ${p.limite_consumo || 100})">
                 <div>
                     <p class="text-xs font-black uppercase text-white">${nombreEscapado}</p>
                     <p class="text-[9px] text-slate-400 font-bold">Deuda: $${deudaEscapada}</p>
@@ -651,17 +553,4 @@ window.filtrarModalPers = function() {
             </div>
         `;
         }).join('');
-}
-
-function asignarClienteDesdeModal(elemento, tipo) {
-    if (tipo === 'estudiante') {
-        const id = parseInt(elemento.dataset.estId);
-        const nombre = elemento.dataset.estName;
-        const bloqueado = elemento.dataset.estBlocked === 'true';
-        asignarCliente(id, nombre, tipo, bloqueado);
-    } else if (tipo === 'personal') {
-        const id = parseInt(elemento.dataset.persId);
-        const nombre = elemento.dataset.persName;
-        asignarCliente(id, nombre, tipo, false);
-    }
 }

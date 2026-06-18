@@ -132,7 +132,7 @@ window.renderDeudores = function() {
 }
 
 // ==========================================
-// 3. WHATSAPP (CON MENSAJE CÁLIDO)
+// 3. WHATSAPP (CON MENSAJE CÁLIDO Y URL ACTUALIZADA)
 // ==========================================
 window.enviarRecordatorio = function(id) {
     const lista = window.state.currentTab === 'alumnos' ? window.state.deudoresAlumnos : window.state.deudoresPersonal;
@@ -150,7 +150,9 @@ window.enviarRecordatorio = function(id) {
     const nombreFilt = deudor.name || deudor.nombre;
     
     const tipoQuery = window.state.currentTab === 'personal' ? '&tipo=personal' : '';
-    const linkPago = `https://mauriciando1999.github.io/Chela-Sport/pago.html?id=${id}&name=${encodeURIComponent(nombreFilt)}&debt=${debtNum.toFixed(2)}${tipoQuery}`;
+    
+    // CORRECCIÓN: Enlace apuntando a tu dominio de Vercel
+    const linkPago = `https://appchela.vercel.app/pago.html?id=${id}&name=${encodeURIComponent(nombreFilt)}&debt=${debtNum.toFixed(2)}${tipoQuery}`;
 
     const msgTexto = window.state.currentTab === 'alumnos'
         ? `¡Hola, *${deudor.representante || nombreFilt}*! Esperamos que te encuentres muy bien. 👋\n\nTe escribimos desde la administración de Chela Sport 1972 para ayudarte a mantener al día la cuenta de *${nombreFilt}*. Actualmente, el saldo pendiente es de *$${debtNum.toFixed(2)}*.\n\nAgradecemos mucho tu apoyo para solventar este monto a la brevedad. Puedes realizar y reportar tu pago móvil de forma segura en este enlace:\n${linkPago}\n\n📌 *Nota importante:* Este enlace es de un solo uso. Para evitar confusiones en el sistema, una vez que reportes los últimos dígitos de tu referencia, por favor no vuelvas a utilizar este link para futuros abonos.\n\n¡Muchas gracias por tu colaboración y confianza!`
@@ -159,7 +161,6 @@ window.enviarRecordatorio = function(id) {
 
     window.open(`https://wa.me/${phoneClean}?text=${encodeURIComponent(msgTexto)}`, '_blank');
 }
-
 // ==========================================
 // 4. LÓGICA DE ABONOS Y CÓDIGO QR
 // ==========================================

@@ -140,8 +140,8 @@
             }
         }
 
-        // ==========================================
-        // 3. CARGAR PENDIENTES (VERIFICADOR LIGERO)
+       // ==========================================
+        // 3. CARGAR PENDIENTES (CON FILTRO DE VALOR ABSOLUTO)
         // ==========================================
         async function cargarPendientes() {
             if(pestanaActiva !== 'pendientes') return;
@@ -168,16 +168,20 @@
                 }
 
                 contenedor.innerHTML = pendientes.map(v => {
-                    const montoBs = (parseFloat(v.total_usd) * tasaActual).toLocaleString('es-VE', { minimumFractionDigits: 2 });
+                    const montoAbsoluto = Math.abs(parseFloat(v.total_usd || 0));
+                    const montoBs = (montoAbsoluto * tasaActual).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    
                     const fecha = new Date(v.created_at).toLocaleString('es-VE', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
                     const nombreCliente = v.estudiante_nombre || 'Venta / Abono en Caja';
 
                     let comprobanteVisual = '';
-                    if (v.referencia) {
+                    
+                    // CORRECCIÓN: Ahora lee ref_pago
+                    if (v.ref_pago) {
                         comprobanteVisual = `
                         <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-5 text-center shadow-inner">
                             <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Referencia Bancaria Reportada</p>
-                            <p class="text-3xl font-mono font-black text-cyan-400 tracking-[0.2em]">${v.referencia}</p>
+                            <p class="text-3xl font-mono font-black text-cyan-400 tracking-[0.2em]">${v.ref_pago}</p>
                         </div>`;
                     } else {
                         comprobanteVisual = `
@@ -191,7 +195,7 @@
                         <div class="flex justify-between items-start mb-6">
                             <div>
                                 <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-[9px] font-black px-3 py-1 rounded-full uppercase italic"><i class="fa-solid fa-money-bill-transfer mr-1"></i> ${v.metodo_pago.replace('_', ' ')}</span>
-                                <div class="text-5xl font-black text-emerald-400 mt-5 tracking-tighter">$${parseFloat(v.total_usd).toFixed(2)}</div>
+                                <div class="text-5xl font-black text-emerald-400 mt-5 tracking-tighter">$${montoAbsoluto.toFixed(2)}</div>
                                 <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Equivale a: <span class="text-white">Bs. ${montoBs}</span></div>
                             </div>
                         </div>
@@ -205,10 +209,10 @@
                         </div>
 
                         <div class="flex gap-3">
-                            <button onclick="procesarPagoSeguro('${v.id}', '${v.id_orden}', '${v.estudiante_id}', ${v.total_usd}, 'completado')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all flex justify-center items-center gap-2 pulse-soft">
+                            <button onclick="procesarPagoSeguro('${v.id}', '${v.id_orden}', '${v.estudiante_id}', ${montoAbsoluto}, 'completado')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all flex justify-center items-center gap-2 pulse-soft">
                                 <i class="fa-solid fa-check-double text-sm"></i> Aprobar
                             </button>
-                            <button onclick="procesarPagoSeguro('${v.id}', '${v.id_orden}', '${v.estudiante_id}', ${v.total_usd}, 'rechazado')" class="bg-slate-950 text-red-500 px-6 py-4 rounded-2xl active:scale-95 border border-red-900/30 shadow-lg hover:bg-red-900/20 transition-all">
+                            <button onclick="procesarPagoSeguro('${v.id}', '${v.id_orden}', '${v.estudiante_id}', ${montoAbsoluto}, 'rechazado')" class="bg-slate-950 text-red-500 px-6 py-4 rounded-2xl active:scale-95 border border-red-900/30 shadow-lg hover:bg-red-900/20 transition-all">
                                 <i class="fa-solid fa-trash-can text-sm"></i>
                             </button>
                         </div>
@@ -216,9 +220,8 @@
                 }).join('');
             } catch (err) { alert("Error de red: " + err.message); }
         }
-
-        // ==========================================
-        // 4. CARGAR HISTORIAL (PAGOS YA PROCESADOS)
+       // ==========================================
+        // 4. CARGAR HISTORIAL (CON FILTRO DE VALOR ABSOLUTO)
         // ==========================================
         async function cargarHistorial() {
             if(pestanaActiva !== 'historial') return;
@@ -246,6 +249,7 @@
                 }
 
                 contenedor.innerHTML = historial.map(v => {
+                    const montoAbsoluto = Math.abs(parseFloat(v.total_usd || 0));
                     const fecha = new Date(v.created_at).toLocaleString('es-VE', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
                     const nombreCliente = v.estudiante_nombre || 'Venta / Abono en Caja';
                     
@@ -258,14 +262,14 @@
                         <div class="flex justify-between items-start mb-4">
                             <div>
                                 <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest"><i class="fa-solid fa-hashtag mr-1"></i> ${v.id_orden || 'S/N'}</span>
-                                <div class="text-3xl font-black text-slate-300 mt-2 tracking-tighter">$${parseFloat(v.total_usd).toFixed(2)}</div>
+                                <div class="text-3xl font-black text-slate-300 mt-2 tracking-tighter">$${montoAbsoluto.toFixed(2)}</div>
                             </div>
                             <div>
                                 ${statusBadge}
                             </div>
                         </div>
 
-                        ${v.referencia ? `<div class="mb-4 inline-block"><span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-1">Referencia</span><p class="text-sm font-mono font-black text-cyan-400 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800"># ${v.referencia}</p></div>` : ''}
+                        ${v.ref_pago ? `<div class="mb-4 inline-block"><span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-1">Referencia</span><p class="text-sm font-mono font-black text-cyan-400 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800"># ${v.ref_pago}</p></div>` : ''}
                         
                         <div class="border-t border-slate-800 pt-4 mt-2">
                             <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Cliente / Representante</p>

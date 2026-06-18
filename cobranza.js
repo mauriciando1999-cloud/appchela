@@ -236,14 +236,13 @@ async function ejecutarAbonoDB(id_deudor, nombre_deudor, monto, metodo, referenc
         const tabla = window.state.currentTab === 'alumnos' ? 'estudiantes' : 'personal';
         const statusVenta = metodo === 'PAGO_MOVIL' ? 'esperando_verificacion' : 'completado';
         
-        // CORRECCIÓN: Enviamos los montos siempre en POSITIVO a la base de datos
         const payloadVenta = {
             id_orden: idOrden,
             total_usd: monto, 
             monto_original: montoBs, 
             moneda: 'VES',
             metodo_pago: metodo,
-            referencia: referencia || null,
+            ref_pago: referencia || null, // CORRECCIÓN: Nombre exacto de la columna en Supabase
             status: statusVenta,
             tasa_referencia: window.state.tasa,
             items: [{ name: `Abono de deuda (${metodo.replace('_', ' ')})`, price: monto, qty: 1 }]

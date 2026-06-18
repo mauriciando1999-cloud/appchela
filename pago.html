@@ -96,13 +96,14 @@
                 const nombreParaBD = decodeURIComponent(nombreUrl);
 
                 // Ocultamos el teléfono dentro de "items" para que el verificador lo lea
+                // Ocultamos el teléfono dentro de "items" para que el verificador lo lea
                 const payloadVenta = {
                     id_orden: `ABO-${ref}-${Date.now().toString().slice(-4)}`,
                     total_usd: montoUSD,           
                     monto_original: montoBsCalculado, 
                     moneda: 'VES',
                     metodo_pago: 'PAGO_MOVIL',
-                    referencia: ref, 
+                    ref_pago: ref,  // <--- ¡ESTO ES LO MÁS IMPORTANTE! Debe decir ref_pago
                     status: 'pendiente_verificacion', 
                     tasa_referencia: tasaGlobal,
                     items: [{ name: isBulk ? "Abono Conjunto Familiar" : "Abono de Deuda", price: montoUSD, qty: 1, phone: phoneParam }]

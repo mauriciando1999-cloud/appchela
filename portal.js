@@ -211,21 +211,43 @@ function renderizarListaHijos(data) {
 window.procesarPagoFamiliar = function(deudaTotal, phone, representante) {
     window.location.href = `pago.html?bulk=true&name=${encodeURIComponent(representante)}&debt=${deudaTotal.toFixed(2)}&phone=${phone}`;
 }
-
 window.modificarLimiteDiario = async function(id, limiteActual, phone) {
-    const nuevoLimite = prompt(`Establecer límite DIARIO:\n(0 = Ilimitado)\n(Actual: $${limiteActual})`, limiteActual);
+    const nuevoLimite = prompt(`Establecer Límite de Crédito:\n(Actual: $${limiteActual})`, limiteActual);
     if (nuevoLimite === null) return;
     const num = parseFloat(nuevoLimite);
     if (isNaN(num) || num < 0) return alert("Monto inválido.");
-    const { error } = await _sb.from('estudiantes').update({ limite_diario: num }).eq('id', id);
-    if (!error) { alert(`Límite diario actualizado.`); solicitarDatosActualizados(phone); }
+    
+    document.body.style.cursor = 'wait'; // Indicador de carga
+    
+    // CORRECCIÓN: Usamos 'limite_credito' que es el nombre real en tu base de datos
+    const { error } = await _sb.from('estudiantes').update({ limite_credito: num }).eq('id', id);
+    
+    document.body.style.cursor = 'default';
+
+    if (!error) { 
+        alert(`✅ Límite de crédito actualizado a $${num.toFixed(2)}`); 
+        solicitarDatosActualizados(phone); 
+    } else {
+        alert(`❌ Supabase rechazó el cambio:\n${error.message}`);
+        console.error(error);
+    }
 }
 
 window.cambiarEstadoBloqueo = async function(id, nuevoEstado, phone) {
+    document.body.style.cursor = 'wait';
+    
+    // La columna 'bloqueado' es correcta. Funcionará gracias al arreglo del RLS.
     const { error } = await _sb.from('estudiantes').update({ bloqueado: nuevoEstado }).eq('id', id);
-    if (!error) solicitarDatosActualizados(phone);
-}
+    
+    document.body.style.cursor = 'default';
 
+    if (!error) {
+        solicitarDatosActualizados(phone);
+    } else {
+        alert(`❌ Supabase rechazó el bloqueo:\n${error.message}`);
+        console.error(error);
+    }
+}
 window.verHistorialAlumno = async function(nombreAlumno) {
     const modal = document.getElementById('modal-historial-portal');
     const contenedor = document.getElementById('lista-historial-portal');

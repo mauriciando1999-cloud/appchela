@@ -238,16 +238,21 @@ async function ejecutarAbonoDB(id_deudor, nombre_deudor, monto, metodo, referenc
         const tabla = window.state.currentTab === 'alumnos' ? 'estudiantes' : 'personal';
         const statusVenta = metodo === 'PAGO_MOVIL' ? 'esperando_verificacion' : 'completado';
         
+        // EL SECRETO ESTÁ AQUÍ: Convertimos los montos a negativos.
+        // Un abono es una "venta negativa" (un crédito) para el cliente.
+        const montoCreditoUsd = -Math.abs(monto);
+        const montoCreditoBs = -Math.abs(montoBs);
+
         const payloadVenta = {
             id_orden: idOrden,
-            total_usd: monto, 
-            monto_original: montoBs, 
+            total_usd: montoCreditoUsd, 
+            monto_original: montoCreditoBs, 
             moneda: 'VES',
             metodo_pago: metodo,
-            ref_pago: referencia || null, // CORRECCIÓN: Nombre exacto de la columna en Supabase
+            ref_pago: referencia || null,
             status: statusVenta,
             tasa_referencia: window.state.tasa,
-            items: [{ name: `Abono de deuda (${metodo.replace('_', ' ')})`, price: monto, qty: 1 }]
+            items: [{ name: `Abono de deuda (${metodo.replace('_', ' ')})`, price: montoCreditoUsd, qty: 1 }]
         };
 
         if (window.state.currentTab === 'alumnos') {
@@ -258,9 +263,12 @@ async function ejecutarAbonoDB(id_deudor, nombre_deudor, monto, metodo, referenc
             payloadVenta.estudiante_nombre = `[Personal] ${nombre_deudor}`;
         }
 
+        // Al insertar un monto negativo, cualquier trigger de Supabase RESTARÁ la deuda en lugar de sumarla.
         const { error: errVenta } = await _sb.from('ventas').insert([payloadVenta]);
         if (errVenta) throw errVenta;
 
+        // Mantengo tu actualización manual del frontend solo para Efectivo/Punto
+        // como capa de seguridad visual, aunque con el monto negativo ya no peleará con la DB.
         if (metodo !== 'PAGO_MOVIL') {
             const deudorInfo = window.state.currentTab === 'alumnos' 
                 ? window.state.deudoresAlumnos.find(d => d.id == id_deudor)

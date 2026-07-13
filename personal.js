@@ -157,7 +157,8 @@ function procesarPago() {
     const deuda = parseFloat(localUser.debt || 0);
     if (deuda <= 0) return;
 
-    window.location.href = `pago.html?id=${localUser.id}&name=${encodeURIComponent(localUser.name)}&debt=${deuda.toFixed(2)}&phone=${localUser.phone}`;
+    // Se añade "&tipo=personal" al final de la URL
+    window.location.href = `pago.html?id=${localUser.id}&name=${encodeURIComponent(localUser.name)}&debt=${deuda.toFixed(2)}&phone=${localUser.phone}&tipo=personal`;
 }
 
 async function ajustarLimite() {

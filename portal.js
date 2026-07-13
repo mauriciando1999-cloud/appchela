@@ -275,7 +275,8 @@ window.verHistorialAlumno = async function(nombreAlumno) {
 }
 
 window.procesarPago = function(id, deudaActual, phone, nombreEstudiante) {
-    window.location.href = `pago.html?id=${id}&name=${encodeURIComponent(nombreEstudiante)}&debt=${deudaActual.toFixed(2)}&phone=${phone}`;
+    // Se añade "&tipo=alumno" al final de la URL
+    window.location.href = `pago.html?id=${id}&name=${encodeURIComponent(nombreEstudiante)}&debt=${deudaActual.toFixed(2)}&phone=${phone}&tipo=alumno`;
 }
 window.cerrarSesion = function() { localStorage.removeItem('userPhone'); location.reload(); }
 

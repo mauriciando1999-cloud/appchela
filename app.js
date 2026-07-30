@@ -3,6 +3,8 @@ const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
 const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
 const _sb = supabase.createClient(SB_URL, SB_KEY);
 const ADMIN_EMAIL = 'mauriciando1999@gmail.com';
+// Cuenta con acceso exclusivo al módulo de Arbitraje Vehicular (vehiculos.html)
+const JORGE_EMAIL = 'jelopezr@gmail.com';
 
 window.state = { 
     products: [], 
@@ -32,7 +34,11 @@ window.onload = async () => {
         const path = window.location.pathname;
 
         if(user) {
-            window.state.userRole = (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) ? 'admin' : 'vendedor';
+            window.state.userRole = (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) ? 'admin'
+                : (user.email.toLowerCase() === JORGE_EMAIL.toLowerCase()) ? 'vehiculos' : 'vendedor';
+
+            if(window.state.userRole === 'vehiculos') return window.location.href = 'vehiculos.html';
+
             document.getElementById('auth-screen')?.classList.add('hidden');
             document.getElementById('app-content')?.classList.remove('hidden');
 

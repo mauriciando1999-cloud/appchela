@@ -7,6 +7,8 @@ const _sb = supabase.createClient(SB_URL, SB_KEY);
 
 // Variables globales útiles
 const ADMIN_EMAIL = 'mauriciando1999@gmail.com';
+// Cuenta con acceso exclusivo al módulo de Arbitraje Vehicular (vehiculos.html)
+const JORGE_EMAIL = 'jelopezr@gmail.com';
 const URL_SISTEMA = window.location.origin; // Opcional, pero muy útil
 
 // PIN maestro de acceso a paneles administrativos (verificacion.html, etc.)

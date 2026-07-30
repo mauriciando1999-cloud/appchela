@@ -6,6 +6,7 @@
     <title>Envolvia | Verificador Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -74,12 +75,8 @@
     <script>
         // ==========================================
         // 1. CONFIGURACIÓN Y SEGURIDAD
+        // (SB_URL, SB_KEY, _sb y MASTER_PIN vienen de config.js)
         // ==========================================
-        const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
-        const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd'; 
-        const _sb = supabase.createClient(SB_URL, SB_KEY);
-
-        const MASTER_PIN = "2026"; 
         let tasaActual = 0;
         let pestanaActiva = 'pendientes';
 
@@ -307,8 +304,22 @@
                     
                     // Traemos la venta exacta para revisar si es Familiar
                     const { data: venta } = await _sb.from('ventas').select('*').eq('id', idFila).single();
-                    
-                    if (venta && venta.estudiante_nombre && venta.estudiante_nombre.includes('[FAMILIA]')) {
+
+                    // PEDIDO DE PREVENTA ESCOLAR: no toca deuda, descuenta stock por talla
+                    if (venta && venta.tipo_pedido === 'preventa') {
+                        if (!venta.stock_descontado) {
+                            const itemsPedido = typeof venta.items === 'string' ? JSON.parse(venta.items) : (venta.items || []);
+                            for (const item of itemsPedido) {
+                                if (!item.producto_id) continue;
+                                const { data: prod } = await _sb.from('productos').select('stock').eq('id', item.producto_id).single();
+                                if (prod) {
+                                    await _sb.from('productos').update({ stock: prod.stock - item.qty }).eq('id', item.producto_id);
+                                }
+                            }
+                            await _sb.from('ventas').update({ stock_descontado: true }).eq('id', idFila);
+                        }
+                    }
+                    else if (venta && venta.estudiante_nombre && venta.estudiante_nombre.includes('[FAMILIA]')) {
                         // 1. Extraer el nombre del representante limpiando la etiqueta "[FAMILIA]"
                         const repNombre = venta.estudiante_nombre.replace('[FAMILIA]', '').trim();
                         

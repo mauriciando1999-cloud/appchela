@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Preventa Escolar | Chela Sport 1972</title>
+    
+    <!-- Tailwind CSS, Supabase y FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; overflow-x: hidden; }
+        .step { display: none; }
+        .step.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        input, select { background: #0f172a !important; border: 1px solid #1e293b !important; color: white !important; transition: all 0.2s; }
+        input:focus, select:focus { border-color: #6366f1 !important; outline: none; box-shadow: 0 0 15px rgba(99, 102, 241, 0.2); }
+    </style>
+</head>
+
+<body class="p-2 md:p-4 flex flex-col justify-start items-center min-h-screen">
+
+    <div class="w-full max-w-md bg-slate-950/40 min-h-[85vh] rounded-[2.5rem] p-2 flex flex-col relative border border-slate-800/50">
+        
+        <!-- PASO 1: Catálogo de Productos -->
+        <div id="step-productos" class="step active flex-1 p-2">
+            <section class="py-6 bg-slate-900/40 border border-slate-800/50 rounded-[2.5rem] mb-5 text-center px-2 mt-1 shadow-xl glass">
+                <div class="inline-block bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest mb-2">
+                    <i class="fa-solid fa-tag mr-1"></i> Descuento del 10%
+                </div>
+                <h2 class="text-white font-black uppercase text-lg tracking-tighter italic">
+                    Preventa Escolar <span class="text-indigo-400 text-sm block not-italic font-medium tracking-normal mt-0.5">Chela Sport 1972</span>
+                </h2>
+                <p class="text-[11px] text-slate-400 font-medium mt-1">Reserva hoy y asegura tu stock para el inicio de clases.</p>
+            </section>
+
+            <div class="space-y-4 px-1 pb-10">
+                
+                <!-- Producto 1: Combo Completo -->
+                <div class="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex flex-col shadow-lg glass relative">
+                    <div class="absolute top-3 right-3 bg-indigo-600 text-white text-[9px] font-black px-2.5 py-1 rounded-md z-10 uppercase tracking-wider">
+                        <i class="fa-solid fa-star"></i> MÁS VENDIDO
+                    </div>
+                    <div class="flex gap-4 items-center">
+                        <div class="w-24 h-24 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800">
+                            <img src="https://lh3.googleusercontent.com/d/1579GgjpmqJmnRA0PGe0gfC8U1EIvlV1_" class="w-full h-full object-cover" alt="Combo Completo">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-slate-100 mb-1 leading-tight">Combo Completo Escolar</h3>
+                            <p class="text-[10px] text-slate-400 mb-2 leading-tight">Chaqueta universitaria, chemise, franela de deporte y pantalón/mono.</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-xs text-slate-500 line-through">$95.00</span>
+                                <span class="text-lg font-black text-emerald-400">$85.50</span>
+                                <span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold">-10%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="seleccionarProducto('Combo Completo Escolar', 85.50, 'combo')" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black py-3 rounded-xl text-xs uppercase tracking-widest active:scale-95 transition-all shadow-lg flex justify-center items-center gap-2">
+                        Apartar Combo <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <!-- Producto 2: Uniforme Diario -->
+                <div class="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex flex-col shadow-lg glass">
+                    <div class="flex gap-4 items-center">
+                        <div class="w-24 h-24 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800">
+                            <img src="https://lh3.googleusercontent.com/d/15EsYozX18rJwg_svJxyJBIoMd0qcsrBB" class="w-full h-full object-cover" alt="Uniforme Diario">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-slate-100 mb-1 leading-tight">Uniforme Diario</h3>
+                            <p class="text-[10px] text-slate-400 mb-2 leading-tight">Chemise escolar blanca y pantalón de gabardina.</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-xs text-slate-500 line-through">$42.00</span>
+                                <span class="text-lg font-black text-emerald-400">$37.80</span>
+                                <span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold">-10%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="seleccionarProducto('Uniforme Diario', 37.80, 'diario')" class="w-full mt-4 bg-slate-800 hover:bg-slate-700 text-indigo-400 font-black py-3 rounded-xl text-xs uppercase tracking-widest active:scale-95 transition-all flex justify-center items-center gap-2">
+                        Apartar <i class="fa-solid fa-cart-shopping"></i>
+                    </button>
+                </div>
+
+                <!-- Producto 3: Chaqueta Universitaria -->
+                <div class="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex flex-col shadow-lg glass">
+                    <div class="flex gap-4 items-center">
+                        <div class="w-24 h-24 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800">
+                            <img src="https://lh3.googleusercontent.com/d/15IyrD24AzXmci-VA910iLZp03pIZMJYb" class="w-full h-full object-cover" alt="Chaqueta Universitaria">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-slate-100 mb-1 leading-tight">Chaqueta Universitaria</h3>
+                            <p class="text-[10px] text-slate-400 mb-2 leading-tight">Chaqueta deportiva institucional con broches y puños tejidos.</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-xs text-slate-500 line-through">$30.00</span>
+                                <span class="text-lg font-black text-emerald-400">$27.00</span>
+                                <span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold">-10%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="seleccionarProducto('Chaqueta Universitaria', 27.00, 'chaqueta')" class="w-full mt-4 bg-slate-800 hover:bg-slate-700 text-indigo-400 font-black py-3 rounded-xl text-xs uppercase tracking-widest active:scale-95 transition-all flex justify-center items-center gap-2">
+                        Apartar <i class="fa-solid fa-cart-shopping"></i>
+                    </button>
+                </div>
+
+                <!-- Producto 4: Chemise Escolar -->
+                <div class="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex flex-col shadow-lg glass">
+                    <div class="flex gap-4 items-center">
+                        <div class="w-24 h-24 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800">
+                            <img src="https://lh3.googleusercontent.com/d/1ShUfWRed6ckxwoaSqfQahI4QnErYAxEt" class="w-full h-full object-cover" alt="Chemise Escolar">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-slate-100 mb-1 leading-tight">Chemise Escolar</h3>
+                            <p class="text-[10px] text-slate-400 mb-2 leading-tight">Tela de algodón/poliéster de alta durabilidad con insignia.</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-xs text-slate-500 line-through">$22.00</span>
+                                <span class="text-lg font-black text-emerald-400">$19.80</span>
+                                <span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold">-10%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="seleccionarProducto('Chemise Escolar', 19.80, 'chemise')" class="w-full mt-4 bg-slate-800 hover:bg-slate-700 text-indigo-400 font-black py-3 rounded-xl text-xs uppercase tracking-widest active:scale-95 transition-all flex justify-center items-center gap-2">
+                        Apartar <i class="fa-solid fa-cart-shopping"></i>
+                    </button>
+                </div>
+
+                <!-- Producto 5: Pantalón de Gabardina -->
+                <div class="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex flex-col shadow-lg glass">
+                    <div class="flex gap-4 items-center">
+                        <div class="w-24 h-24 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800">
+                            <img src="https://lh3.googleusercontent.com/d/1VCyDJkBF77W9kBGuUAr7c3MV1uDwdSSu" class="w-full h-full object-cover" alt="Pantalón Escolar">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-slate-100 mb-1 leading-tight">Pantalón Gabardina Escolar</h3>
+                            <p class="text-[10px] text-slate-400 mb-2 leading-tight">Pantalón de vestir azul marino.</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-xs text-slate-500 line-through">$20.00</span>
+                                <span class="text-lg font-black text-emerald-400">$18.00</span>
+                                <span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold">-10%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="seleccionarProducto('Pantalón Gabardina Escolar', 18.00, 'pantalon')" class="w-full mt-4 bg-slate-800 hover:bg-slate-700 text-indigo-400 font-black py-3 rounded-xl text-xs uppercase tracking-widest active:scale-95 transition-all flex justify-center items-center gap-2">
+                        Apartar <i class="fa-solid fa-cart-shopping"></i>
+                    </button>
+                </div>
+
+                <!-- Producto 6: Mono Deportivo -->
+                <div class="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex flex-col shadow-lg glass">
+                    <div class="flex gap-4 items-center">
+                        <div class="w-24 h-24 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800">
+                            <img src="https://lh3.googleusercontent.com/d/1scgr4RpEGNz8i115zadfDk__aJBf1hZu" class="w-full h-full object-cover" alt="Mono Deportivo">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-slate-100 mb-1 leading-tight">Mono Deportivo Escolar</h3>
+                            <p class="text-[10px] text-slate-400 mb-2 leading-tight">Mono deportivo de atletismo de taslon y bolsillos.</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-xs text-slate-500 line-through">$22.00</span>
+                                <span class="text-lg font-black text-emerald-400">$19.80</span>
+                                <span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold">-10%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="seleccionarProducto('Mono Deportivo Escolar', 19.80, 'mono')" class="w-full mt-4 bg-slate-800 hover:bg-slate-700 text-indigo-400 font-black py-3 rounded-xl text-xs uppercase tracking-widest active:scale-95 transition-all flex justify-center items-center gap-2">
+                        Apartar <i class="fa-solid fa-cart-shopping"></i>
+                    </button>
+                </div>
+
+                <!-- Producto 7: Franela de Deporte -->
+                <div class="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex flex-col shadow-lg glass">
+                    <div class="flex gap-4 items-center">
+                        <div class="w-24 h-24 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800">
+                            <img src="https://lh3.googleusercontent.com/d/1yAZW2D228IHCflJ1BPSOFqgcY_9uAS1v" class="w-full h-full object-cover" alt="Franela Deporte">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-slate-100 mb-1 leading-tight">Franela de Deporte</h3>
+                            <p class="text-[10px] text-slate-400 mb-2 leading-tight">Transpirable con estampado deportivo oficial.</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-xs text-slate-500 line-through">$22.00</span>
+                                <span class="text-lg font-black text-emerald-400">$19.80</span>
+                                <span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold">-10%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="seleccionarProducto('Franela de Deporte', 19.80, 'franela')" class="w-full mt-4 bg-slate-800 hover:bg-slate-700 text-indigo-400 font-black py-3 rounded-xl text-xs uppercase tracking-widest active:scale-95 transition-all flex justify-center items-center gap-2">
+                        Apartar <i class="fa-solid fa-cart-shopping"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- PASO 2: Selección de Tallas y Cantidades -->
+        <div id="step-formulario" class="step flex-1 p-4">
+            <button onclick="nextStep('productos')" class="text-slate-500 hover:text-slate-300 transition-all mb-6 flex items-center gap-2 font-bold text-sm">
+                <i class="fa-solid fa-arrow-left"></i> Volver al catálogo
+            </button>
+            <h3 class="text-xl font-black mb-1 text-white">Configurar Pedido</h3>
+            <p class="text-[10px] text-slate-400 font-medium mb-4">Producto: <span id="lbl-producto" class="text-indigo-400 font-bold"></span></p>
+            
+            <div class="bg-indigo-950/40 border border-indigo-500/20 p-4 rounded-2xl mb-6 shadow-inner">
+                <p class="text-[10px] text-indigo-300 font-black uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-link"></i> Vinculado al Portal
+                </p>
+                <div class="flex flex-col gap-1">
+                    <p class="text-xs text-slate-400 font-medium">Rep: <span id="lbl-rep" class="text-slate-200 font-bold">Cargando...</span></p>
+                    <p class="text-xs text-slate-400 font-medium">Estudiante: <span id="lbl-est" class="text-slate-200 font-bold">Cargando...</span></p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Género (solo aplica a prendas con Chemise: chemise, diario, combo) -->
+                <div id="box-genero" style="display:none;">
+                    <label class="text-[10px] text-slate-500 font-bold uppercase ml-1">Género</label>
+                    <select id="reg-genero" class="w-full p-4 rounded-xl text-sm mt-1">
+                        <option value="nino">Niño</option>
+                        <option value="nina">Niña</option>
+                    </select>
+                </div>
+
+                <!-- Tallas -->
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <div id="box-talla-sup">
+                        <label class="text-[10px] text-slate-500 font-bold uppercase ml-1">Talla Superior</label>
+                        <select id="reg-talla-sup" class="w-full p-4 rounded-xl text-sm mt-1">
+                            <option value="">Seleccione...</option>
+                            <option value="4">Talla 4</option>
+                            <option value="6">Talla 6</option>
+                            <option value="8">Talla 8</option>
+                            <option value="10">Talla 10</option>
+                            <option value="12">Talla 12</option>
+                            <option value="14">Talla 14</option>
+                            <option value="16">Talla 16</option>
+                            <option value="S">S</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                        </select>
+                    </div>
+                    <div id="box-talla-inf">
+                        <label class="text-[10px] text-slate-500 font-bold uppercase ml-1">Talla Inferior</label>
+                        <select id="reg-talla-inf" class="w-full p-4 rounded-xl text-sm mt-1">
+                            <option value="">Seleccione...</option>
+                            <option value="4">Talla 4</option>
+                            <option value="6">Talla 6</option>
+                            <option value="8">Talla 8</option>
+                            <option value="10">Talla 10</option>
+                            <option value="12">Talla 12</option>
+                            <option value="14">Talla 14</option>
+                            <option value="16">Talla 16</option>
+                            <option value="S">S</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Variante Pantalón/Mono (solo aplica al Combo Completo) -->
+                <div id="box-variante" style="display:none;">
+                    <label class="text-[10px] text-slate-500 font-bold uppercase ml-1">El combo lleva...</label>
+                    <select id="reg-variante" class="w-full p-4 rounded-xl text-sm mt-1">
+                        <option value="pantalon">Pantalón Gabardina</option>
+                        <option value="mono">Mono Deportivo</option>
+                    </select>
+                </div>
+
+                <!-- Productos Adicionales (ej. Insignias) -->
+                <div id="box-extras" class="space-y-2"></div>
+
+                <!-- Selección de Cantidad -->
+                <div>
+                    <label class="text-[10px] text-slate-500 font-bold uppercase ml-1">Cantidad de Unidades</label>
+                    <div class="flex items-center gap-3 mt-1">
+                        <button type="button" onclick="cambiarCantidad(-1)" class="w-12 h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black border border-slate-700 active:scale-95 text-lg flex items-center justify-center">-</button>
+                        <input type="number" id="reg-cantidad" value="1" min="1" max="20" readonly class="w-full text-center p-3 rounded-xl font-black text-xl border border-slate-800 bg-slate-950 text-emerald-400">
+                        <button type="button" onclick="cambiarCantidad(1)" class="w-12 h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black border border-slate-700 active:scale-95 text-lg flex items-center justify-center">+</button>
+                    </div>
+                </div>
+
+                <!-- Resumen de Monto -->
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center mt-4">
+                    <span class="text-xs text-slate-400 font-bold uppercase">Monto Total:</span>
+                    <span id="lbl-monto-calculado" class="text-2xl font-black text-emerald-400">$0.00</span>
+                </div>
+
+                <!-- Botón hacia Portal de Pago -->
+                <button id="btn-guardar" onclick="irAPortalPago()" class="w-full bg-emerald-600 hover:bg-emerald-500 p-4 rounded-xl font-black uppercase tracking-widest text-xs mt-4 active:scale-95 text-white flex justify-center items-center gap-2 transition-all shadow-lg">
+                    Aceptar e Ir a Pagar <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script Configuración -->
+    <script src="config.js"></script>
+    <script src="preventa-config.js"></script>
+
+    <!-- Lógica del Portal -->
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+
+        let cantidadActual = 1;
+        let pedidoActual = {
+            producto: '',
+            precioUnitario: 0,
+            tipo: '',
+            representante: urlParams.get('rep') || localStorage.getItem('user_name') || 'Representante Activo',
+            estudiante: urlParams.get('est') || localStorage.getItem('student_name') || 'Estudiante Asignado',
+            telefono: urlParams.get('tel') || localStorage.getItem('user_phone') || 'No registrado',
+            tallaSup: '',
+            tallaInf: ''
+        };
+
+        // Índice de productos reales (Supabase) para resolver el pedido: clave = nombre normalizado
+        let productosIndex = {};
+        // Cantidades elegidas de productos adicionales (ej. Insignias): clave = nombre del producto
+        let extrasState = {};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('lbl-rep').innerText = pedidoActual.representante;
+            document.getElementById('lbl-est').innerText = pedidoActual.estudiante;
+            cargarProductos();
+        });
+
+        async function cargarProductos() {
+            const { data, error } = await _sb.from('productos').select('id,name,price,stock');
+            if (error || !data) return;
+            productosIndex = {};
+            data.forEach(p => { productosIndex[normalizarNombreProducto(p.name)] = p; });
+            renderExtras();
+        }
+
+        function renderExtras() {
+            const cont = document.getElementById('box-extras');
+            cont.innerHTML = EXTRAS_DISPONIBLES.map(extra => {
+                if (extrasState[extra.nombre] === undefined) extrasState[extra.nombre] = 0;
+                const prod = productosIndex[normalizarNombreProducto(extra.nombre)];
+                const stockDisponible = prod ? prod.stock : 0;
+                const idSeguro = extra.nombre.replace(/[^a-zA-Z0-9]/g, '');
+                return `
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-200">${extra.label} <span class="text-emerald-400 font-black">$${extra.precio.toFixed(2)}</span></p>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase">${stockDisponible > 0 ? stockDisponible + ' disponibles' : 'Agotado'}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="cambiarCantidadExtra('${extra.nombre}', -1)" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black border border-slate-700 active:scale-95 flex items-center justify-center">-</button>
+                        <span id="extra-qty-${idSeguro}" class="w-6 text-center font-black text-emerald-400">${extrasState[extra.nombre]}</span>
+                        <button type="button" onclick="cambiarCantidadExtra('${extra.nombre}', 1)" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black border border-slate-700 active:scale-95 flex items-center justify-center">+</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.cambiarCantidadExtra = function(nombreExtra, delta) {
+            const extra = EXTRAS_DISPONIBLES.find(e => e.nombre === nombreExtra);
+            const prod = productosIndex[normalizarNombreProducto(nombreExtra)];
+            const stockDisponible = prod ? prod.stock : 0;
+            const nuevaCantidad = (extrasState[nombreExtra] || 0) + delta;
+            extrasState[nombreExtra] = Math.max(0, Math.min(stockDisponible, nuevaCantidad));
+            const idSeguro = nombreExtra.replace(/[^a-zA-Z0-9]/g, '');
+            document.getElementById(`extra-qty-${idSeguro}`).innerText = extrasState[nombreExtra];
+            actualizarMontoTotal();
+        };
+
+        window.nextStep = function(stepId) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById('step-' + stepId);
+            if(target) target.classList.add('active');
+            window.scrollTo(0, 0);
+        };
+
+        window.seleccionarProducto = function(nombre, precio, tipo) {
+            pedidoActual.producto = nombre;
+            pedidoActual.precioUnitario = precio;
+            pedidoActual.tipo = tipo;
+            cantidadActual = 1;
+
+            // Resetear selecciones anteriores
+            document.getElementById('reg-talla-sup').value = '';
+            document.getElementById('reg-talla-inf').value = '';
+            document.getElementById('reg-genero').value = 'nino';
+            document.getElementById('reg-variante').value = 'pantalon';
+            EXTRAS_DISPONIBLES.forEach(e => extrasState[e.nombre] = 0);
+
+            document.getElementById('lbl-producto').innerText = nombre;
+            document.getElementById('reg-cantidad').value = cantidadActual;
+
+            const boxSup = document.getElementById('box-talla-sup');
+            const boxInf = document.getElementById('box-talla-inf');
+            const boxGenero = document.getElementById('box-genero');
+            const boxVariante = document.getElementById('box-variante');
+
+            boxSup.style.display = 'block';
+            boxInf.style.display = 'block';
+
+            if (tipo === 'chaqueta' || tipo === 'chemise' || tipo === 'franela') {
+                boxInf.style.display = 'none';
+            } else if (tipo === 'pantalon' || tipo === 'mono') {
+                boxSup.style.display = 'none';
+            }
+
+            boxGenero.style.display = (tipo === 'chemise' || tipo === 'diario' || tipo === 'combo') ? 'block' : 'none';
+            boxVariante.style.display = (tipo === 'combo') ? 'block' : 'none';
+
+            renderExtras();
+            actualizarMontoTotal();
+            nextStep('formulario');
+        };
+
+        window.cambiarCantidad = function(delta) {
+            cantidadActual = Math.max(1, cantidadActual + delta);
+            document.getElementById('reg-cantidad').value = cantidadActual;
+            actualizarMontoTotal();
+        };
+
+        function totalExtras() {
+            return EXTRAS_DISPONIBLES.reduce((sum, e) => sum + (e.precio * (extrasState[e.nombre] || 0)), 0);
+        }
+
+        function actualizarMontoTotal() {
+            const total = (pedidoActual.precioUnitario * cantidadActual) + totalExtras();
+            document.getElementById('lbl-monto-calculado').innerText = `$${total.toFixed(2)}`;
+        }
+
+        window.irAPortalPago = function() {
+            const tallaSup = document.getElementById('reg-talla-sup').value;
+            const tallaInf = document.getElementById('reg-talla-inf').value;
+
+            const boxSupVisible = document.getElementById('box-talla-sup').style.display !== 'none';
+            const boxInfVisible = document.getElementById('box-talla-inf').style.display !== 'none';
+
+            if (boxSupVisible && !tallaSup) return alert("⚠️ Seleccione la talla superior.");
+            if (boxInfVisible && !tallaInf) return alert("⚠️ Seleccione la talla inferior.");
+
+            pedidoActual.tallaSup = boxSupVisible ? tallaSup : 'N/A';
+            pedidoActual.tallaInf = boxInfVisible ? tallaInf : 'N/A';
+
+            const boxGeneroVisible = document.getElementById('box-genero').style.display !== 'none';
+            const genero = boxGeneroVisible ? document.getElementById('reg-genero').value : null;
+            const pantalonOMono = pedidoActual.tipo === 'combo' ? document.getElementById('reg-variante').value : null;
+
+            const ctx = { genero, pantalonOMono, tallaSup: pedidoActual.tallaSup, tallaInf: pedidoActual.tallaInf };
+            const roles = PRODUCT_TYPE_MAP[pedidoActual.tipo] || [];
+
+            const items = [];
+            for (const role of roles) {
+                const plantilla = role.plantilla(ctx);
+                const talla = role.talla(ctx);
+                const nombreEsp = nombreEsperado(plantilla, talla);
+                const prod = productosIndex[normalizarNombreProducto(nombreEsp)];
+                if (!prod) {
+                    return alert(`⚠️ "${nombreEsp}" no está disponible en el sistema. Contacta al colegio antes de continuar.`);
+                }
+                items.push({ name: prod.name, qty: cantidadActual, price: prod.price, producto_id: prod.id, rol: role.rol, talla });
+            }
+
+            EXTRAS_DISPONIBLES.forEach(extra => {
+                const cantidadExtra = extrasState[extra.nombre] || 0;
+                if (cantidadExtra <= 0) return;
+                const prod = productosIndex[normalizarNombreProducto(extra.nombre)];
+                if (!prod) return;
+                items.push({ name: prod.name, qty: cantidadExtra, price: prod.price, producto_id: prod.id, rol: 'extra', talla: null });
+            });
+
+            const detalle = {
+                producto: pedidoActual.producto,
+                tipoBase: pedidoActual.tipo,
+                tallaSup: pedidoActual.tallaSup,
+                tallaInf: pedidoActual.tallaInf,
+                genero: genero,
+                pantalonOMono: pantalonOMono,
+                cantidad: cantidadActual,
+                representante: pedidoActual.representante,
+                estudiante: pedidoActual.estudiante,
+                telefono: pedidoActual.telefono
+            };
+
+            const montoTotal = ((pedidoActual.precioUnitario * cantidadActual) + totalExtras()).toFixed(2);
+            const pedidoResuelto = { items, detalle };
+
+            // Redirección directa al Portal de Pago pasando todos los parámetros del pedido
+            const redirectUrl = `pago.html?debt=${montoTotal}` +
+                `&name=${encodeURIComponent(pedidoActual.estudiante)}` +
+                `&phone=${encodeURIComponent(pedidoActual.telefono)}` +
+                `&prod=${encodeURIComponent(pedidoActual.producto)}` +
+                `&sup=${encodeURIComponent(pedidoActual.tallaSup)}` +
+                `&inf=${encodeURIComponent(pedidoActual.tallaInf)}` +
+                `&qty=${cantidadActual}` +
+                `&precioUnitario=${pedidoActual.precioUnitario}` +
+                `&tipo=preventa` +
+                `&pedido=${encodeURIComponent(JSON.stringify(pedidoResuelto))}`;
+
+            window.location.href = redirectUrl;
+        };
+    </script>
+</body>
+</html>

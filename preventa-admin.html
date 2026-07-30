@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chela Sport | Preventa Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="preventa-config.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { background-color: #020617; font-family: 'Inter', sans-serif; color: white; overflow-x: hidden; }
+        .card-shadow { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); }
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- MODAL DE SEGURIDAD (PIN MAESTRO) -->
+    <div id="modal-seguridad" class="fixed inset-0 bg-slate-950/95 z-[200] flex items-center justify-center p-4 backdrop-blur-md transition-all">
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-2xl text-center max-w-sm w-full relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500"></div>
+            <div class="w-20 h-20 bg-indigo-500/10 border border-indigo-500/20 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fa-solid fa-shirt text-3xl"></i>
+            </div>
+            <h2 class="text-white font-black uppercase tracking-widest mb-2 text-lg">Acceso Restringido</h2>
+            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-8">Preventa Escolar • Chela Sport</p>
+
+            <input type="password" id="pin-input" maxlength="4" placeholder="••••" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl text-center text-3xl tracking-[0.5em] text-white outline-none focus:border-indigo-500 mb-6 font-black transition-colors">
+
+            <button onclick="validarAcceso()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-5 rounded-2xl uppercase tracking-widest text-xs active:scale-95 transition-all shadow-lg shadow-indigo-900/50">
+                Desbloquear Panel
+            </button>
+        </div>
+    </div>
+
+    <!-- PANEL PRINCIPAL -->
+    <div id="panel-body" class="max-w-4xl mx-auto space-y-6 hidden opacity-0 transition-opacity duration-500">
+        <header class="p-8 text-center bg-slate-900/80 backdrop-blur-xl rounded-[3rem] border border-slate-800 shadow-2xl relative">
+            <div class="inline-flex p-5 bg-indigo-600/10 rounded-full mb-4 border border-indigo-500/20">
+                <i class="fa-solid fa-shirt text-4xl text-indigo-500"></i>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-black uppercase italic tracking-tighter mb-2">Preventa <span class="text-indigo-500">Admin</span></h1>
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">Pedidos • Inventario • Producción</p>
+        </header>
+
+        <!-- PESTAÑAS -->
+        <div class="flex gap-2 bg-slate-900 p-2 rounded-3xl border border-slate-800 shadow-lg overflow-x-auto">
+            <button id="tab-pedidos" onclick="cambiarPestana('pedidos')" class="tab-btn flex-1 py-4 rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all whitespace-nowrap">
+                <i class="fa-solid fa-receipt mr-1"></i> Pedidos
+            </button>
+            <button id="tab-inventario" onclick="cambiarPestana('inventario')" class="tab-btn flex-1 py-4 rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all whitespace-nowrap">
+                <i class="fa-solid fa-boxes-stacked mr-1"></i> Inventario
+            </button>
+            <button id="tab-produccion" onclick="cambiarPestana('produccion')" class="tab-btn flex-1 py-4 rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all whitespace-nowrap">
+                <i class="fa-solid fa-industry mr-1"></i> Producción
+            </button>
+            <button id="tab-difusion" onclick="cambiarPestana('difusion')" class="tab-btn flex-1 py-4 rounded-[1.5rem] font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all whitespace-nowrap">
+                <i class="fa-brands fa-whatsapp mr-1"></i> Difusión
+            </button>
+        </div>
+
+        <!-- FILTROS DE PEDIDOS (solo visible en tab Pedidos) -->
+        <div id="filtros-pedidos" class="flex gap-2 flex-wrap">
+            <button onclick="filtrarPedidos('todos')" class="filtro-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-800">Todos</button>
+            <button onclick="filtrarPedidos('pendiente_verificacion')" class="filtro-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-800">Pendientes</button>
+            <button onclick="filtrarPedidos('completado')" class="filtro-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-800">Completados</button>
+            <button onclick="filtrarPedidos('rechazado')" class="filtro-btn px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-800">Rechazados</button>
+        </div>
+
+        <!-- CONTENEDOR -->
+        <div id="lista-contenedor" class="space-y-4 pb-20"></div>
+    </div>
+
+    <script src="preventa-admin.js"></script>
+</body>
+</html>

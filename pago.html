@@ -59,9 +59,16 @@
         const tipoUsuario = params.get('tipo'); 
         
         // AQUÍ ESTÁ LA MAGIA QUE FALTABA:
-        const isBulk = params.get('bulk') === 'true'; 
+        const isBulk = params.get('bulk') === 'true';
         const phoneParam = params.get('phone');
-        
+
+        // Pedido resuelto de Preventa (items con producto_id + detalle), si viene de portal_preventa.html
+        let pedidoPreventa = null;
+        try {
+            const pedidoParam = params.get('pedido');
+            if (pedidoParam) pedidoPreventa = JSON.parse(pedidoParam);
+        } catch (e) { console.error('No se pudo leer el pedido de preventa:', e); }
+
         let tasaGlobal = 0;
 
         async function init() {
@@ -117,6 +124,17 @@
                     payloadVenta.estudiante_nombre = `[Personal] ${nombreParaBD}`;
                 } else {
                     payloadVenta.estudiante_id = estId;
+                    payloadVenta.estudiante_nombre = nombreParaBD;
+                }
+
+                // Si viene de Preventa Escolar, sobreescribimos items con el pedido resuelto
+                // (producto_id ya calculado) y marcamos el pedido para descuento de stock al aprobar.
+                if (pedidoPreventa && Array.isArray(pedidoPreventa.items)) {
+                    payloadVenta.items = pedidoPreventa.items;
+                    payloadVenta.tipo_pedido = 'preventa';
+                    payloadVenta.detalle_pedido = pedidoPreventa.detalle;
+                    payloadVenta.producto_preventa = pedidoPreventa.detalle ? pedidoPreventa.detalle.producto : null;
+                    payloadVenta.stock_descontado = false;
                     payloadVenta.estudiante_nombre = nombreParaBD;
                 }
 

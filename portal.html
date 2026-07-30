@@ -24,11 +24,18 @@
         .pin-field { letter-spacing: 0.5em; text-align: center; font-size: 1.5rem !important; font-weight: 900; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Animación para el botón de preventa */
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+        .btn-preventa { animation: pulse-border 2s infinite; }
     </style>
 </head>
 
 <body class="p-4 flex justify-center items-start min-h-screen">
-    <div class="w-full max-w-md bg-slate-950/40 min-h-[85vh] rounded-[2.5rem] p-2 flex flex-col justify-between relative">
+    <div class="w-full max-w-md bg-slate-950/40 min-h-[85vh] rounded-[2.5rem] p-2 flex flex-col justify-between relative border border-slate-800/50">
         
         <div class="flex-1">
             
@@ -113,6 +120,25 @@
                             <button onclick="cerrarSesion()" class="w-10 h-10 bg-slate-900 border border-slate-800 rounded-xl flex justify-center items-center text-slate-400 active:scale-90 transition-all hover:text-red-400">
                                 <i class="fa-solid fa-right-from-bracket text-sm"></i>
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- BOTÓN LLAMATIVO PARA PREVENTA ESCOLAR -->
+                    <div class="mb-6 relative group cursor-pointer" onclick="irAPreventa()">
+                        <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[1.5rem] blur-sm opacity-70 group-hover:opacity-100 transition duration-300"></div>
+                        <div class="relative bg-slate-900 border border-indigo-500/50 rounded-[1.5rem] p-5 flex items-center justify-between shadow-xl btn-preventa overflow-hidden glass">
+                            <!-- Decoración de fondo -->
+                            <div class="absolute -right-4 -top-4 text-indigo-500/20 text-6xl rotate-12"><i class="fa-solid fa-shirt"></i></div>
+                            
+                            <div class="z-10 relative">
+                                <span class="bg-indigo-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-full tracking-widest mb-1.5 inline-block">Campaña Por tiempo limitado</span>
+                                <h4 class="text-white font-black text-lg leading-tight mb-0.5">Preventa Escolar</h4>
+                                <p class="text-[10px] text-indigo-200 font-medium">Asegura uniformes para el nuevo año.</p>
+                            </div>
+                            
+                            <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-inner shrink-0 z-10 group-active:scale-90 transition-transform">
+                                <i class="fa-solid fa-arrow-right text-lg"></i>
+                            </div>
                         </div>
                     </div>
 

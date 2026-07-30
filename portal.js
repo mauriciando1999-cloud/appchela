@@ -139,7 +139,8 @@ window.abrirDashboard = async function(phone) {
         if (hijoAfectado) {
             let resumenItems = "Productos varios";
             if (venta.items && Array.isArray(venta.items)) resumenItems = venta.items.map(i => `${i.qty}x ${i.name}`).join(', ');
-            dispararAlertaNativa(`🛒 ¡Nueva Compra de ${hijoAfectado.name}!`, `Consumo: $${parseFloat(venta.total_usd).toFixed(2)}\nLlevó: ${resumenItems}`);
+            dispararAlertaNativa(`🛒 ¡Nueva Compra de ${hijoAfectado.name}!`, `Consumo: $${parseFloat(venta.total_usd).toFixed(2)}
+Llevó: ${resumenItems}`);
             solicitarDatosActualizados(phone);
         }
     }).subscribe();
@@ -207,19 +208,18 @@ function renderizarListaHijos(data) {
     });
 }
 
-// NUEVA FUNCIÓN PARA ENVIAR EL PAGO FAMILIAR
 window.procesarPagoFamiliar = function(deudaTotal, phone, representante) {
     window.location.href = `pago.html?bulk=true&name=${encodeURIComponent(representante)}&debt=${deudaTotal.toFixed(2)}&phone=${phone}`;
 }
 window.modificarLimiteDiario = async function(id, limiteActual, phone) {
-    const nuevoLimite = prompt(`Establecer Límite de Crédito:\n(Actual: $${limiteActual})`, limiteActual);
+    const nuevoLimite = prompt(`Establecer Límite de Crédito:
+(Actual: $${limiteActual})`, limiteActual);
     if (nuevoLimite === null) return;
     const num = parseFloat(nuevoLimite);
     if (isNaN(num) || num < 0) return alert("Monto inválido.");
     
-    document.body.style.cursor = 'wait'; // Indicador de carga
+    document.body.style.cursor = 'wait'; 
     
-    // CORRECCIÓN: Usamos 'limite_credito' que es el nombre real en tu base de datos
     const { error } = await _sb.from('estudiantes').update({ limite_credito: num }).eq('id', id);
     
     document.body.style.cursor = 'default';
@@ -228,7 +228,8 @@ window.modificarLimiteDiario = async function(id, limiteActual, phone) {
         alert(`✅ Límite de crédito actualizado a $${num.toFixed(2)}`); 
         solicitarDatosActualizados(phone); 
     } else {
-        alert(`❌ Supabase rechazó el cambio:\n${error.message}`);
+        alert(`❌ Supabase rechazó el cambio:
+${error.message}`);
         console.error(error);
     }
 }
@@ -236,7 +237,6 @@ window.modificarLimiteDiario = async function(id, limiteActual, phone) {
 window.cambiarEstadoBloqueo = async function(id, nuevoEstado, phone) {
     document.body.style.cursor = 'wait';
     
-    // La columna 'bloqueado' es correcta. Funcionará gracias al arreglo del RLS.
     const { error } = await _sb.from('estudiantes').update({ bloqueado: nuevoEstado }).eq('id', id);
     
     document.body.style.cursor = 'default';
@@ -244,7 +244,8 @@ window.cambiarEstadoBloqueo = async function(id, nuevoEstado, phone) {
     if (!error) {
         solicitarDatosActualizados(phone);
     } else {
-        alert(`❌ Supabase rechazó el bloqueo:\n${error.message}`);
+        alert(`❌ Supabase rechazó el bloqueo:
+${error.message}`);
         console.error(error);
     }
 }
@@ -275,7 +276,6 @@ window.verHistorialAlumno = async function(nombreAlumno) {
 }
 
 window.procesarPago = function(id, deudaActual, phone, nombreEstudiante) {
-    // Se añade "&tipo=alumno" al final de la URL
     window.location.href = `pago.html?id=${id}&name=${encodeURIComponent(nombreEstudiante)}&debt=${deudaActual.toFixed(2)}&phone=${phone}&tipo=alumno`;
 }
 window.cerrarSesion = function() { localStorage.removeItem('userPhone'); location.reload(); }
@@ -318,6 +318,18 @@ async function dispararAlertaNativa(titulo, cuerpo) {
         if (reg) return reg.showNotification(titulo, { body: cuerpo });
     }
     try { new Notification(titulo, { body: cuerpo }); } catch(e) {}
+}
+
+// NUEVA FUNCIÓN PARA REDIRIGIR A PREVENTA
+window.irAPreventa = function() {
+    if(estudiantesCached.length === 0) return alert("Cargando datos, espera un momento...");
+    
+    const rep = encodeURIComponent(estudiantesCached[0].representante);
+    const tel = encodeURIComponent(estudiantesCached[0].phone);
+    // Tomamos el primer alumno por defecto, en preventa.html se podría hacer un select si hay varios
+    const est = encodeURIComponent(estudiantesCached[0].name);
+    
+    window.location.href = `portal_preventa.html?rep=${rep}&est=${est}&tel=${tel}`;
 }
 
 window.abrirMenuPortal = async function() {

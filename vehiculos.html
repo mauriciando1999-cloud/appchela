@@ -350,11 +350,12 @@
             const f = leerFormCalculadora();
             if (!f.precioObjetivoVenta || !f.precioOfertado) return V.toast('Completa precio ofertado y precio objetivo.', 'error');
             const r = V.evaluarViabilidad(f);
+            const num = (v) => v === '' || v === null || v === undefined ? 0 : Number(v);
             const { error } = await _sb.from('veh_unidades').insert({
                 marca: f.marca || null, modelo: f.modelo || null, anio: f.anio,
-                precio_ofertado: f.precioOfertado, precio_objetivo_venta: f.precioObjetivoVenta,
-                ganancia_deseada: f.gananciaDeseada, gastos_legales_estimados: f.gastosLegales,
-                puesta_a_punto_estimada: f.puestaAPunto, holgura_pct: f.holguraPct,
+                precio_ofertado: num(f.precioOfertado), precio_objetivo_venta: num(f.precioObjetivoVenta),
+                ganancia_deseada: num(f.gananciaDeseada), gastos_legales_estimados: num(f.gastosLegales),
+                puesta_a_punto_estimada: num(f.puestaAPunto), holgura_pct: num(f.holguraPct),
                 precio_maximo_compra: r.precioMaximoCompra, colchon_imprevistos: r.colchonImprevistos,
                 veredicto: r.aprobado ? 'aprobado' : 'rechazado', estado: 'evaluando'
             });

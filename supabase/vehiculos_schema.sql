@@ -82,6 +82,10 @@ create table if not exists veh_unidades (
     puesta_a_punto_estimada     numeric default 0,
     holgura_pct                 numeric default 10,
 
+    -- Contacto del vendedor / origen de la publicacion
+    enlace_publicacion          text,
+    telefono_contacto           text,
+
     -- Output congelado de la evaluacion
     precio_maximo_compra        numeric,
     colchon_imprevistos         numeric,
@@ -110,6 +114,11 @@ create table if not exists veh_unidades (
 );
 
 create index if not exists idx_veh_unidades_estado on veh_unidades(estado);
+
+-- Migracion aditiva: si ya habias corrido este script antes de que existieran
+-- las columnas de contacto, esto las agrega sin afectar filas existentes.
+alter table veh_unidades add column if not exists enlace_publicacion text;
+alter table veh_unidades add column if not exists telefono_contacto text;
 
 -- ----------------------------------------------------------------------------
 -- veh_gastos: bitacora de gastos vivos por unidad activa.

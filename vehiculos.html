@@ -84,6 +84,10 @@
                         <input type="text" id="calc-modelo" placeholder="Modelo" list="dl-modelos" oninput="sugerirReferencia()" class="bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold outline-none focus:border-emerald-500">
                         <input type="number" id="calc-anio" placeholder="Año" class="bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold outline-none focus:border-emerald-500">
                     </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="tel" id="calc-telefono" placeholder="Teléfono del dueño" class="bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold outline-none focus:border-emerald-500">
+                        <input type="url" id="calc-enlace" placeholder="Enlace de la publicación" class="bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold outline-none focus:border-emerald-500">
+                    </div>
                     <datalist id="dl-marcas"></datalist>
                     <datalist id="dl-modelos"></datalist>
                     <div id="sugerencia-mercado" class="hidden bg-indigo-900/20 border border-indigo-500/30 rounded-xl p-3 text-[11px] text-indigo-300 font-bold"></div>
@@ -283,6 +287,8 @@
                 marca: document.getElementById('calc-marca').value.trim(),
                 modelo: document.getElementById('calc-modelo').value.trim(),
                 anio: document.getElementById('calc-anio').value ? parseInt(document.getElementById('calc-anio').value) : null,
+                telefono: document.getElementById('calc-telefono').value.trim(),
+                enlace: document.getElementById('calc-enlace').value.trim(),
                 precioOfertado: document.getElementById('calc-ofertado').value,
                 precioObjetivoVenta: document.getElementById('calc-objetivo').value,
                 gananciaDeseada: document.getElementById('calc-ganancia').value,
@@ -353,6 +359,7 @@
             const num = (v) => v === '' || v === null || v === undefined ? 0 : Number(v);
             const { error } = await _sb.from('veh_unidades').insert({
                 marca: f.marca || null, modelo: f.modelo || null, anio: f.anio,
+                telefono_contacto: f.telefono || null, enlace_publicacion: f.enlace || null,
                 precio_ofertado: num(f.precioOfertado), precio_objetivo_venta: num(f.precioObjetivoVenta),
                 ganancia_deseada: num(f.gananciaDeseada), gastos_legales_estimados: num(f.gastosLegales),
                 puesta_a_punto_estimada: num(f.puestaAPunto), holgura_pct: num(f.holguraPct),
@@ -361,7 +368,7 @@
             });
             if (error) return V.toast('Error al guardar: ' + error.message, 'error');
             V.toast('Evaluación guardada');
-            ['calc-marca','calc-modelo','calc-anio','calc-ofertado','calc-objetivo','calc-legales','calc-punto'].forEach(id => document.getElementById(id).value = '');
+            ['calc-marca','calc-modelo','calc-anio','calc-telefono','calc-enlace','calc-ofertado','calc-objetivo','calc-legales','calc-punto'].forEach(id => document.getElementById(id).value = '');
             await cargarTodo();
             switchTab('dashboard');
         }
@@ -410,7 +417,7 @@
                 return `
                 <div onclick="abrirUnidad('${u.id}')" class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex justify-between items-center active:scale-[0.98] transition-transform cursor-pointer">
                     <div>
-                        <p class="font-bold text-white text-sm">${V.escapeHtml(nombre) || 'Vehículo sin nombre'}</p>
+                        <p class="font-bold text-white text-sm flex items-center gap-2">${V.escapeHtml(nombre) || 'Vehículo sin nombre'} ${u.telefono_contacto || u.enlace_publicacion ? '<i class="fa-solid fa-address-card text-cyan-400 text-xs"></i>' : ''}</p>
                         ${extra}
                     </div>
                     <div class="flex flex-col items-end gap-2">
@@ -440,6 +447,25 @@
             vstate.currentUnidad = null;
         }
 
+        function contactoBar(u) {
+            if (!u.telefono_contacto && !u.enlace_publicacion) return '';
+            const tel = (u.telefono_contacto || '').replace(/[^0-9+]/g, '');
+            return `
+                <div class="flex gap-2">
+                    ${u.telefono_contacto ? `
+                    <a href="tel:${tel}" class="flex-1 bg-slate-800 border border-slate-700 hover:border-emerald-500 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-center active:scale-95 transition-colors">
+                        <i class="fa-solid fa-phone mr-1 text-emerald-400"></i> Llamar
+                    </a>
+                    <a href="https://wa.me/${tel}" target="_blank" rel="noopener" class="flex-1 bg-slate-800 border border-slate-700 hover:border-emerald-500 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-center active:scale-95 transition-colors">
+                        <i class="fa-brands fa-whatsapp mr-1 text-emerald-400"></i> WhatsApp
+                    </a>` : ''}
+                    ${u.enlace_publicacion ? `
+                    <a href="${V.escapeHtml(u.enlace_publicacion)}" target="_blank" rel="noopener" class="flex-1 bg-slate-800 border border-slate-700 hover:border-cyan-500 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-center active:scale-95 transition-colors">
+                        <i class="fa-solid fa-link mr-1 text-cyan-400"></i> Publicación
+                    </a>` : ''}
+                </div>`;
+        }
+
         function renderModalUnidad() {
             const u = vstate.currentUnidad;
             const body = document.getElementById('modal-unidad-body');
@@ -447,6 +473,7 @@
 
             if (u.estado === 'evaluando') {
                 body.innerHTML = `
+                    ${contactoBar(u)}
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
                         <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-2">Resumen de la evaluación</p>
                         <p class="text-xs text-slate-300 mb-1">Precio ofertado: <b class="text-white">${V.fmtUSD(u.precio_ofertado)}</b></p>
@@ -476,6 +503,7 @@
                 const cl = u.checklist_legal || {};
 
                 body.innerHTML = `
+                    ${contactoBar(u)}
                     <div class="rounded-2xl p-4 border-2 ${bColor} ${bBg}">
                         <p class="text-[10px] font-black uppercase tracking-widest ${tColor} mb-1">Margen proyectado en vivo</p>
                         <p class="text-2xl font-black ${tColor}">${V.fmtUSD(margen)}</p>

@@ -151,15 +151,15 @@ window.enviarRecordatorio = function(id) {
     
     const tipoQuery = window.state.currentTab === 'personal' ? '&tipo=personal' : '';
     
-    // CORRECCIÓN: Enlace apuntando a tu dominio de Vercel
+    // Enlace apuntando a tu dominio de Vercel
     const linkPago = `https://appchela.vercel.app/pago.html?id=${id}&name=${encodeURIComponent(nombreFilt)}&debt=${debtNum.toFixed(2)}${tipoQuery}`;
 
     const msgTexto = window.state.currentTab === 'alumnos'
-    ? `Hola, estimado(a) *${deudor.representante || nombreFilt}*, esperamos que se encuentren bien. Queremos expresarles nuestra solidaridad y acompañarlos en su dolor si ustedes o algún familiar se vieron afectados por la catástrofe que estamos atravesando.\n\nActualmente, mantiene un saldo pendiente de *$${debtNum.toFixed(2)}*. Le agradeceríamos que se ponga al día a la brevedad posible para así poder seguir prestando el servicio cuando se normalicen las actividades escolares.\n\nPuede realizar y reportar su pago en el siguiente enlace:\n${linkPago}\n\nDe haber sido afectado directamente por esta situación, le agradecemos que se ponga en contacto con nosotros para conversar.\n\nMuchas bendiciones.`
+    ? `Hola, estimado(a) *${deudor.representante || nombreFilt}*, esperamos que se encuentre muy bien. ¡Les deseamos unas felices y merecidas vacaciones! \n\nAprovechamos la oportunidad para recordarle que mantiene un saldo pendiente de *$${debtNum.toFixed(2)}*. Le invitamos cordialmente a ponerse al día antes del inicio del nuevo año escolar para facilitar la planificación y continuidad de nuestros servicios.\n\nPuede consultar y reportar su pago de forma rápida en el siguiente enlace:\n${linkPago}\n\n¡Felices vacaciones y muchas bendiciones!`
     
-    : `Hola, estimado(a) *${nombreFilt}*, esperamos que se encuentren bien. Queremos expresarles nuestra solidaridad y acompañarlos en su dolor si ustedes o algún familiar se vieron afectados por la catástrofe que estamos atravesando.\n\nActualmente, mantiene un saldo pendiente de *$${debtNum.toFixed(2)}*. Le agradeceríamos que se ponga al día a la brevedad posible para así poder seguir prestando el servicio cuando se normalicen las actividades escolares.\n\nPuede realizar y reportar su abono en el siguiente enlace:\n${linkPago}\n\nDe haber sido afectado directamente por esta situación, le agradecemos que se ponga en contacto con nosotros para conversar.\n\nMuchas bendiciones.`;
+    : `Hola, estimado(a) *${nombreFilt}*, esperamos que se encuentre muy bien. ¡Le deseamos unas felices y merecidas vacaciones! \n\nAprovechamos la oportunidad para recordarle que mantiene un saldo pendiente de *$${debtNum.toFixed(2)}*. Le invitamos cordialmente a ponerse al día antes del inicio del nuevo año escolar.\n\nPuede realizar y reportar su abono en el siguiente enlace:\n${linkPago}\n\n¡Felices vacaciones y muchas bendiciones!`;
 
-window.open(`https://wa.me/${phoneClean}?text=${encodeURIComponent(msgTexto)}`, '_blank');
+    window.open(`https://wa.me/${phoneClean}?text=${encodeURIComponent(msgTexto)}`, '_blank');
 }
 // ==========================================
 // 4. LÓGICA DE ABONOS Y CÓDIGO QR

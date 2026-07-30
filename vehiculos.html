@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Arbitraje Vehicular | Chela Sport</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+        .veh-tab { display: none; }
+        .veh-tab.active { display: block; }
+        .veh-nav-btn.active { color: #10b981; border-top: 2px solid #10b981; }
+        .veh-chip.active { background-color: #10b981; color: #020617; }
+    </style>
+</head>
+<body class="overflow-x-hidden pb-24 selection:bg-emerald-500/30">
+
+    <div id="loading-screen" class="fixed inset-0 z-[999] bg-slate-950 flex items-center justify-center">
+        <i class="fa-solid fa-car-side fa-bounce text-emerald-500 text-4xl"></i>
+    </div>
+
+    <div id="app-content" class="hidden">
+
+        <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 p-4 sticky top-0 z-30 flex justify-between items-center shadow-sm">
+            <h1 class="font-black text-white text-sm uppercase tracking-widest flex items-center gap-2">
+                <i class="fa-solid fa-car-side text-emerald-500"></i> Arbitraje Vehicular
+            </h1>
+            <div class="flex items-center gap-2">
+                <span class="veh-bcv-val bg-emerald-900/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest">BCV: --</span>
+                <button onclick="window.location.href='index.html'" class="text-slate-400 hover:text-white bg-slate-800 w-8 h-8 rounded-full flex justify-center items-center transition-all border border-slate-700 active:scale-90">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="p-4 pb-0">
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                    <p class="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1"><i class="fa-solid fa-vault mr-1 text-cyan-400"></i>Capital de Trabajo</p>
+                    <p id="tile-capital" class="text-xl font-black text-cyan-400">$0.00</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                    <p class="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1"><i class="fa-solid fa-sack-dollar mr-1 text-emerald-400"></i>Ganancias Acumuladas</p>
+                    <p id="tile-ganancias" class="text-xl font-black text-emerald-400">$0.00</p>
+                </div>
+            </div>
+        </div>
+
+        <main class="p-4 pt-0">
+
+            <!-- ============================================================ -->
+            <!-- TAB: DASHBOARD -->
+            <!-- ============================================================ -->
+            <div id="tab-dashboard" class="veh-tab active">
+                <div class="flex overflow-x-auto gap-2 pb-4 no-scrollbar">
+                    <button onclick="setFiltroEstado('evaluando')" data-filtro="evaluando" class="veh-chip px-4 py-2 bg-slate-800 border border-slate-700 rounded-full text-[10px] font-black tracking-widest text-slate-300 active:scale-95 transition-transform shrink-0">EVALUANDO</button>
+                    <button onclick="setFiltroEstado('comprada')" data-filtro="comprada" class="veh-chip px-4 py-2 bg-slate-800 border border-slate-700 rounded-full text-[10px] font-black tracking-widest text-slate-300 active:scale-95 transition-transform shrink-0">ACTIVAS</button>
+                    <button onclick="setFiltroEstado('vendida')" data-filtro="vendida" class="veh-chip px-4 py-2 bg-slate-800 border border-slate-700 rounded-full text-[10px] font-black tracking-widest text-slate-300 active:scale-95 transition-transform shrink-0">VENDIDAS</button>
+                    <button onclick="setFiltroEstado('descartada')" data-filtro="descartada" class="veh-chip px-4 py-2 bg-slate-800 border border-slate-700 rounded-full text-[10px] font-black tracking-widest text-slate-300 active:scale-95 transition-transform shrink-0">DESCARTADAS</button>
+                </div>
+                <div id="lista-unidades" class="space-y-3 pb-4"></div>
+                <button onclick="switchTab('calculadora')" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-lg shadow-emerald-900/30 flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Nueva Evaluación
+                </button>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB: CALCULADORA (Modulo 1) -->
+            <!-- ============================================================ -->
+            <div id="tab-calculadora" class="veh-tab">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-4">
+                    <label class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-2 block">Vehículo (opcional, para guardar)</label>
+                    <div class="grid grid-cols-3 gap-2 mb-2">
+                        <input type="text" id="calc-marca" placeholder="Marca" list="dl-marcas" oninput="sugerirReferencia()" class="bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold outline-none focus:border-emerald-500">
+                        <input type="text" id="calc-modelo" placeholder="Modelo" list="dl-modelos" oninput="sugerirReferencia()" class="bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold outline-none focus:border-emerald-500">
+                        <input type="number" id="calc-anio" placeholder="Año" class="bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold outline-none focus:border-emerald-500">
+                    </div>
+                    <datalist id="dl-marcas"></datalist>
+                    <datalist id="dl-modelos"></datalist>
+                    <div id="sugerencia-mercado" class="hidden bg-indigo-900/20 border border-indigo-500/30 rounded-xl p-3 text-[11px] text-indigo-300 font-bold"></div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-4 space-y-3">
+                    <div>
+                        <label class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1 block">Precio Ofertado por el Dueño ($)</label>
+                        <input type="number" id="calc-ofertado" oninput="calcularLive()" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl text-xl font-black text-white outline-none focus:border-emerald-500 text-center">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1 block">Precio Objetivo de Venta en Caracas ($)</label>
+                        <input type="number" id="calc-objetivo" oninput="calcularLive()" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl text-xl font-black text-white outline-none focus:border-emerald-500 text-center">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1 block">Ganancia Deseada ($)</label>
+                            <input type="number" id="calc-ganancia" oninput="calcularLive()" value="1000" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold text-emerald-400 outline-none focus:border-emerald-500 text-center">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1 block">Holgura Imprevistos (%)</label>
+                            <input type="number" id="calc-holgura" oninput="calcularLive()" value="10" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500 text-center">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1 block">Gastos Legales Est. ($)</label>
+                            <input type="number" id="calc-legales" oninput="calcularLive()" placeholder="Traspaso, notaría, INTT..." class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500 text-center">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1 block">Puesta a Punto Est. ($)</label>
+                            <input type="number" id="calc-punto" oninput="calcularLive()" placeholder="Mecánica, estética..." class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500 text-center">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="resultado-calc" class="rounded-2xl p-5 mb-4 border-2 transition-all">
+                    <p class="text-[10px] font-black uppercase tracking-widest mb-1" id="resultado-titulo">Completa los datos</p>
+                    <p class="text-3xl font-black mb-2" id="resultado-monto">$0.00</p>
+                    <p class="text-xs font-bold" id="resultado-detalle"></p>
+                    <div class="grid grid-cols-2 gap-3 mt-4 text-center">
+                        <div class="bg-slate-950/50 rounded-xl p-3">
+                            <p class="text-[9px] uppercase font-black tracking-widest text-slate-400">Precio Máx. Compra</p>
+                            <p id="out-max" class="text-lg font-black text-white">$0.00</p>
+                        </div>
+                        <div class="bg-slate-950/50 rounded-xl p-3">
+                            <p class="text-[9px] uppercase font-black tracking-widest text-slate-400">Colchón Imprevistos</p>
+                            <p id="out-colchon" class="text-lg font-black text-white">$0.00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="guardarUnidad()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 shadow-lg shadow-indigo-900/30 flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Evaluación
+                </button>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB: MERCADO (Modulo 2) -->
+            <!-- ============================================================ -->
+            <div id="tab-mercado" class="veh-tab">
+                <button onclick="abrirFormReferencia()" class="w-full bg-slate-800 border border-dashed border-slate-700 hover:border-emerald-500 text-emerald-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-colors mb-4">
+                    <i class="fa-solid fa-plus mr-1"></i> Agregar Modelo de Referencia
+                </button>
+                <div id="lista-mercado" class="space-y-3"></div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB: PROVEEDORES (Modulo 3) -->
+            <!-- ============================================================ -->
+            <div id="tab-proveedores" class="veh-tab">
+                <button onclick="abrirFormProveedor()" class="w-full bg-slate-800 border border-dashed border-slate-700 hover:border-emerald-500 text-emerald-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-colors mb-4">
+                    <i class="fa-solid fa-plus mr-1"></i> Agregar Proveedor
+                </button>
+                <div id="lista-proveedores" class="space-y-3"></div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB: PANEL FINANCIERO (Modulo 5) -->
+            <!-- ============================================================ -->
+            <div id="tab-panel" class="veh-tab">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-4">
+                    <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-3"><i class="fa-solid fa-piggy-bank mr-1 text-emerald-500"></i> Retirar Ganancias</p>
+                    <div class="flex gap-2">
+                        <input type="number" id="retiro-monto" placeholder="Monto $" class="flex-1 bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                        <button onclick="registrarRetiro()" class="bg-emerald-600 hover:bg-emerald-500 px-5 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95">Retirar</button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-4">
+                    <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-3"><i class="fa-solid fa-money-bill-transfer mr-1 text-cyan-400"></i> Simulador de Pago Mixto</p>
+                    <div class="flex gap-2 mb-3">
+                        <input type="number" id="sim-total" oninput="renderSimulador()" placeholder="Total a cubrir ($)" class="flex-1 bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                        <button onclick="agregarFilaSimulador()" class="bg-slate-800 border border-slate-700 px-4 rounded-xl text-emerald-400 active:scale-95"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div id="sim-filas" class="space-y-2 mb-3"></div>
+                    <div id="sim-resultado" class="text-xs font-bold"></div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                    <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-3"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Movimientos de Capital</p>
+                    <div id="lista-ledger" class="space-y-2"></div>
+                </div>
+            </div>
+
+        </main>
+
+        <nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 z-40 flex justify-around p-2 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
+            <button onclick="switchTab('dashboard')" data-tab="dashboard" class="veh-nav-btn flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors"><i class="fa-solid fa-table-columns text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Unidades</span></button>
+            <button onclick="switchTab('calculadora')" data-tab="calculadora" class="veh-nav-btn flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors"><i class="fa-solid fa-calculator text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Calcular</span></button>
+            <button onclick="switchTab('mercado')" data-tab="mercado" class="veh-nav-btn flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors"><i class="fa-solid fa-chart-line text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Mercado</span></button>
+            <button onclick="switchTab('proveedores')" data-tab="proveedores" class="veh-nav-btn flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors"><i class="fa-solid fa-address-book text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Proveed.</span></button>
+            <button onclick="switchTab('panel')" data-tab="panel" class="veh-nav-btn flex-1 flex flex-col items-center py-2 text-slate-500 hover:text-slate-300 transition-colors"><i class="fa-solid fa-vault text-xl mb-1"></i><span class="text-[8px] uppercase font-black tracking-widest mt-1">Capital</span></button>
+        </nav>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- MODAL: DETALLE DE UNIDAD (Modulos 3 y 4 + cierre Modulo 5) -->
+    <!-- ================================================================ -->
+    <div id="modal-unidad" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-sm flex flex-col hidden">
+        <header class="bg-slate-900 border-b border-slate-800 p-5 flex justify-between items-center shrink-0">
+            <h2 id="modal-unidad-titulo" class="font-black uppercase tracking-widest text-sm flex items-center gap-2 text-white"><i class="fa-solid fa-car"></i> Unidad</h2>
+            <button onclick="cerrarModalUnidad()" class="text-slate-400 hover:text-white bg-slate-800 w-8 h-8 rounded-full flex justify-center items-center active:scale-90 border border-slate-700"><i class="fa-solid fa-xmark"></i></button>
+        </header>
+        <div id="modal-unidad-body" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+    </div>
+
+    <!-- MODAL: Formulario generico (referencia mercado / proveedor) -->
+    <div id="modal-form" class="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-[2rem] w-full max-w-sm p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-form-titulo" class="font-black uppercase tracking-widest text-sm text-white"></h3>
+                <button onclick="cerrarModalForm()" class="text-slate-400 hover:text-white bg-slate-800 w-8 h-8 rounded-full flex justify-center items-center active:scale-90 border border-slate-700"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="modal-form-body" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="vehiculos-common.js"></script>
+    <script>
+        const V = window.Veh;
+        let vstate = {
+            unidades: [], referencias: [], proveedores: [], ledger: [], config: {},
+            filtroEstado: 'evaluando',
+            currentUnidad: null, currentGastos: [],
+            simFilas: []
+        };
+
+        window.onload = async () => {
+            const user = await V.requireAuth();
+            if (!user) return;
+            await Promise.all([V.fetchBCV(), cargarTodo()]);
+            document.getElementById('loading-screen').classList.add('hidden');
+            switchTab('dashboard');
+        };
+
+        async function cargarTodo() {
+            const [u, r, p, c, l] = await Promise.all([
+                _sb.from('veh_unidades').select('*').order('created_at', { ascending: false }),
+                _sb.from('veh_referencias_mercado').select('*').order('marca'),
+                _sb.from('veh_proveedores').select('*').order('nombre'),
+                V.getConfig(),
+                _sb.from('veh_capital_ledger').select('*').order('created_at', { ascending: false }).limit(25)
+            ]);
+            vstate.unidades = u.data || [];
+            vstate.referencias = r.data || [];
+            vstate.proveedores = p.data || [];
+            vstate.config = c || {};
+            vstate.ledger = l.data || [];
+            renderTiles();
+        }
+
+        function renderTiles() {
+            document.getElementById('tile-capital').innerText = V.fmtUSD(vstate.config.capital_disponible);
+            document.getElementById('tile-ganancias').innerText = V.fmtUSD(vstate.config.ganancias_acumuladas);
+        }
+
+        // ==========================================================
+        // NAVEGACION DE PESTAÑAS
+        // ==========================================================
+        function switchTab(name) {
+            document.querySelectorAll('.veh-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            document.querySelectorAll('.veh-nav-btn').forEach(el => el.classList.toggle('active', el.dataset.tab === name));
+
+            if (name === 'dashboard') renderDashboard();
+            if (name === 'calculadora') calcularLive();
+            if (name === 'mercado') renderMercado();
+            if (name === 'proveedores') renderProveedores();
+            if (name === 'panel') renderPanel();
+        }
+
+        // ==========================================================
+        // MODULO 1 - CALCULADORA
+        // ==========================================================
+        function leerFormCalculadora() {
+            return {
+                marca: document.getElementById('calc-marca').value.trim(),
+                modelo: document.getElementById('calc-modelo').value.trim(),
+                anio: document.getElementById('calc-anio').value ? parseInt(document.getElementById('calc-anio').value) : null,
+                precioOfertado: document.getElementById('calc-ofertado').value,
+                precioObjetivoVenta: document.getElementById('calc-objetivo').value,
+                gananciaDeseada: document.getElementById('calc-ganancia').value,
+                gastosLegales: document.getElementById('calc-legales').value,
+                puestaAPunto: document.getElementById('calc-punto').value,
+                holguraPct: document.getElementById('calc-holgura').value
+            };
+        }
+
+        function calcularLive() {
+            const f = leerFormCalculadora();
+            const r = V.evaluarViabilidad(f);
+            const box = document.getElementById('resultado-calc');
+            const titulo = document.getElementById('resultado-titulo');
+            const monto = document.getElementById('resultado-monto');
+            const detalle = document.getElementById('resultado-detalle');
+
+            document.getElementById('out-max').innerText = V.fmtUSD(r.precioMaximoCompra);
+            document.getElementById('out-colchon').innerText = V.fmtUSD(r.colchonImprevistos);
+
+            if (!f.precioObjetivoVenta) {
+                box.className = 'rounded-2xl p-5 mb-4 border-2 border-slate-800 bg-slate-900 transition-all';
+                titulo.innerText = 'Completa los datos';
+                monto.innerText = '$0.00';
+                detalle.innerText = '';
+                return;
+            }
+
+            if (r.aprobado) {
+                box.className = 'rounded-2xl p-5 mb-4 border-2 border-emerald-500 bg-emerald-900/20 transition-all';
+                titulo.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> APROBADO - NEGOCIO VIABLE';
+                titulo.className = 'text-[10px] font-black uppercase tracking-widest mb-1 text-emerald-400';
+                monto.className = 'text-3xl font-black mb-2 text-emerald-400';
+                monto.innerText = V.fmtUSD(r.diferencia) + ' de colchón extra';
+                detalle.innerText = `Comprando a ${V.fmtUSD(f.precioOfertado || 0)}, tu ganancia proyectada real es ${V.fmtUSD(r.gananciaProyectadaAlPrecioOfertado)}.`;
+            } else {
+                box.className = 'rounded-2xl p-5 mb-4 border-2 border-red-500 bg-red-900/20 transition-all';
+                titulo.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> RECHAZADO - NO RENTABLE';
+                titulo.className = 'text-[10px] font-black uppercase tracking-widest mb-1 text-red-400';
+                monto.className = 'text-3xl font-black mb-2 text-red-400';
+                monto.innerText = V.fmtUSD(Math.abs(r.diferencia)) + ' de más';
+                detalle.innerText = `Debes negociar al menos ${V.fmtUSD(Math.abs(r.diferencia))} menos para proteger tu ganancia de ${V.fmtUSD(f.gananciaDeseada || 0)}.`;
+            }
+        }
+
+        function sugerirReferencia() {
+            const marca = document.getElementById('calc-marca').value.trim().toLowerCase();
+            const modelo = document.getElementById('calc-modelo').value.trim().toLowerCase();
+            const dlM = document.getElementById('dl-marcas');
+            const dlMo = document.getElementById('dl-modelos');
+            dlM.innerHTML = [...new Set(vstate.referencias.map(r => r.marca))].map(m => `<option value="${V.escapeHtml(m)}">`).join('');
+            dlMo.innerHTML = [...new Set(vstate.referencias.map(r => r.modelo))].map(m => `<option value="${V.escapeHtml(m)}">`).join('');
+
+            const match = vstate.referencias.find(r => r.marca.toLowerCase() === marca && (modelo === '' || r.modelo.toLowerCase().includes(modelo)));
+            const box = document.getElementById('sugerencia-mercado');
+            if (match) {
+                box.classList.remove('hidden');
+                box.innerHTML = `<i class="fa-solid fa-lightbulb mr-1"></i> ${V.escapeHtml(match.marca)} ${V.escapeHtml(match.modelo)}: precio de mercado ${V.fmtUSD(match.precio_min)} - ${V.fmtUSD(match.precio_max)}, ~${match.dias_stock_promedio} días en stock, demanda ${match.demanda}.`;
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        async function guardarUnidad() {
+            const f = leerFormCalculadora();
+            if (!f.precioObjetivoVenta || !f.precioOfertado) return V.toast('Completa precio ofertado y precio objetivo.', 'error');
+            const r = V.evaluarViabilidad(f);
+            const { error } = await _sb.from('veh_unidades').insert({
+                marca: f.marca || null, modelo: f.modelo || null, anio: f.anio,
+                precio_ofertado: f.precioOfertado, precio_objetivo_venta: f.precioObjetivoVenta,
+                ganancia_deseada: f.gananciaDeseada, gastos_legales_estimados: f.gastosLegales,
+                puesta_a_punto_estimada: f.puestaAPunto, holgura_pct: f.holguraPct,
+                precio_maximo_compra: r.precioMaximoCompra, colchon_imprevistos: r.colchonImprevistos,
+                veredicto: r.aprobado ? 'aprobado' : 'rechazado', estado: 'evaluando'
+            });
+            if (error) return V.toast('Error al guardar: ' + error.message, 'error');
+            V.toast('Evaluación guardada');
+            ['calc-marca','calc-modelo','calc-anio','calc-ofertado','calc-objetivo','calc-legales','calc-punto'].forEach(id => document.getElementById(id).value = '');
+            await cargarTodo();
+            switchTab('dashboard');
+        }
+
+        // ==========================================================
+        // DASHBOARD DE UNIDADES
+        // ==========================================================
+        function setFiltroEstado(estado) {
+            vstate.filtroEstado = estado;
+            renderDashboard();
+        }
+
+        function renderDashboard() {
+            document.querySelectorAll('.veh-chip').forEach(el => el.classList.toggle('active', el.dataset.filtro === vstate.filtroEstado));
+            const lista = vstate.unidades.filter(u => u.estado === vstate.filtroEstado);
+            const cont = document.getElementById('lista-unidades');
+
+            if (lista.length === 0) {
+                cont.innerHTML = `<p class="text-center text-slate-500 text-xs font-bold py-8">No hay unidades en este estado.</p>`;
+                return;
+            }
+
+            cont.innerHTML = lista.map(u => {
+                const nombre = `${u.marca || 'Sin marca'} ${u.modelo || ''} ${u.anio || ''}`.trim();
+                let badge = '';
+                let extra = '';
+
+                if (u.estado === 'evaluando') {
+                    badge = u.veredicto === 'aprobado'
+                        ? `<span class="text-[9px] font-black uppercase text-emerald-400 bg-emerald-900/20 border border-emerald-500/30 px-2 py-1 rounded-full">Aprobado</span>`
+                        : `<span class="text-[9px] font-black uppercase text-red-400 bg-red-900/20 border border-red-500/30 px-2 py-1 rounded-full">Rechazado</span>`;
+                    extra = `<p class="text-xs text-slate-400 mt-1">Ofertado: ${V.fmtUSD(u.precio_ofertado)} · Máx: ${V.fmtUSD(u.precio_maximo_compra)}</p>`;
+                } else if (u.estado === 'comprada') {
+                    const dias = V.calcularDiasEnStock(u.fecha_compra);
+                    badge = `<span class="text-[9px] font-black uppercase text-cyan-400 bg-cyan-900/20 border border-cyan-500/30 px-2 py-1 rounded-full">${dias}d en stock</span>`;
+                    extra = `<p class="text-xs text-slate-400 mt-1">Compra: ${V.fmtUSD(u.precio_compra_real)} · Objetivo: ${V.fmtUSD(u.precio_objetivo_venta)}</p>`;
+                } else if (u.estado === 'vendida') {
+                    const okMeta = (u.ganancia_neta_real || 0) >= (u.ganancia_deseada || 0);
+                    badge = `<span class="text-[9px] font-black uppercase ${okMeta ? 'text-emerald-400 bg-emerald-900/20 border-emerald-500/30' : 'text-amber-400 bg-amber-900/20 border-amber-500/30'} border px-2 py-1 rounded-full">Ganancia ${V.fmtUSD(u.ganancia_neta_real)}</span>`;
+                    extra = `<p class="text-xs text-slate-400 mt-1">Vendido: ${V.fmtUSD(u.precio_venta_real)} el ${u.fecha_venta || '-'}</p>`;
+                } else {
+                    badge = `<span class="text-[9px] font-black uppercase text-slate-400 bg-slate-800 border border-slate-700 px-2 py-1 rounded-full">Descartada</span>`;
+                    extra = `<p class="text-xs text-slate-400 mt-1">Ofertado: ${V.fmtUSD(u.precio_ofertado)}</p>`;
+                }
+
+                return `
+                <div onclick="abrirUnidad('${u.id}')" class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex justify-between items-center active:scale-[0.98] transition-transform cursor-pointer">
+                    <div>
+                        <p class="font-bold text-white text-sm">${V.escapeHtml(nombre) || 'Vehículo sin nombre'}</p>
+                        ${extra}
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        ${badge}
+                        <i class="fa-solid fa-chevron-right text-slate-600 text-xs"></i>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ==========================================================
+        // MODAL DE UNIDAD (Modulos 3 y 4 + cierre Modulo 5)
+        // ==========================================================
+        async function abrirUnidad(id) {
+            const u = vstate.unidades.find(x => x.id === id);
+            if (!u) return;
+            vstate.currentUnidad = u;
+            const { data } = await _sb.from('veh_gastos').select('*').eq('unidad_id', id).order('fecha', { ascending: false });
+            vstate.currentGastos = data || [];
+            document.getElementById('modal-unidad-titulo').innerText = `${u.marca || ''} ${u.modelo || ''} ${u.anio || ''}`.trim() || 'Vehículo';
+            renderModalUnidad();
+            document.getElementById('modal-unidad').classList.remove('hidden');
+        }
+
+        function cerrarModalUnidad() {
+            document.getElementById('modal-unidad').classList.add('hidden');
+            vstate.currentUnidad = null;
+        }
+
+        function renderModalUnidad() {
+            const u = vstate.currentUnidad;
+            const body = document.getElementById('modal-unidad-body');
+            if (!u) return;
+
+            if (u.estado === 'evaluando') {
+                body.innerHTML = `
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-2">Resumen de la evaluación</p>
+                        <p class="text-xs text-slate-300 mb-1">Precio ofertado: <b class="text-white">${V.fmtUSD(u.precio_ofertado)}</b></p>
+                        <p class="text-xs text-slate-300 mb-1">Precio máximo de compra: <b class="text-white">${V.fmtUSD(u.precio_maximo_compra)}</b></p>
+                        <p class="text-xs text-slate-300 mb-1">Precio objetivo de venta: <b class="text-white">${V.fmtUSD(u.precio_objetivo_venta)}</b></p>
+                        <p class="text-xs font-black mt-2 ${u.veredicto === 'aprobado' ? 'text-emerald-400' : 'text-red-400'}">${u.veredicto === 'aprobado' ? 'APROBADO' : 'RECHAZADO'}</p>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Registrar Compra</p>
+                        <input type="number" id="form-precio-compra" value="${u.precio_ofertado || ''}" placeholder="Precio de compra real ($)" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                        <input type="date" id="form-fecha-compra" value="${new Date().toISOString().slice(0,10)}" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                        <button onclick="registrarCompra()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95">Confirmar Compra</button>
+                        <button onclick="descartarUnidad()" class="w-full bg-slate-800 border border-slate-700 text-red-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95">Descartar Unidad</button>
+                    </div>`;
+                return;
+            }
+
+            if (u.estado === 'comprada') {
+                const costoTotal = V.calcularCostoTotalUnidad(u, vstate.currentGastos);
+                const margen = V.calcularMargenProyectado(u, costoTotal);
+                const riesgo = V.clasificarRiesgoMargen(margen, u.ganancia_deseada);
+                const dias = V.calcularDiasEnStock(u.fecha_compra);
+                const ref = vstate.referencias.find(r => (r.marca || '').toLowerCase() === (u.marca || '').toLowerCase() && (r.modelo || '').toLowerCase() === (u.modelo || '').toLowerCase());
+                const alertaDias = ref && dias > ref.dias_stock_promedio;
+                const colores = { verde: ['border-emerald-500','bg-emerald-900/20','text-emerald-400'], amarillo: ['border-amber-500','bg-amber-900/20','text-amber-400'], rojo: ['border-red-500','bg-red-900/20','text-red-400'] };
+                const [bColor, bBg, tColor] = colores[riesgo];
+                const cl = u.checklist_legal || {};
+
+                body.innerHTML = `
+                    <div class="rounded-2xl p-4 border-2 ${bColor} ${bBg}">
+                        <p class="text-[10px] font-black uppercase tracking-widest ${tColor} mb-1">Margen proyectado en vivo</p>
+                        <p class="text-2xl font-black ${tColor}">${V.fmtUSD(margen)}</p>
+                        <p class="text-[11px] text-slate-300 mt-1">Meta: ${V.fmtUSD(u.ganancia_deseada)} · Costo acumulado: ${V.fmtUSD(costoTotal)}</p>
+                        <p class="text-[11px] mt-1 ${alertaDias ? 'text-red-400 font-black' : 'text-slate-400'}"><i class="fa-solid fa-clock mr-1"></i>${dias} días en stock${ref ? ` (promedio del modelo: ${ref.dias_stock_promedio}d)` : ''}${alertaDias ? ' — CAPITAL INMOVILIZADO' : ''}</p>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-3">Bitácora de Gastos</p>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <select id="gasto-categoria" class="bg-slate-950 border border-slate-800 p-2 rounded-lg text-xs font-bold">
+                                <option value="mecanica">Mecánica</option>
+                                <option value="latoneria">Latonería</option>
+                                <option value="repuestos">Repuestos</option>
+                                <option value="legal">Legal</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                            <select id="gasto-proveedor" onchange="prefillGasto()" class="bg-slate-950 border border-slate-800 p-2 rounded-lg text-xs font-bold">
+                                <option value="">Sin proveedor</option>
+                                ${vstate.proveedores.map(p => `<option value="${p.id}" data-costo="${p.costo_referencia || ''}">${V.escapeHtml(p.nombre)}</option>`).join('')}
+                            </select>
+                        </div>
+                        <input type="text" id="gasto-desc" placeholder="Descripción" class="w-full bg-slate-950 border border-slate-800 p-2 rounded-lg text-xs font-bold mb-2 outline-none focus:border-emerald-500">
+                        <div class="flex gap-2">
+                            <input type="number" id="gasto-monto" placeholder="Monto $" class="flex-1 bg-slate-950 border border-slate-800 p-2 rounded-lg text-xs font-bold outline-none focus:border-emerald-500">
+                            <button onclick="agregarGasto()" class="bg-emerald-600 px-4 rounded-lg text-[10px] font-black uppercase active:scale-95">Añadir</button>
+                        </div>
+                        <div class="space-y-2 mt-3">
+                            ${vstate.currentGastos.length === 0 ? '<p class="text-slate-500 text-[11px]">Sin gastos registrados.</p>' : vstate.currentGastos.map(g => `
+                                <div class="flex justify-between items-center bg-slate-950 border border-slate-800 rounded-lg p-2">
+                                    <div>
+                                        <p class="text-[11px] font-bold text-white">${V.escapeHtml(g.descripcion || g.categoria)}</p>
+                                        <p class="text-[9px] text-slate-500 uppercase">${g.categoria} · ${g.fecha}</p>
+                                    </div>
+                                    <p class="text-xs font-black text-red-400">-${V.fmtUSD(g.monto)}</p>
+                                </div>`).join('')}
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Checklist Legal (Traspaso)</p>
+                        ${['experticia','solvencia_municipal','planilla_intt','notaria'].map(k => {
+                            const labels = { experticia: 'Experticia (CICPC / Tránsito)', solvencia_municipal: 'Solvencia municipal (Alcaldía)', planilla_intt: 'Planilla única INTT', notaria: 'Notaría (firmas)' };
+                            const done = cl[k]?.completado;
+                            return `<label class="flex items-center gap-3 bg-slate-950 border border-slate-800 rounded-lg p-3 cursor-pointer">
+                                <input type="checkbox" ${done ? 'checked' : ''} onchange="toggleChecklist('${k}', this.checked)" class="w-5 h-5 accent-emerald-500">
+                                <span class="text-xs font-bold ${done ? 'text-emerald-400 line-through' : 'text-white'}">${labels[k]}</span>
+                            </label>`;
+                        }).join('')}
+                        <select id="form-alcaldia" onchange="guardarAlcaldia(this.value)" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold">
+                            <option value="">Alcaldía correspondiente...</option>
+                            ${['Chacao','Baruta','Libertador','Sucre','El Hatillo','Otro'].map(a => `<option value="${a}" ${u.alcaldia === a ? 'selected' : ''}>${a}</option>`).join('')}
+                        </select>
+                        <div>
+                            <label class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1 block">Multas / Deudas pendientes ($)</label>
+                            <input type="number" id="form-multas" value="${u.multas_deudas || 0}" onchange="guardarMultas(this.value)" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold text-red-400 outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Registrar Venta</p>
+                        <input type="number" id="form-precio-venta" placeholder="Precio de venta real ($)" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                        <input type="date" id="form-fecha-venta" value="${new Date().toISOString().slice(0,10)}" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                        <select id="form-metodo-pago" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Zelle">Zelle</option>
+                            <option value="Pago Móvil">Pago Móvil</option>
+                            <option value="Mixto">Mixto</option>
+                        </select>
+                        <button onclick="confirmarVenta()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95">Cerrar Venta</button>
+                    </div>`;
+                return;
+            }
+
+            if (u.estado === 'vendida') {
+                const costoTotal = V.calcularCostoTotalUnidad(u, vstate.currentGastos);
+                const dias = V.calcularDiasEnStock(u.fecha_compra, u.fecha_venta);
+                body.innerHTML = `
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
+                        <p class="text-xs text-slate-300">Compra: <b class="text-white">${V.fmtUSD(u.precio_compra_real)}</b> (${u.fecha_compra || '-'})</p>
+                        <p class="text-xs text-slate-300">Gastos + multas: <b class="text-white">${V.fmtUSD(costoTotal - (u.precio_compra_real || 0))}</b></p>
+                        <p class="text-xs text-slate-300">Costo total: <b class="text-white">${V.fmtUSD(costoTotal)}</b></p>
+                        <p class="text-xs text-slate-300">Venta: <b class="text-white">${V.fmtUSD(u.precio_venta_real)}</b> (${u.fecha_venta || '-'})</p>
+                        <p class="text-xs text-slate-300">Días en stock: <b class="text-white">${dias}</b></p>
+                        <p class="text-sm font-black mt-2 ${(u.ganancia_neta_real||0) >= (u.ganancia_deseada||0) ? 'text-emerald-400' : 'text-amber-400'}">Ganancia neta real: ${V.fmtUSD(u.ganancia_neta_real)} (meta ${V.fmtUSD(u.ganancia_deseada)})</p>
+                    </div>`;
+                return;
+            }
+
+            body.innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                <p class="text-xs text-slate-300">Evaluación descartada. Precio ofertado: ${V.fmtUSD(u.precio_ofertado)} · Precio máximo viable: ${V.fmtUSD(u.precio_maximo_compra)}</p>
+            </div>`;
+        }
+
+        async function registrarCompra() {
+            const u = vstate.currentUnidad;
+            const precio = parseFloat(document.getElementById('form-precio-compra').value);
+            const fecha = document.getElementById('form-fecha-compra').value;
+            if (!precio || !fecha) return V.toast('Completa precio y fecha de compra.', 'error');
+            await _sb.from('veh_unidades').update({ estado: 'comprada', precio_compra_real: precio, fecha_compra: fecha }).eq('id', u.id);
+            await V.aplicarMovimientoCapital({ unidad_id: u.id, tipo: 'inversion_compra', monto: precio, descripcion: `Compra de ${u.marca || ''} ${u.modelo || ''}`.trim() });
+            V.toast('Compra registrada. Capital actualizado.');
+            await cargarTodo();
+            await abrirUnidad(u.id);
+        }
+
+        async function descartarUnidad() {
+            const u = vstate.currentUnidad;
+            await _sb.from('veh_unidades').update({ estado: 'descartada' }).eq('id', u.id);
+            V.toast('Unidad descartada.');
+            cerrarModalUnidad();
+            await cargarTodo();
+            renderDashboard();
+        }
+
+        function prefillGasto() {
+            const sel = document.getElementById('gasto-proveedor');
+            const costo = sel.selectedOptions[0]?.dataset.costo;
+            if (costo) document.getElementById('gasto-monto').value = costo;
+        }
+
+        async function agregarGasto() {
+            const u = vstate.currentUnidad;
+            const categoria = document.getElementById('gasto-categoria').value;
+            const proveedor_id = document.getElementById('gasto-proveedor').value || null;
+            const descripcion = document.getElementById('gasto-desc').value.trim();
+            const monto = parseFloat(document.getElementById('gasto-monto').value);
+            if (!monto || monto <= 0) return V.toast('Ingresa un monto válido.', 'error');
+
+            await _sb.from('veh_gastos').insert({ unidad_id: u.id, categoria, proveedor_id, descripcion, monto });
+            await V.aplicarMovimientoCapital({ unidad_id: u.id, tipo: 'inversion_gasto', monto, descripcion: descripcion || categoria });
+            V.toast('Gasto registrado.');
+            await cargarTodo();
+            await abrirUnidad(u.id);
+        }
+
+        async function toggleChecklist(key, checked) {
+            const u = vstate.currentUnidad;
+            const cl = { ...(u.checklist_legal || {}) };
+            cl[key] = { completado: checked, fecha: checked ? new Date().toISOString().slice(0,10) : null };
+            await _sb.from('veh_unidades').update({ checklist_legal: cl }).eq('id', u.id);
+            u.checklist_legal = cl;
+            vstate.currentUnidad = u;
+            const idx = vstate.unidades.findIndex(x => x.id === u.id);
+            if (idx >= 0) vstate.unidades[idx] = u;
+        }
+
+        async function guardarAlcaldia(valor) {
+            const u = vstate.currentUnidad;
+            await _sb.from('veh_unidades').update({ alcaldia: valor }).eq('id', u.id);
+            u.alcaldia = valor;
+        }
+
+        async function guardarMultas(valor) {
+            const u = vstate.currentUnidad;
+            const monto = parseFloat(valor) || 0;
+            await _sb.from('veh_unidades').update({ multas_deudas: monto }).eq('id', u.id);
+            u.multas_deudas = monto;
+            const idx = vstate.unidades.findIndex(x => x.id === u.id);
+            if (idx >= 0) vstate.unidades[idx] = u;
+            renderModalUnidad();
+        }
+
+        async function confirmarVenta() {
+            const u = vstate.currentUnidad;
+            const precioVentaReal = parseFloat(document.getElementById('form-precio-venta').value);
+            const fechaVenta = document.getElementById('form-fecha-venta').value;
+            const metodoPago = document.getElementById('form-metodo-pago').value;
+            if (!precioVentaReal || !fechaVenta) return V.toast('Completa precio y fecha de venta.', 'error');
+
+            const { gananciaNeta } = await V.registrarVenta(u, vstate.currentGastos, { precioVentaReal, fechaVenta, metodoPago });
+            V.toast(gananciaNeta >= (u.ganancia_deseada || 0) ? `¡Meta cumplida! Ganancia: ${V.fmtUSD(gananciaNeta)}` : `Venta cerrada. Ganancia: ${V.fmtUSD(gananciaNeta)}`, gananciaNeta >= (u.ganancia_deseada || 0) ? 'ok' : 'warn');
+            cerrarModalUnidad();
+            await cargarTodo();
+            renderDashboard();
+        }
+
+        // ==========================================================
+        // MODULO 2 - MERCADO
+        // ==========================================================
+        function renderMercado() {
+            const cont = document.getElementById('lista-mercado');
+            if (vstate.referencias.length === 0) {
+                cont.innerHTML = `<p class="text-center text-slate-500 text-xs font-bold py-8">Sin referencias de mercado aún.</p>`;
+                return;
+            }
+            const demandaColor = { alta: 'text-emerald-400 bg-emerald-900/20 border-emerald-500/30', media: 'text-amber-400 bg-amber-900/20 border-amber-500/30', baja: 'text-red-400 bg-red-900/20 border-red-500/30' };
+            cont.innerHTML = vstate.referencias.map(r => `
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-white text-sm">${V.escapeHtml(r.marca)} ${V.escapeHtml(r.modelo)}</p>
+                        <p class="text-xs text-slate-400 mt-1">${V.fmtUSD(r.precio_min)} - ${V.fmtUSD(r.precio_max)} · ~${r.dias_stock_promedio}d en stock</p>
+                        <span class="inline-block mt-1 text-[9px] font-black uppercase border px-2 py-0.5 rounded-full ${demandaColor[r.demanda] || demandaColor.media}">${r.demanda}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="abrirFormReferencia('${r.id}')" class="text-slate-400 hover:text-white bg-slate-800 w-8 h-8 rounded-full flex justify-center items-center active:scale-90"><i class="fa-solid fa-pen text-xs"></i></button>
+                        <button onclick="eliminarReferencia('${r.id}')" class="text-red-400 bg-red-900/20 w-8 h-8 rounded-full flex justify-center items-center active:scale-90"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function abrirFormReferencia(id) {
+            const r = id ? vstate.referencias.find(x => x.id === id) : {};
+            document.getElementById('modal-form-titulo').innerText = id ? 'Editar Referencia' : 'Nueva Referencia de Mercado';
+            document.getElementById('modal-form-body').innerHTML = `
+                <input type="hidden" id="mf-id" value="${id || ''}">
+                <input type="text" id="mf-marca" placeholder="Marca" value="${r.marca || ''}" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                <input type="text" id="mf-modelo" placeholder="Modelo" value="${r.modelo || ''}" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="number" id="mf-min" placeholder="Precio mín $" value="${r.precio_min || ''}" class="bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                    <input type="number" id="mf-max" placeholder="Precio máx $" value="${r.precio_max || ''}" class="bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                </div>
+                <input type="number" id="mf-dias" placeholder="Días en stock promedio" value="${r.dias_stock_promedio || ''}" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                <select id="mf-demanda" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold">
+                    <option value="alta" ${r.demanda === 'alta' ? 'selected' : ''}>Alta</option>
+                    <option value="media" ${r.demanda === 'media' || !r.demanda ? 'selected' : ''}>Media</option>
+                    <option value="baja" ${r.demanda === 'baja' ? 'selected' : ''}>Baja</option>
+                </select>
+                <textarea id="mf-notas" placeholder="Notas" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">${r.notas || ''}</textarea>
+                <button onclick="guardarReferencia()" class="w-full bg-emerald-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95">Guardar</button>`;
+            document.getElementById('modal-form').classList.remove('hidden');
+        }
+
+        async function guardarReferencia() {
+            const id = document.getElementById('mf-id').value;
+            const payload = {
+                marca: document.getElementById('mf-marca').value.trim(),
+                modelo: document.getElementById('mf-modelo').value.trim(),
+                precio_min: parseFloat(document.getElementById('mf-min').value) || null,
+                precio_max: parseFloat(document.getElementById('mf-max').value) || null,
+                dias_stock_promedio: parseInt(document.getElementById('mf-dias').value) || null,
+                demanda: document.getElementById('mf-demanda').value,
+                notas: document.getElementById('mf-notas').value.trim()
+            };
+            if (!payload.marca || !payload.modelo) return V.toast('Marca y modelo son obligatorios.', 'error');
+            if (id) await _sb.from('veh_referencias_mercado').update(payload).eq('id', id);
+            else await _sb.from('veh_referencias_mercado').insert(payload);
+            V.toast('Referencia guardada.');
+            cerrarModalForm();
+            await cargarTodo();
+            renderMercado();
+        }
+
+        async function eliminarReferencia(id) {
+            await _sb.from('veh_referencias_mercado').delete().eq('id', id);
+            V.toast('Referencia eliminada.');
+            await cargarTodo();
+            renderMercado();
+        }
+
+        // ==========================================================
+        // MODULO 3 - PROVEEDORES
+        // ==========================================================
+        function renderProveedores() {
+            const cont = document.getElementById('lista-proveedores');
+            if (vstate.proveedores.length === 0) {
+                cont.innerHTML = `<p class="text-center text-slate-500 text-xs font-bold py-8">Sin proveedores registrados.</p>`;
+                return;
+            }
+            cont.innerHTML = vstate.proveedores.map(p => `
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-white text-sm">${V.escapeHtml(p.nombre)}</p>
+                        <p class="text-xs text-slate-400 mt-1 uppercase">${p.tipo} · ${V.escapeHtml(p.zona || '')}</p>
+                        <p class="text-xs text-slate-400">${V.escapeHtml(p.telefono || '')} ${p.costo_referencia ? '· Ref: ' + V.fmtUSD(p.costo_referencia) : ''}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="abrirFormProveedor('${p.id}')" class="text-slate-400 hover:text-white bg-slate-800 w-8 h-8 rounded-full flex justify-center items-center active:scale-90"><i class="fa-solid fa-pen text-xs"></i></button>
+                        <button onclick="eliminarProveedor('${p.id}')" class="text-red-400 bg-red-900/20 w-8 h-8 rounded-full flex justify-center items-center active:scale-90"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function abrirFormProveedor(id) {
+            const p = id ? vstate.proveedores.find(x => x.id === id) : {};
+            document.getElementById('modal-form-titulo').innerText = id ? 'Editar Proveedor' : 'Nuevo Proveedor';
+            document.getElementById('modal-form-body').innerHTML = `
+                <input type="hidden" id="pf-id" value="${id || ''}">
+                <input type="text" id="pf-nombre" placeholder="Nombre" value="${p.nombre || ''}" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                <select id="pf-tipo" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold">
+                    ${['mecanico','latonero','gestor','notaria','repuestos','otro'].map(t => `<option value="${t}" ${p.tipo === t ? 'selected' : ''}>${t}</option>`).join('')}
+                </select>
+                <input type="text" id="pf-telefono" placeholder="Teléfono" value="${p.telefono || ''}" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                <input type="text" id="pf-zona" placeholder="Zona (Ej: Chacao)" value="${p.zona || ''}" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                <input type="number" id="pf-costo" placeholder="Costo de referencia $" value="${p.costo_referencia || ''}" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">
+                <textarea id="pf-notas" placeholder="Notas" class="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500">${p.notas || ''}</textarea>
+                <button onclick="guardarProveedor()" class="w-full bg-emerald-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95">Guardar</button>`;
+            document.getElementById('modal-form').classList.remove('hidden');
+        }
+
+        async function guardarProveedor() {
+            const id = document.getElementById('pf-id').value;
+            const payload = {
+                nombre: document.getElementById('pf-nombre').value.trim(),
+                tipo: document.getElementById('pf-tipo').value,
+                telefono: document.getElementById('pf-telefono').value.trim(),
+                zona: document.getElementById('pf-zona').value.trim(),
+                costo_referencia: parseFloat(document.getElementById('pf-costo').value) || null,
+                notas: document.getElementById('pf-notas').value.trim()
+            };
+            if (!payload.nombre) return V.toast('El nombre es obligatorio.', 'error');
+            if (id) await _sb.from('veh_proveedores').update(payload).eq('id', id);
+            else await _sb.from('veh_proveedores').insert(payload);
+            V.toast('Proveedor guardado.');
+            cerrarModalForm();
+            await cargarTodo();
+            renderProveedores();
+        }
+
+        async function eliminarProveedor(id) {
+            await _sb.from('veh_proveedores').delete().eq('id', id);
+            V.toast('Proveedor eliminado.');
+            await cargarTodo();
+            renderProveedores();
+        }
+
+        function cerrarModalForm() {
+            document.getElementById('modal-form').classList.add('hidden');
+        }
+
+        // ==========================================================
+        // MODULO 5 - PANEL FINANCIERO
+        // ==========================================================
+        function renderPanel() {
+            renderTiles();
+            const cont = document.getElementById('lista-ledger');
+            if (vstate.ledger.length === 0) {
+                cont.innerHTML = `<p class="text-center text-slate-500 text-xs font-bold py-4">Sin movimientos aún.</p>`;
+            } else {
+                const tipoColor = { inversion_compra: 'text-red-400', inversion_gasto: 'text-red-400', retorno_capital: 'text-cyan-400', ganancia: 'text-emerald-400', retiro: 'text-amber-400' };
+                cont.innerHTML = vstate.ledger.map(l => `
+                    <div class="flex justify-between items-center bg-slate-950 border border-slate-800 rounded-lg p-3">
+                        <div>
+                            <p class="text-[11px] font-bold text-white">${V.escapeHtml(l.descripcion || l.tipo)}</p>
+                            <p class="text-[9px] text-slate-500 uppercase">${l.tipo.replace('_',' ')} · ${new Date(l.created_at).toLocaleDateString('es-VE')}</p>
+                        </div>
+                        <p class="text-xs font-black ${tipoColor[l.tipo] || 'text-white'}">${['inversion_compra','inversion_gasto','retiro'].includes(l.tipo) ? '-' : '+'}${V.fmtUSD(l.monto)}</p>
+                    </div>`).join('');
+            }
+            renderSimulador();
+        }
+
+        async function registrarRetiro() {
+            const monto = parseFloat(document.getElementById('retiro-monto').value);
+            if (!monto || monto <= 0) return V.toast('Ingresa un monto válido.', 'error');
+            if (monto > Number(vstate.config.ganancias_acumuladas)) return V.toast('No hay suficientes ganancias acumuladas.', 'error');
+            await V.aplicarMovimientoCapital({ tipo: 'retiro', monto, descripcion: 'Retiro de ganancias' });
+            V.toast('Retiro registrado.');
+            document.getElementById('retiro-monto').value = '';
+            await cargarTodo();
+            renderPanel();
+        }
+
+        function agregarFilaSimulador() {
+            vstate.simFilas.push({ tipo: 'Efectivo', moneda: 'USD', monto: 0 });
+            renderSimulador();
+        }
+
+        function renderSimulador() {
+            const cont = document.getElementById('sim-filas');
+            cont.innerHTML = vstate.simFilas.map((f, i) => `
+                <div class="flex gap-2 items-center">
+                    <select onchange="vstate.simFilas[${i}].tipo=this.value" class="bg-slate-950 border border-slate-800 p-2 rounded-lg text-[10px] font-bold">
+                        <option ${f.tipo==='Efectivo'?'selected':''}>Efectivo</option>
+                        <option ${f.tipo==='Zelle'?'selected':''}>Zelle</option>
+                        <option ${f.tipo==='Pago Móvil'?'selected':''}>Pago Móvil</option>
+                    </select>
+                    <select onchange="vstate.simFilas[${i}].moneda=this.value; renderSimulador();" class="bg-slate-950 border border-slate-800 p-2 rounded-lg text-[10px] font-bold">
+                        <option value="USD" ${f.moneda==='USD'?'selected':''}>USD</option>
+                        <option value="BS" ${f.moneda==='BS'?'selected':''}>Bs</option>
+                    </select>
+                    <input type="number" value="${f.monto || ''}" oninput="vstate.simFilas[${i}].monto=this.value; renderSimuladorResultado();" placeholder="Monto" class="flex-1 bg-slate-950 border border-slate-800 p-2 rounded-lg text-xs font-bold outline-none focus:border-emerald-500">
+                    <button onclick="vstate.simFilas.splice(${i},1); renderSimulador();" class="text-red-400 w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                </div>`).join('');
+            renderSimuladorResultado();
+        }
+
+        function renderSimuladorResultado() {
+            const total = document.getElementById('sim-total').value;
+            const r = V.simularPagoMixto(total, vstate.simFilas, V.getTasa());
+            const el = document.getElementById('sim-resultado');
+            if (!total) { el.innerHTML = ''; return; }
+            el.innerHTML = `<p class="${r.cuadra ? 'text-emerald-400' : 'text-amber-400'}">Cubierto: ${V.fmtUSD(r.sumaUSD)} de ${V.fmtUSD(total)} — ${r.cuadra ? 'Cuadra perfecto' : (r.diferencia > 0 ? `Falta ${V.fmtUSD(r.diferencia)}` : `Sobra ${V.fmtUSD(Math.abs(r.diferencia))}`)}</p>`;
+        }
+    </script>
+</body>
+</html>

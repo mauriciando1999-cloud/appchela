@@ -190,7 +190,72 @@
                     </button>
                 </div>
 
+                <!-- Producto 8: Chaqueta Deportiva (sin foto: ícono para no depender de almacenamiento externo) -->
+                <div class="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex flex-col shadow-lg glass">
+                    <div class="flex gap-4 items-center">
+                        <div class="w-24 h-24 rounded-xl overflow-hidden bg-gradient-to-br from-cyan-900 to-slate-950 flex-shrink-0 border border-slate-800 flex items-center justify-center">
+                            <i class="fa-solid fa-vest text-3xl text-cyan-400"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-slate-100 mb-1 leading-tight">Chaqueta Deportiva</h3>
+                            <p class="text-[10px] text-slate-400 mb-2 leading-tight">Chaqueta deportiva liviana, ideal para educación física.</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-xs text-slate-500 line-through">$30.00</span>
+                                <span class="text-lg font-black text-emerald-400">$27.00</span>
+                                <span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold">-10%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="seleccionarProducto('Chaqueta Deportiva', 27.00, 'chaqueta_deportiva')" class="w-full mt-4 bg-slate-800 hover:bg-slate-700 text-indigo-400 font-black py-3 rounded-xl text-xs uppercase tracking-widest active:scale-95 transition-all flex justify-center items-center gap-2">
+                        Apartar <i class="fa-solid fa-cart-shopping"></i>
+                    </button>
+                </div>
+
+                <!-- Producto 9: Pullover Escolar (sin foto: ícono para no depender de almacenamiento externo) -->
+                <div class="bg-slate-900 border border-slate-800 rounded-[1.5rem] p-4 flex flex-col shadow-lg glass">
+                    <div class="flex gap-4 items-center">
+                        <div class="w-24 h-24 rounded-xl overflow-hidden bg-gradient-to-br from-purple-900 to-slate-950 flex-shrink-0 border border-slate-800 flex items-center justify-center">
+                            <i class="fa-solid fa-shirt text-3xl text-purple-400"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-bold text-slate-100 mb-1 leading-tight">Pullover Escolar</h3>
+                            <p class="text-[10px] text-slate-400 mb-2 leading-tight">Pullover institucional para los días de frío.</p>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-xs text-slate-500 line-through">$20.00</span>
+                                <span class="text-lg font-black text-emerald-400">$18.00</span>
+                                <span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold">-10%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="seleccionarProducto('Pullover Escolar', 18.00, 'pullover')" class="w-full mt-4 bg-slate-800 hover:bg-slate-700 text-indigo-400 font-black py-3 rounded-xl text-xs uppercase tracking-widest active:scale-95 transition-all flex justify-center items-center gap-2">
+                        Apartar <i class="fa-solid fa-cart-shopping"></i>
+                    </button>
+                </div>
+
             </div>
+
+            <div class="px-1 pb-24">
+                <h3 class="text-white font-black uppercase text-xs tracking-widest mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-tags text-indigo-400"></i> Artículos Individuales
+                </h3>
+                <div id="lista-individuales" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- PASO 3: Carrito -->
+        <div id="step-carrito" class="step flex-1 p-4">
+            <button onclick="nextStep('productos')" class="text-slate-500 hover:text-slate-300 transition-all mb-6 flex items-center gap-2 font-bold text-sm">
+                <i class="fa-solid fa-arrow-left"></i> Seguir comprando
+            </button>
+            <h3 class="text-xl font-black mb-4 text-white">Tu Carrito</h3>
+            <div id="carrito-lista" class="space-y-3 mb-6"></div>
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center mb-4">
+                <span class="text-xs text-slate-400 font-bold uppercase">Total:</span>
+                <span id="carrito-total" class="text-2xl font-black text-emerald-400">$0.00</span>
+            </div>
+            <button id="btn-pagar-carrito" onclick="irAPortalPagoDesdeCarrito()" class="w-full bg-emerald-600 hover:bg-emerald-500 p-4 rounded-xl font-black uppercase tracking-widest text-xs active:scale-95 text-white flex justify-center items-center gap-2 transition-all shadow-lg">
+                Continuar y Pagar <i class="fa-solid fa-arrow-right"></i>
+            </button>
         </div>
 
         <!-- PASO 2: Selección de Tallas y Cantidades -->
@@ -285,14 +350,24 @@
                     <span id="lbl-monto-calculado" class="text-2xl font-black text-emerald-400">$0.00</span>
                 </div>
 
-                <!-- Botón hacia Portal de Pago -->
-                <button id="btn-guardar" onclick="irAPortalPago()" class="w-full bg-emerald-600 hover:bg-emerald-500 p-4 rounded-xl font-black uppercase tracking-widest text-xs mt-4 active:scale-95 text-white flex justify-center items-center gap-2 transition-all shadow-lg">
-                    Aceptar e Ir a Pagar <i class="fa-solid fa-arrow-right"></i>
+                <!-- Botón para agregar el ítem configurado al carrito -->
+                <button id="btn-guardar" onclick="agregarAlCarrito()" class="w-full bg-emerald-600 hover:bg-emerald-500 p-4 rounded-xl font-black uppercase tracking-widest text-xs mt-4 active:scale-95 text-white flex justify-center items-center gap-2 transition-all shadow-lg">
+                    Agregar al Carrito <i class="fa-solid fa-cart-plus"></i>
                 </button>
             </div>
         </div>
 
     </div>
+
+    <!-- Botón flotante del carrito -->
+    <button id="btn-cart-float" onclick="nextStep('carrito')" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 bg-emerald-600 text-white pl-5 pr-6 py-3.5 rounded-full shadow-[0_10px_25px_rgba(16,185,129,0.5)] flex items-center gap-3 active:scale-90 border-[3px] border-slate-950 transition-transform">
+        <i class="fa-solid fa-cart-shopping"></i>
+        <span id="cart-count" class="font-black text-[10px] bg-slate-950 px-2 py-1 rounded-full">0</span>
+        <span id="cart-subtotal" class="font-black text-sm">$0.00</span>
+    </button>
+
+    <!-- Toast de confirmación -->
+    <div id="toast-preventa" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-full shadow-2xl border border-emerald-400 z-[200]"></div>
 
     <!-- Script Configuración -->
     <script src="config.js"></script>
@@ -316,13 +391,18 @@
 
         // Índice de productos reales (Supabase) para resolver el pedido: clave = nombre normalizado
         let productosIndex = {};
-        // Cantidades elegidas de productos adicionales (ej. Insignias): clave = nombre del producto
+        // Cantidades elegidas de productos adicionales (ej. Insignias) dentro de un ítem en configuración: clave = nombre del producto
         let extrasState = {};
+        // Cantidades elegidas de artículos individuales (catálogo general, sin talla): clave = nombre del producto
+        let individualQty = {};
+        // Carrito: cada entrada ya trae sus items[] resueltos (producto_id, qty, price) listos para pago.html
+        let carrito = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('lbl-rep').innerText = pedidoActual.representante;
             document.getElementById('lbl-est').innerText = pedidoActual.estudiante;
             cargarProductos();
+            actualizarBadgeCarrito();
         });
 
         async function cargarProductos() {
@@ -331,20 +411,30 @@
             productosIndex = {};
             data.forEach(p => { productosIndex[normalizarNombreProducto(p.name)] = p; });
             renderExtras();
+            renderIndividuales();
+        }
+
+        function generarClave() {
+            return (crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        }
+
+        function mostrarToast(msg) {
+            const el = document.getElementById('toast-preventa');
+            el.innerText = msg;
+            el.classList.remove('hidden');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => el.classList.add('hidden'), 2200);
         }
 
         function renderExtras() {
             const cont = document.getElementById('box-extras');
             cont.innerHTML = EXTRAS_DISPONIBLES.map(extra => {
                 if (extrasState[extra.nombre] === undefined) extrasState[extra.nombre] = 0;
-                const prod = productosIndex[normalizarNombreProducto(extra.nombre)];
-                const stockDisponible = prod ? prod.stock : 0;
                 const idSeguro = extra.nombre.replace(/[^a-zA-Z0-9]/g, '');
                 return `
                 <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
                     <div>
                         <p class="text-xs font-bold text-slate-200">${extra.label} <span class="text-emerald-400 font-black">$${extra.precio.toFixed(2)}</span></p>
-                        <p class="text-[9px] text-slate-500 font-bold uppercase">${stockDisponible > 0 ? stockDisponible + ' disponibles' : 'Agotado'}</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <button type="button" onclick="cambiarCantidadExtra('${extra.nombre}', -1)" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black border border-slate-700 active:scale-95 flex items-center justify-center">-</button>
@@ -355,21 +445,125 @@
             }).join('');
         }
 
+        // La preventa no depende del stock actual: es un pre-pedido que dispara producción,
+        // así que la cantidad solo tiene un mínimo (0), sin tope de existencias.
         window.cambiarCantidadExtra = function(nombreExtra, delta) {
-            const extra = EXTRAS_DISPONIBLES.find(e => e.nombre === nombreExtra);
-            const prod = productosIndex[normalizarNombreProducto(nombreExtra)];
-            const stockDisponible = prod ? prod.stock : 0;
             const nuevaCantidad = (extrasState[nombreExtra] || 0) + delta;
-            extrasState[nombreExtra] = Math.max(0, Math.min(stockDisponible, nuevaCantidad));
+            extrasState[nombreExtra] = Math.max(0, nuevaCantidad);
             const idSeguro = nombreExtra.replace(/[^a-zA-Z0-9]/g, '');
             document.getElementById(`extra-qty-${idSeguro}`).innerText = extrasState[nombreExtra];
             actualizarMontoTotal();
+        };
+
+        // ==========================================
+        // ARTÍCULOS INDIVIDUALES (sin talla, se agregan directo al carrito)
+        // ==========================================
+        function renderIndividuales() {
+            const cont = document.getElementById('lista-individuales');
+            if (!cont) return;
+            cont.innerHTML = EXTRAS_DISPONIBLES.map(extra => {
+                if (individualQty[extra.nombre] === undefined) individualQty[extra.nombre] = 0;
+                const idSeguro = 'ind-' + extra.nombre.replace(/[^a-zA-Z0-9]/g, '');
+                return `
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-lg glass">
+                    <div>
+                        <p class="text-sm font-bold text-slate-100">${extra.label}</p>
+                        <p class="text-emerald-400 font-black text-sm">$${extra.precio.toFixed(2)}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="cambiarQtyIndividual('${extra.nombre}', -1)" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black border border-slate-700 active:scale-95 flex items-center justify-center">-</button>
+                        <span id="${idSeguro}-qty" class="w-6 text-center font-black text-emerald-400">${individualQty[extra.nombre]}</span>
+                        <button type="button" onclick="cambiarQtyIndividual('${extra.nombre}', 1)" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black border border-slate-700 active:scale-95 flex items-center justify-center">+</button>
+                        <button type="button" onclick="agregarIndividualAlCarrito('${extra.nombre}')" class="ml-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] font-black uppercase px-3 py-2.5 rounded-lg active:scale-95 transition-all">Agregar</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // La preventa no depende del stock actual: es un pre-pedido que dispara producción,
+        // así que la cantidad solo tiene un mínimo (0), sin tope de existencias.
+        window.cambiarQtyIndividual = function(nombre, delta) {
+            const nueva = (individualQty[nombre] || 0) + delta;
+            individualQty[nombre] = Math.max(0, nueva);
+            const idSeguro = 'ind-' + nombre.replace(/[^a-zA-Z0-9]/g, '');
+            document.getElementById(`${idSeguro}-qty`).innerText = individualQty[nombre];
+        };
+
+        window.agregarIndividualAlCarrito = function(nombre) {
+            const cantidad = individualQty[nombre] || 0;
+            if (cantidad <= 0) return alert('⚠️ Selecciona al menos 1 unidad.');
+            const extra = EXTRAS_DISPONIBLES.find(e => e.nombre === nombre);
+            const prod = productosIndex[normalizarNombreProducto(nombre)];
+            if (!prod) return alert(`⚠️ "${nombre}" no está disponible en el sistema.`);
+
+            carrito.push({
+                clienteKey: generarClave(),
+                producto: extra.label,
+                tipoBase: 'individual',
+                cantidad,
+                tallaResumen: '',
+                genero: null,
+                pantalonOMono: null,
+                items: [{ name: prod.name, qty: cantidad, price: prod.price, producto_id: prod.id, rol: 'individual', talla: null }],
+                subtotal: prod.price * cantidad
+            });
+
+            individualQty[nombre] = 0;
+            renderIndividuales();
+            actualizarBadgeCarrito();
+            mostrarToast(`${extra.label} agregado al carrito`);
+        };
+
+        // ==========================================
+        // CARRITO
+        // ==========================================
+        function actualizarBadgeCarrito() {
+            const btn = document.getElementById('btn-cart-float');
+            const count = carrito.reduce((s, c) => s + c.cantidad, 0);
+            const subtotal = carrito.reduce((s, c) => s + c.subtotal, 0);
+            document.getElementById('cart-count').innerText = count;
+            document.getElementById('cart-subtotal').innerText = `$${subtotal.toFixed(2)}`;
+
+            const activo = document.querySelector('.step.active');
+            const enCarrito = activo && activo.id === 'step-carrito';
+            if (carrito.length > 0 && !enCarrito) btn.classList.remove('hidden');
+            else btn.classList.add('hidden');
+        }
+
+        function renderCarrito() {
+            const cont = document.getElementById('carrito-lista');
+            if (carrito.length === 0) {
+                cont.innerHTML = `<p class="text-center text-slate-500 text-xs font-bold py-8">Tu carrito está vacío.</p>`;
+            } else {
+                cont.innerHTML = carrito.map((c, i) => `
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex justify-between items-center">
+                        <div>
+                            <p class="text-sm font-bold text-white">${c.producto}</p>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase mt-0.5">${c.tallaResumen ? c.tallaResumen + ' · ' : ''}${c.cantidad} unid.</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-black text-emerald-400">$${c.subtotal.toFixed(2)}</span>
+                            <button onclick="quitarDelCarrito(${i})" class="text-red-400 bg-red-400/10 w-8 h-8 rounded-lg flex items-center justify-center border border-red-500/20 active:scale-90">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>`).join('');
+            }
+            document.getElementById('carrito-total').innerText = `$${carrito.reduce((s, c) => s + c.subtotal, 0).toFixed(2)}`;
+        }
+
+        window.quitarDelCarrito = function(index) {
+            carrito.splice(index, 1);
+            renderCarrito();
+            actualizarBadgeCarrito();
         };
 
         window.nextStep = function(stepId) {
             document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
             const target = document.getElementById('step-' + stepId);
             if(target) target.classList.add('active');
+            if (stepId === 'carrito') renderCarrito();
+            actualizarBadgeCarrito();
             window.scrollTo(0, 0);
         };
 
@@ -426,24 +620,26 @@
             document.getElementById('lbl-monto-calculado').innerText = `$${total.toFixed(2)}`;
         }
 
-        window.irAPortalPago = function() {
+        // Valida y resuelve el ítem que está configurado en pantalla (tallas, género, extras)
+        // contra el catálogo real. Devuelve null (y muestra la alerta correspondiente) si falta algo.
+        function resolverItemFormulario() {
             const tallaSup = document.getElementById('reg-talla-sup').value;
             const tallaInf = document.getElementById('reg-talla-inf').value;
 
             const boxSupVisible = document.getElementById('box-talla-sup').style.display !== 'none';
             const boxInfVisible = document.getElementById('box-talla-inf').style.display !== 'none';
 
-            if (boxSupVisible && !tallaSup) return alert("⚠️ Seleccione la talla superior.");
-            if (boxInfVisible && !tallaInf) return alert("⚠️ Seleccione la talla inferior.");
+            if (boxSupVisible && !tallaSup) { alert("⚠️ Seleccione la talla superior."); return null; }
+            if (boxInfVisible && !tallaInf) { alert("⚠️ Seleccione la talla inferior."); return null; }
 
-            pedidoActual.tallaSup = boxSupVisible ? tallaSup : 'N/A';
-            pedidoActual.tallaInf = boxInfVisible ? tallaInf : 'N/A';
+            const tSup = boxSupVisible ? tallaSup : 'N/A';
+            const tInf = boxInfVisible ? tallaInf : 'N/A';
 
             const boxGeneroVisible = document.getElementById('box-genero').style.display !== 'none';
             const genero = boxGeneroVisible ? document.getElementById('reg-genero').value : null;
             const pantalonOMono = pedidoActual.tipo === 'combo' ? document.getElementById('reg-variante').value : null;
 
-            const ctx = { genero, pantalonOMono, tallaSup: pedidoActual.tallaSup, tallaInf: pedidoActual.tallaInf };
+            const ctx = { genero, pantalonOMono, tallaSup: tSup, tallaInf: tInf };
             const roles = PRODUCT_TYPE_MAP[pedidoActual.tipo] || [];
 
             const items = [];
@@ -453,7 +649,8 @@
                 const nombreEsp = nombreEsperado(plantilla, talla);
                 const prod = productosIndex[normalizarNombreProducto(nombreEsp)];
                 if (!prod) {
-                    return alert(`⚠️ "${nombreEsp}" no está disponible en el sistema. Contacta al colegio antes de continuar.`);
+                    alert(`⚠️ "${nombreEsp}" no está disponible en el sistema. Contacta al colegio antes de continuar.`);
+                    return null;
                 }
                 items.push({ name: prod.name, qty: cantidadActual, price: prod.price, producto_id: prod.id, rol: role.rol, talla });
             }
@@ -466,31 +663,55 @@
                 items.push({ name: prod.name, qty: cantidadExtra, price: prod.price, producto_id: prod.id, rol: 'extra', talla: null });
             });
 
-            const detalle = {
+            const subtotal = (pedidoActual.precioUnitario * cantidadActual) + totalExtras();
+            const tallaResumen = [tSup !== 'N/A' ? `Sup ${tSup}` : null, tInf !== 'N/A' ? `Inf ${tInf}` : null].filter(Boolean).join(' / ');
+
+            return {
+                clienteKey: generarClave(),
                 producto: pedidoActual.producto,
                 tipoBase: pedidoActual.tipo,
-                tallaSup: pedidoActual.tallaSup,
-                tallaInf: pedidoActual.tallaInf,
-                genero: genero,
-                pantalonOMono: pantalonOMono,
                 cantidad: cantidadActual,
+                tallaResumen,
+                genero,
+                pantalonOMono,
+                items,
+                subtotal
+            };
+        }
+
+        window.agregarAlCarrito = function() {
+            const resuelto = resolverItemFormulario();
+            if (!resuelto) return;
+            carrito.push(resuelto);
+            mostrarToast(`${resuelto.producto} agregado al carrito`);
+            actualizarBadgeCarrito();
+            nextStep('productos');
+        };
+
+        window.irAPortalPagoDesdeCarrito = function() {
+            if (carrito.length === 0) return alert('⚠️ Tu carrito está vacío. Agrega al menos un artículo.');
+
+            const items = carrito.flatMap(c => c.items);
+            const montoTotal = carrito.reduce((s, c) => s + c.subtotal, 0).toFixed(2);
+            const productosResumen = carrito.map(c => c.producto).join(' + ');
+
+            const detalle = {
+                producto: productosResumen,
+                tipoBase: carrito.length > 1 ? 'carrito' : carrito[0].tipoBase,
+                items_resumen: carrito.map(c => ({ producto: c.producto, talla: c.tallaResumen, cantidad: c.cantidad, subtotal: c.subtotal })),
+                cantidad: carrito.reduce((s, c) => s + c.cantidad, 0),
                 representante: pedidoActual.representante,
                 estudiante: pedidoActual.estudiante,
                 telefono: pedidoActual.telefono
             };
 
-            const montoTotal = ((pedidoActual.precioUnitario * cantidadActual) + totalExtras()).toFixed(2);
             const pedidoResuelto = { items, detalle };
 
-            // Redirección directa al Portal de Pago pasando todos los parámetros del pedido
+            // Redirección directa al Portal de Pago pasando el carrito completo resuelto
             const redirectUrl = `pago.html?debt=${montoTotal}` +
                 `&name=${encodeURIComponent(pedidoActual.estudiante)}` +
                 `&phone=${encodeURIComponent(pedidoActual.telefono)}` +
-                `&prod=${encodeURIComponent(pedidoActual.producto)}` +
-                `&sup=${encodeURIComponent(pedidoActual.tallaSup)}` +
-                `&inf=${encodeURIComponent(pedidoActual.tallaInf)}` +
-                `&qty=${cantidadActual}` +
-                `&precioUnitario=${pedidoActual.precioUnitario}` +
+                `&prod=${encodeURIComponent(productosResumen)}` +
                 `&tipo=preventa` +
                 `&pedido=${encodeURIComponent(JSON.stringify(pedidoResuelto))}`;
 

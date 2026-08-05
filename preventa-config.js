@@ -14,9 +14,11 @@ function normalizarNombreProducto(s) {
 
 // Plantillas de nombre base (sin talla) tal como existen en `productos.name`.
 const PLANTILLA_CHAQUETA = 'Chaqueta Universitario';
+const PLANTILLA_CHAQUETA_DEPORTIVA = 'Chaqueta Deportiva';
 const PLANTILLA_FRANELA = 'Franela deportiva';
 const PLANTILLA_PANTALON = 'Pantalon Gabardina';
 const PLANTILLA_MONO = 'Mono Deportivo';
+const PLANTILLA_PULLOVER = 'Pullover Escolar';
 const PLANTILLA_CHEMISE_NINO = 'Chemise Niño Pique';
 const PLANTILLA_CHEMISE_NINA = 'Chemise Niña Pique';
 
@@ -26,8 +28,8 @@ function plantillaChemise(genero) {
 
 // Todas las plantillas con talla que existen en el catálogo de preventa (para filtrar Inventario/Producción).
 const PLANTILLAS_CON_TALLA = [
-    PLANTILLA_CHAQUETA, PLANTILLA_FRANELA, PLANTILLA_PANTALON, PLANTILLA_MONO,
-    PLANTILLA_CHEMISE_NINO, PLANTILLA_CHEMISE_NINA
+    PLANTILLA_CHAQUETA, PLANTILLA_CHAQUETA_DEPORTIVA, PLANTILLA_FRANELA, PLANTILLA_PANTALON, PLANTILLA_MONO,
+    PLANTILLA_PULLOVER, PLANTILLA_CHEMISE_NINO, PLANTILLA_CHEMISE_NINA
 ];
 
 // Productos adicionales sin talla que se pueden agregar en el paso de configuración.
@@ -41,6 +43,12 @@ const EXTRAS_DISPONIBLES = [
 const PRODUCT_TYPE_MAP = {
     chaqueta: [
         { rol: 'chaqueta', plantilla: () => PLANTILLA_CHAQUETA, talla: (ctx) => ctx.tallaSup }
+    ],
+    chaqueta_deportiva: [
+        { rol: 'chaqueta_deportiva', plantilla: () => PLANTILLA_CHAQUETA_DEPORTIVA, talla: (ctx) => ctx.tallaSup }
+    ],
+    pullover: [
+        { rol: 'pullover', plantilla: () => PLANTILLA_PULLOVER, talla: (ctx) => ctx.tallaSup }
     ],
     chemise: [
         { rol: 'chemise', plantilla: (ctx) => plantillaChemise(ctx.genero), talla: (ctx) => ctx.tallaSup }

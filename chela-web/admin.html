@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin Catálogo | Chela</title>
+    <link rel="icon" href="assets/logo.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="selection:bg-black selection:text-[#F4F1E9]">
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="auth-screen" class="min-h-screen flex items-center justify-center p-4">
+        <form onsubmit="handleLogin(event)" class="surface w-full max-w-sm p-8">
+            <div class="text-center mb-8">
+                <img src="assets/logo.png" alt="Chela" class="w-14 h-14 object-cover mx-auto mb-3" style="border: 1px solid var(--line);">
+                <h1 class="font-display text-xl">Admin Catálogo</h1>
+                <p class="eyebrow mt-1">Chela</p>
+            </div>
+            <div class="space-y-4">
+                <input type="email" id="login-email" placeholder="Correo administrativo" required class="field w-full p-3 text-sm">
+                <input type="password" id="login-pass" placeholder="Contraseña" required class="field w-full p-3 text-sm">
+            </div>
+            <button type="submit" class="btn-solid w-full mt-8">Ingresar</button>
+            <p id="login-error" class="hidden text-[11px] text-red-600 font-bold text-center mt-4"></p>
+        </form>
+    </div>
+
+    <!-- ACCESO DENEGADO (logueado pero no es la cuenta admin) -->
+    <div id="denegado-screen" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="surface w-full max-w-sm p-8 text-center">
+            <i class="fa-solid fa-lock text-3xl mb-4"></i>
+            <h1 class="font-display text-lg mb-2">Acceso restringido</h1>
+            <p class="text-muted text-xs mb-6">Esta cuenta no tiene permiso para administrar el catálogo.</p>
+            <button onclick="handleLogout()" class="btn-line w-full">Cerrar Sesión</button>
+        </div>
+    </div>
+
+    <!-- PANEL ADMIN -->
+    <div id="app-content" class="hidden">
+        <header class="site-header">
+            <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <img src="assets/logo.png" alt="Chela" class="w-9 h-9 object-cover" style="border: 1px solid var(--line);">
+                    <span class="font-display text-sm">Admin Catálogo</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="marketplace.html" target="_blank" class="btn-line text-[10px] py-2 px-4">Ver Marketplace <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i></a>
+                    <button onclick="handleLogout()" class="w-9 h-9 flex items-center justify-center" style="border: 1px solid var(--line);">
+                        <i class="fa-solid fa-power-off"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-5xl mx-auto px-4 py-8">
+            <h2 class="font-display text-lg mb-1">Categorías</h2>
+            <p class="text-muted text-xs mb-5">Marketplace y Corporativo tienen cada uno su propia lista de categorías — se usan como filtros en el catálogo público.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16">
+                <div class="surface p-4">
+                    <p class="text-sm font-semibold mb-3">Marketplace</p>
+                    <div id="categorias-marketplace" class="mb-3"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="nueva-categoria-marketplace" placeholder="Ej: Disfraces" class="field flex-1 p-2 text-xs">
+                        <button onclick="agregarCategoria('marketplace')" class="text-[10px] font-bold uppercase px-3" style="border: 1px solid var(--line-strong);">+</button>
+                    </div>
+                </div>
+                <div class="surface p-4">
+                    <p class="text-sm font-semibold mb-3">Corporativo</p>
+                    <div id="categorias-corporativo" class="mb-3"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="nueva-categoria-corporativo" placeholder="Ej: Camisas" class="field flex-1 p-2 text-xs">
+                        <button onclick="agregarCategoria('corporativo')" class="text-[10px] font-bold uppercase px-3" style="border: 1px solid var(--line-strong);">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <h2 class="font-display text-lg mb-1 hairline-top pt-10">Productos — Marketplace</h2>
+            <p class="text-muted text-xs mb-5">El catálogo que se muestra en la página Marketplace.</p>
+            <button onclick="abrirFormProducto(null, 'marketplace')" class="btn-solid mb-8">
+                <i class="fa-solid fa-plus"></i> Nuevo Producto de Marketplace
+            </button>
+            <div id="lista-admin-marketplace" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16"></div>
+
+            <h2 class="font-display text-lg mb-1 hairline-top pt-10">Productos — Corporativo</h2>
+            <p class="text-muted text-xs mb-5">El catálogo que se muestra en la página Corporativo.</p>
+            <button onclick="abrirFormProducto(null, 'corporativo')" class="btn-solid mb-8">
+                <i class="fa-solid fa-plus"></i> Nuevo Producto Corporativo
+            </button>
+            <div id="lista-admin-corporativo" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16"></div>
+
+            <h2 class="font-display text-lg mb-1 hairline-top pt-10">Imágenes del Sitio</h2>
+            <p class="text-muted text-xs mb-5">Logo, paneles, módulos y bloques editoriales de todas las páginas. Puedes subir varias fotos por espacio — el sitio las rota automáticamente.</p>
+
+            <div id="lista-imagenes-sitio" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+        </main>
+    </div>
+
+    <!-- MODAL: Formulario de producto -->
+    <div id="modal-producto" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="surface w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" style="background: var(--bg);">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="modal-titulo" class="font-display text-lg">Nuevo Producto</h2>
+                <button onclick="cerrarFormProducto()" class="w-8 h-8 flex items-center justify-center" style="border: 1px solid var(--line);"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-4">
+                <input type="hidden" id="f-id">
+                <div>
+                    <label class="text-[10px] text-muted font-bold uppercase ml-1">Nombre</label>
+                    <input type="text" id="f-nombre" placeholder="Ej: Chaqueta Personalizada" class="field w-full p-2.5 text-sm mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] text-muted font-bold uppercase ml-1">Descripción</label>
+                    <textarea id="f-descripcion" rows="2" placeholder="Descripción corta para la tarjeta del producto" class="field w-full p-2.5 text-sm mt-1"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] text-muted font-bold uppercase ml-1">Precio desde ($)</label>
+                        <input type="number" id="f-precio" step="0.01" placeholder="20.00" class="field w-full p-2.5 text-sm mt-1">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-muted font-bold uppercase ml-1">Orden (menor = primero)</label>
+                        <input type="number" id="f-orden" placeholder="1" class="field w-full p-2.5 text-sm mt-1">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] text-muted font-bold uppercase ml-1">Sección</label>
+                        <select id="f-seccion" onchange="renderSelectCategoriaForm()" class="field w-full p-2.5 text-sm mt-1">
+                            <option value="marketplace">Marketplace</option>
+                            <option value="corporativo">Corporativo</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-muted font-bold uppercase ml-1">Categoría</label>
+                        <select id="f-categoria" class="field w-full p-2.5 text-sm mt-1"></select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] text-muted font-bold uppercase ml-1">Tallas (separadas por coma)</label>
+                        <input type="text" id="f-tallas" placeholder="4,6,8,10,12,14,16,S,M,L" class="field w-full p-2.5 text-sm mt-1">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-muted font-bold uppercase ml-1">Género</label>
+                        <select id="f-genero" class="field w-full p-2.5 text-sm mt-1">
+                            <option value="unisex">Unisex</option>
+                            <option value="hombre">Para Él</option>
+                            <option value="mujer">Para Ella</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] text-muted font-bold uppercase ml-1">Foto del producto</label>
+                    <div class="flex items-center gap-3 mt-1">
+                        <div id="f-imagen-preview-wrap" class="w-16 h-16 flex-shrink-0 flex items-center justify-center overflow-hidden" style="background: var(--bg); border: 1px solid var(--line);">
+                            <img id="f-imagen-preview" src="" alt="" class="hidden w-full h-full object-cover">
+                            <i id="f-imagen-preview-icono" class="fa-solid fa-image text-lg" style="color: var(--ink-muted);"></i>
+                        </div>
+                        <div class="flex-1">
+                            <input type="file" id="f-imagen-file" accept="image/*" onchange="subirImagenProducto(event)" class="hidden">
+                            <button type="button" onclick="document.getElementById('f-imagen-file').click()" class="btn-line text-[10px] py-2 px-4">
+                                <i class="fa-solid fa-upload"></i> Subir foto
+                            </button>
+                            <p id="f-imagen-status" class="text-[10px] text-muted mt-1.5"></p>
+                        </div>
+                    </div>
+                    <input type="text" id="f-imagen" placeholder="o pega una URL externa" class="field w-full p-2.5 text-sm mt-3" oninput="actualizarPreviewImagen()">
+                    <p class="text-[10px] text-muted mt-2 leading-relaxed">La foto se redimensiona y comprime automáticamente en tu navegador antes de subirse, así casi no ocupa espacio de almacenamiento.</p>
+                </div>
+                <div>
+                    <label class="text-[10px] text-muted font-bold uppercase ml-1">Ícono de respaldo (Font Awesome, si no hay foto)</label>
+                    <input type="text" id="f-icono" placeholder="fa-shirt" class="field w-full p-2.5 text-sm mt-1">
+                </div>
+                <label class="flex items-center gap-2 mt-2">
+                    <input type="checkbox" id="f-activo" checked class="w-4 h-4">
+                    <span class="text-xs font-medium">Visible en el catálogo público</span>
+                </label>
+
+                <button onclick="guardarProducto()" class="btn-solid w-full mt-4">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Producto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="supabase-client.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

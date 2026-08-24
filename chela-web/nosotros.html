@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sobre Nosotros | Chela</title>
+    <meta name="description" content="32 años de trayectoria confeccionando ropa por encargo.">
+    <link rel="icon" href="assets/logo.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="selection:bg-black selection:text-[#F4F1E9]">
+
+    <div class="utility-bar">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-2 flex items-center justify-between">
+            <span>32 años de trayectoria</span>
+            <span class="hidden sm:inline">Ropa por encargo · Entrega en toda Caracas</span>
+        </div>
+    </div>
+
+    <header id="site-header" class="site-header">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-5 flex items-center justify-between">
+            <button id="btn-menu-movil" class="md:hidden w-8 h-8 flex items-center justify-center">
+                <i class="fa-solid fa-bars text-base"></i>
+            </button>
+
+            <nav class="hidden md:flex items-center gap-8">
+                <a href="marketplace.html" class="nav-link">Marketplace</a>
+                <a href="corporativo.html" class="nav-link">Corporativo</a>
+                <a href="emprendedores.html" class="nav-link">Emprendedores</a>
+                <a href="novias.html" class="nav-link">Novias</a>
+            </nav>
+
+            <a href="index.html" class="shrink-0">
+                <img src="assets/logo-transparente.png" alt="Chela" class="h-7 md:h-8 w-auto object-contain" data-img-slot="logo"
+                     onerror="this.onerror=null; this.src='assets/logo.png';">
+            </a>
+
+            <div class="hidden md:flex items-center gap-6">
+                <a href="nosotros.html" class="nav-link active">Nosotros</a>
+                <a data-wa="general" href="#" target="_blank" rel="noopener" class="nav-link"><i class="fa-brands fa-whatsapp"></i></a>
+            </div>
+            <div class="md:hidden w-8"></div>
+        </div>
+
+        <div id="menu-movil" class="hidden md:hidden px-6 py-4 space-y-4" style="background: var(--bg); border-top: 1px solid var(--line);">
+            <a href="index.html" class="block nav-link">Inicio</a>
+            <a href="marketplace.html" class="block nav-link">Marketplace</a>
+            <a href="corporativo.html" class="block nav-link">Corporativo</a>
+            <a href="emprendedores.html" class="block nav-link">Emprendedores</a>
+            <a href="novias.html" class="block nav-link">Novias</a>
+            <a href="nosotros.html" class="block nav-link active">Nosotros</a>
+            <a data-wa="general" href="#" target="_blank" rel="noopener" class="btn-solid w-full mt-2">
+                <i class="fa-brands fa-whatsapp"></i> Escríbenos
+            </a>
+        </div>
+    </header>
+
+    <section class="max-w-[1600px] mx-auto px-6 md:px-10 py-16 md:py-24 text-center">
+        <span class="eyebrow">Sobre Nosotros</span>
+        <h1 class="text-4xl md:text-6xl font-light mt-4 mb-8 max-w-3xl mx-auto">32 años confeccionando con oficio</h1>
+        <p class="text-muted text-sm md:text-base leading-relaxed max-w-2xl mx-auto">
+            Somos un taller de confección con 32 años de trayectoria. Empezamos vistiendo equipos y colegios
+            de nuestra comunidad, y hoy seguimos con la misma filosofía: cada prenda se confecciona por encargo,
+            en las tallas que necesitas. Para tu vestido de novia, en cambio, lo hacemos completamente a tu medida,
+            de principio a fin. Trabajamos de la mano contigo en cada encargo, desde el diseño hasta la entrega.
+        </p>
+    </section>
+
+    <section class="hairline-top">
+        <div class="max-w-[1600px] mx-auto grid sm:grid-cols-3">
+            <div class="p-10 text-center border-r-0 sm:border-r" style="border-color: var(--line);">
+                <p class="text-4xl font-light">32</p>
+                <p class="eyebrow mt-3">Años de trayectoria</p>
+            </div>
+            <div class="p-10 text-center border-r-0 sm:border-r hairline-top sm:border-t-0" style="border-color: var(--line);">
+                <p class="text-4xl font-light">100%</p>
+                <p class="eyebrow mt-3">Confeccionado por encargo</p>
+            </div>
+            <div class="p-10 text-center hairline-top sm:border-t-0" style="border-color: var(--line);">
+                <p class="text-4xl font-light">4</p>
+                <p class="eyebrow mt-3">Líneas: escolar, corporativo, marca propia y novias</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="site-footer hairline-top px-6 md:px-10 py-14">
+        <div class="max-w-[1600px] mx-auto">
+            <div class="flex flex-col md:flex-row justify-between gap-10 mb-12">
+                <div>
+                    <p class="brand-mark text-lg">CHELA</p>
+                    <p class="text-muted text-xs mt-2 max-w-xs">Ropa por encargo, uniformes corporativos y confección al mayor. Con 32 años de trayectoria.</p>
+                </div>
+                <a data-wa="general" href="#" target="_blank" rel="noopener" class="btn-line self-start">
+                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                </a>
+            </div>
+            <div class="hairline-top pt-6 text-[9px] font-medium uppercase tracking-widest text-muted">
+                &copy; <span id="anio-actual"></span> Chela. Todos los derechos reservados.
+            </div>
+        </div>
+    </footer>
+
+    <script src="supabase-client.js"></script>
+    <script src="common.js"></script>
+</body>
+</html>

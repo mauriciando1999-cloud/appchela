@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chela | Ropa por Encargo</title>
+    <meta name="description" content="Ropa por encargo: uniformes deportivos y escolares, uniformes corporativos, confección al mayor con tu propia marca, y vestidos de novia hechos a tu medida.">
+    <link rel="icon" href="assets/logo.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="selection:bg-black selection:text-white">
+
+    <div class="utility-bar">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-2 flex items-center justify-between">
+            <span>32 años de trayectoria</span>
+            <span class="hidden sm:inline">Ropa por encargo · Entrega en toda Caracas</span>
+        </div>
+    </div>
+
+    <!-- HEADER: delgado, transparente sobre el hero, sólido al hacer scroll -->
+    <header id="site-header" class="site-header transparent">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-5 flex items-center justify-between">
+            <button id="btn-menu-movil" class="md:hidden w-8 h-8 flex items-center justify-center">
+                <i class="fa-solid fa-bars text-base"></i>
+            </button>
+
+            <nav class="hidden md:flex items-center gap-8">
+                <a href="marketplace.html" class="nav-link">Marketplace</a>
+                <a href="corporativo.html" class="nav-link">Corporativo</a>
+                <a href="emprendedores.html" class="nav-link">Emprendedores</a>
+                <a href="novias.html" class="nav-link">Novias</a>
+            </nav>
+
+            <a href="index.html" class="shrink-0">
+                <img src="assets/logo-transparente.png" alt="Chela" class="h-7 md:h-8 w-auto object-contain" data-img-slot="logo"
+                     style="filter: drop-shadow(0 1px 4px rgba(0,0,0,0.35));"
+                     onerror="this.onerror=null; this.src='assets/logo.png';">
+            </a>
+
+            <div class="hidden md:flex items-center gap-6">
+                <a href="nosotros.html" class="nav-link">Nosotros</a>
+                <a data-wa="general" href="#" target="_blank" rel="noopener" class="nav-link"><i class="fa-brands fa-whatsapp"></i></a>
+            </div>
+            <div class="md:hidden w-8"></div>
+        </div>
+
+        <div id="menu-movil" class="hidden md:hidden px-6 py-4 space-y-4" style="background: var(--bg); border-top: 1px solid var(--line);">
+            <a href="index.html" class="block nav-link active">Inicio</a>
+            <a href="marketplace.html" class="block nav-link">Marketplace</a>
+            <a href="corporativo.html" class="block nav-link">Corporativo</a>
+            <a href="emprendedores.html" class="block nav-link">Emprendedores</a>
+            <a href="novias.html" class="block nav-link">Novias</a>
+            <a href="nosotros.html" class="block nav-link">Nosotros</a>
+            <a data-wa="general" href="#" target="_blank" rel="noopener" class="btn-solid w-full mt-2">
+                <i class="fa-brands fa-whatsapp"></i> Escríbenos
+            </a>
+        </div>
+    </header>
+
+    <!-- HERO: video a sangre completa, texto pequeño anclado abajo -->
+    <section class="hero-wrap">
+        <video class="hero-video" autoplay muted loop playsinline data-img-slot="hero_poster"
+               poster="https://placehold.co/1600x1000/EFEBE1/57534A?text=Chela"
+               onerror="this.style.display='none';">
+            <source src="assets/hero-video.mp4" type="video/mp4">
+        </video>
+        <div class="hero-overlay"></div>
+
+        <div class="relative z-10 w-full px-6 md:px-10 pb-10 md:pb-16 flex items-end justify-between gap-6">
+            <div>
+                <p class="text-white text-sm md:text-base font-light" style="text-shadow: 0 2px 14px rgba(0,0,0,0.45);">
+                    Ropa por encargo
+                </p>
+                <p class="text-white/70 text-[9px] uppercase tracking-[0.2em] mt-1">32 años de trayectoria</p>
+            </div>
+            <a href="marketplace.html" class="text-white text-[10px] font-medium uppercase tracking-[0.14em] border-b pb-1 shrink-0 transition-colors"
+               style="border-color: rgba(255,255,255,0.5);"
+               onmouseover="this.style.borderColor='#fff'" onmouseout="this.style.borderColor='rgba(255,255,255,0.5)'">
+                Descubrir <i class="fa-solid fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- PARA ÉL / PARA ELLA -->
+    <section class="grid grid-cols-1 md:grid-cols-2 hairline-top">
+        <a href="marketplace.html?categoria=Para%20Ella" class="group relative flex items-end p-8 md:p-14 overflow-hidden" data-img-slot="panel_para_ella"
+           style="aspect-ratio: 4/3; background-image: url('https://placehold.co/1200x900/EFEBE1/57534A?text=Para+Ella'); background-size: cover; background-position: center; border-bottom: 1px solid var(--line);">
+            <div class="absolute inset-0 transition-colors group-hover:bg-black/10"></div>
+            <div class="relative">
+                <p class="eyebrow mb-2">Catálogo</p>
+                <p class="text-3xl md:text-4xl font-light mb-4">Para Ella</p>
+                <span class="btn-text">Ver colección</span>
+            </div>
+        </a>
+        <a href="marketplace.html?categoria=Para%20%C3%89l" class="group relative flex items-end p-8 md:p-14 overflow-hidden" data-img-slot="panel_para_el"
+           style="aspect-ratio: 4/3; background-image: url('https://placehold.co/1200x900/E7E1D2/57534A?text=Para%20%C3%89l'); background-size: cover; background-position: center; border-bottom: 1px solid var(--line);">
+            <div class="absolute inset-0 transition-colors group-hover:bg-black/10"></div>
+            <div class="relative">
+                <p class="eyebrow mb-2">Catálogo</p>
+                <p class="text-3xl md:text-4xl font-light mb-4">Para Él</p>
+                <span class="btn-text">Ver colección</span>
+            </div>
+        </a>
+    </section>
+
+    <!-- MÓDULOS: grid editorial simétrico, sin bloques gráficos pesados -->
+    <section class="px-6 md:px-10 py-20 md:py-28">
+        <div class="max-w-[1600px] mx-auto">
+            <div class="text-center mb-14">
+                <span class="eyebrow">Explorar</span>
+                <h2 class="text-2xl md:text-3xl font-light mt-3">Nuestro mundo</h2>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-14">
+                <a href="marketplace.html" class="group block">
+                    <div class="editorial-media mb-5" data-img-slot="modulo_marketplace" style="background-image: url('https://placehold.co/900x1200/EFEBE1/57534A?text=Marketplace'); background-size: cover; background-position: center;"></div>
+                    <p class="text-sm font-medium mb-1">Marketplace</p>
+                    <p class="text-muted text-xs leading-relaxed mb-3">Explora el catálogo, elige tu talla y encarga por WhatsApp.</p>
+                    <span class="btn-text">Ver catálogo</span>
+                </a>
+                <a href="corporativo.html" class="group block">
+                    <div class="editorial-media mb-5" data-img-slot="modulo_corporativo" style="background-image: url('https://placehold.co/900x1200/E7E1D2/57534A?text=Corporativo'); background-size: cover; background-position: center;"></div>
+                    <p class="text-sm font-medium mb-1">Corporativo</p>
+                    <p class="text-muted text-xs leading-relaxed mb-3">Impulsa la imagen de tu empresa con uniformes propios.</p>
+                    <span class="btn-text">Cotizar</span>
+                </a>
+                <a href="emprendedores.html" class="group block">
+                    <div class="editorial-media mb-5" data-img-slot="modulo_emprendedores" style="background-image: url('https://placehold.co/900x1200/EFEBE1/57534A?text=Emprendedores'); background-size: cover; background-position: center;"></div>
+                    <p class="text-sm font-medium mb-1">Emprendedores</p>
+                    <p class="text-muted text-xs leading-relaxed mb-3">Confeccionamos al mayor y colocamos tu marca.</p>
+                    <span class="btn-text">Cotizar producción</span>
+                </a>
+                <a href="novias.html" class="group block">
+                    <div class="editorial-media mb-5" data-img-slot="modulo_novias" style="background-image: url('https://placehold.co/900x1200/E7E1D2/57534A?text=Novias'); background-size: cover; background-position: center;"></div>
+                    <p class="text-sm font-medium mb-1">Novias</p>
+                    <p class="text-muted text-xs leading-relaxed mb-3">Vestidos de novia hechos completamente a tu medida.</p>
+                    <span class="btn-text">Conocer más</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOQUE EDITORIAL: Novias, el único lugar donde sí es "a la medida" -->
+    <section class="hairline-top">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-20 md:py-28 grid md:grid-cols-2 gap-12 md:gap-20 items-center">
+            <div class="editorial-media order-2 md:order-1" data-img-slot="editorial_novias_home" style="background-image: url('https://placehold.co/900x1200/E7E1D2/57534A?text=Vestido+de+Novia'); background-size: cover; background-position: center;"></div>
+            <div class="order-1 md:order-2">
+                <span class="eyebrow">Vestidos de Novia</span>
+                <h2 class="text-3xl md:text-4xl font-light mt-3 mb-6">Hecho a tu medida</h2>
+                <p class="text-muted text-sm leading-relaxed mb-8 max-w-md">
+                    Es la única prenda de nuestro catálogo que confeccionamos completamente a la medida: tomamos tus
+                    medidas, definimos el diseño contigo y ajustamos cada detalle para tu día especial.
+                </p>
+                <a href="novias.html" class="btn-text">Conocer el servicio</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- TRUST BAR -->
+    <section class="hairline-top">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-14 grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div>
+                <i class="fa-solid fa-clipboard-list mb-3 text-base text-muted"></i>
+                <p class="text-xs font-medium">Por encargo</p>
+                <p class="text-muted text-[11px] mt-1">Cada pieza, hecha al pedir</p>
+            </div>
+            <div>
+                <i class="fa-solid fa-people-group mb-3 text-base text-muted"></i>
+                <p class="text-xs font-medium">32 años</p>
+                <p class="text-muted text-[11px] mt-1">De trayectoria familiar</p>
+            </div>
+            <div>
+                <i class="fa-solid fa-tag mb-3 text-base text-muted"></i>
+                <p class="text-xs font-medium">Tu marca</p>
+                <p class="text-muted text-[11px] mt-1">Producción al mayor</p>
+            </div>
+            <div>
+                <i class="fa-brands fa-whatsapp mb-3 text-base text-muted"></i>
+                <p class="text-xs font-medium">Trato directo</p>
+                <p class="text-muted text-[11px] mt-1">Encargo por WhatsApp</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="site-footer hairline-top px-6 md:px-10 py-14">
+        <div class="max-w-[1600px] mx-auto">
+            <div class="flex flex-col md:flex-row justify-between gap-10 mb-12">
+                <div>
+                    <p class="brand-mark text-lg">CHELA</p>
+                    <p class="text-muted text-xs mt-2 max-w-xs">Ropa por encargo, uniformes corporativos y confección al mayor. Con 32 años de trayectoria.</p>
+                </div>
+                <div class="flex gap-12">
+                    <div>
+                        <p class="eyebrow mb-3">Explorar</p>
+                        <div class="flex flex-col gap-2">
+                            <a href="marketplace.html" class="nav-link">Marketplace</a>
+                            <a href="corporativo.html" class="nav-link">Corporativo</a>
+                            <a href="emprendedores.html" class="nav-link">Emprendedores</a>
+                            <a href="novias.html" class="nav-link">Novias</a>
+                            <a href="nosotros.html" class="nav-link">Nosotros</a>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="eyebrow mb-3">Contacto</p>
+                        <a data-wa="general" href="#" target="_blank" rel="noopener" class="btn-line">
+                            <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="hairline-top pt-6 text-[9px] font-medium uppercase tracking-widest text-muted">
+                &copy; <span id="anio-actual"></span> Chela. Todos los derechos reservados.
+            </div>
+        </div>
+    </footer>
+
+    <script src="supabase-client.js"></script>
+    <script src="common.js"></script>
+</body>
+</html>

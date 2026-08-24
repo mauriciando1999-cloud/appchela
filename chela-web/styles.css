@@ -1,0 +1,215 @@
+/* styles.css - Tema de Chela: lujo silencioso (ref. Prada) — monocromo, tipografía
+   pequeña y refinada, mucho espacio en blanco, sin bloques gráficos grandes. */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --bg: #FAF9F5;
+    --surface: #FFFFFF;
+    --ink: #111111;
+    --ink-muted: #8C877D;
+    --line: rgba(17, 17, 17, 0.09);
+    --line-strong: rgba(17, 17, 17, 0.22);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg);
+    color: var(--ink);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .font-display {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.08;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ===== Barra utilitaria ===== */
+.utility-bar { background: var(--ink); color: var(--bg); }
+.utility-bar span, .utility-bar a {
+    font-size: 9px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+}
+
+/* ===== Header / Nav (delgado, estable) ===== */
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+}
+.site-header.transparent {
+    position: absolute;
+    left: 0; right: 0; top: 28px;
+    background: transparent;
+    border-bottom-color: transparent;
+}
+.site-header.transparent .brand-mark { color: #fff; }
+.site-header.transparent .nav-link { color: rgba(255,255,255,0.92); }
+.site-header.transparent #btn-menu-movil { color: #fff; }
+
+.brand-mark {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+}
+
+.nav-link {
+    color: var(--ink);
+    font-weight: 400;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+}
+.nav-link.active { color: var(--ink-muted); }
+
+.filtro-genero {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-muted);
+    border-bottom: 1px solid transparent;
+    padding-bottom: 0.75rem;
+    margin-bottom: -1px;
+    transition: color 0.2s, border-color 0.2s;
+}
+.filtro-genero:hover { color: var(--ink); }
+.filtro-genero.active { color: var(--ink); border-color: var(--ink); }
+
+/* ===== CTAs: texto minimalista tipo "Discover", sin bloques pesados ===== */
+.btn-solid {
+    background: var(--ink);
+    color: var(--bg);
+    font-weight: 500;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 0.95rem 2rem;
+    transition: opacity 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    white-space: nowrap;
+}
+.btn-solid:hover { opacity: 0.78; }
+
+.btn-line {
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    font-weight: 500;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 0.95rem 2rem;
+    transition: border-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    white-space: nowrap;
+}
+.btn-line:hover { border-color: currentColor; }
+
+.btn-text {
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink);
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: border-color 0.2s, opacity 0.2s;
+}
+.btn-text:hover { border-color: currentColor; opacity: 0.65; }
+
+/* ===== Superficies ===== */
+.surface { background: var(--surface); border: 1px solid var(--line); }
+.eyebrow {
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--ink-muted);
+}
+.text-muted { color: var(--ink-muted); }
+
+.field {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--line-strong);
+    color: var(--ink);
+    border-radius: 0;
+    font-size: 13px;
+}
+.field:focus { outline: none; border-color: var(--ink); }
+
+/* ===== Hero: video de fondo, texto pequeño y contenido ===== */
+.hero-wrap {
+    position: relative;
+    min-height: 88vh;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    background: var(--bg);
+}
+.hero-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(17,17,17,0.05) 0%, rgba(17,17,17,0.05) 55%, rgba(17,17,17,0.55) 100%);
+}
+
+/* ===== Grid editorial simétrico (retrato / retrato) ===== */
+.editorial-media {
+    aspect-ratio: 3 / 4;
+    background: #EFEBE1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== Producto (marketplace) ===== */
+.product-media {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    background: #EFEBE1;
+}
+.product-media img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.7s ease;
+}
+.product:hover .product-media img { transform: scale(1.03); }
+
+/* ===== Footer ===== */
+.site-footer { background: var(--surface); color: var(--ink); }
+.site-footer .text-muted { color: var(--ink-muted); }
+
+.hairline-top { border-top: 1px solid var(--line); }
+.hairline-bottom { border-bottom: 1px solid var(--line); }

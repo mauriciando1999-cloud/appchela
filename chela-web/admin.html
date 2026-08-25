@@ -60,8 +60,8 @@
 
         <main class="max-w-5xl mx-auto px-4 py-8">
             <h2 class="font-display text-lg mb-1">Categorías</h2>
-            <p class="text-muted text-xs mb-5">Marketplace y Corporativo tienen cada uno su propia lista de categorías — se usan como filtros en el catálogo público.</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16">
+            <p class="text-muted text-xs mb-5">Cada catálogo tiene su propia lista de categorías, totalmente independiente — se usan como filtros en su página pública. Vestidos de Novia, Damas de Honor y Batas son tres catálogos separados: productos, categorías y filtros de cada uno no se mezclan entre sí.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
                 <div class="surface p-4">
                     <p class="text-sm font-semibold mb-3">Marketplace</p>
                     <div id="categorias-marketplace" class="mb-3"></div>
@@ -76,6 +76,30 @@
                     <div class="flex gap-2">
                         <input type="text" id="nueva-categoria-corporativo" placeholder="Ej: Camisas" class="field flex-1 p-2 text-xs">
                         <button onclick="agregarCategoria('corporativo')" class="text-[10px] font-bold uppercase px-3" style="border: 1px solid var(--line-strong);">+</button>
+                    </div>
+                </div>
+                <div class="surface p-4">
+                    <p class="text-sm font-semibold mb-3">Novias — Vestidos de Novia</p>
+                    <div id="categorias-novias_vestidos" class="mb-3"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="nueva-categoria-novias_vestidos" placeholder="Ej: Corte Sirena" class="field flex-1 p-2 text-xs">
+                        <button onclick="agregarCategoria('novias_vestidos')" class="text-[10px] font-bold uppercase px-3" style="border: 1px solid var(--line-strong);">+</button>
+                    </div>
+                </div>
+                <div class="surface p-4">
+                    <p class="text-sm font-semibold mb-3">Novias — Damas de Honor</p>
+                    <div id="categorias-novias_damas" class="mb-3"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="nueva-categoria-novias_damas" placeholder="Ej: Largo" class="field flex-1 p-2 text-xs">
+                        <button onclick="agregarCategoria('novias_damas')" class="text-[10px] font-bold uppercase px-3" style="border: 1px solid var(--line-strong);">+</button>
+                    </div>
+                </div>
+                <div class="surface p-4">
+                    <p class="text-sm font-semibold mb-3">Novias — Batas</p>
+                    <div id="categorias-novias_batas" class="mb-3"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="nueva-categoria-novias_batas" placeholder="Ej: Con bordado" class="field flex-1 p-2 text-xs">
+                        <button onclick="agregarCategoria('novias_batas')" class="text-[10px] font-bold uppercase px-3" style="border: 1px solid var(--line-strong);">+</button>
                     </div>
                 </div>
             </div>
@@ -94,10 +118,85 @@
             </button>
             <div id="lista-admin-corporativo" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16"></div>
 
+            <h2 class="font-display text-lg mb-1 hairline-top pt-10">Productos — Novias: Vestidos de Novia</h2>
+            <p class="text-muted text-xs mb-5">Catálogo independiente, dentro de la página Novias.</p>
+            <button onclick="abrirFormProducto(null, 'novias_vestidos')" class="btn-solid mb-8">
+                <i class="fa-solid fa-plus"></i> Nuevo Vestido de Novia
+            </button>
+            <div id="lista-admin-novias_vestidos" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16"></div>
+
+            <h2 class="font-display text-lg mb-1 hairline-top pt-10">Productos — Novias: Damas de Honor</h2>
+            <p class="text-muted text-xs mb-5">Catálogo independiente, dentro de la página Novias.</p>
+            <button onclick="abrirFormProducto(null, 'novias_damas')" class="btn-solid mb-8">
+                <i class="fa-solid fa-plus"></i> Nuevo Vestido de Dama de Honor
+            </button>
+            <div id="lista-admin-novias_damas" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16"></div>
+
+            <h2 class="font-display text-lg mb-1 hairline-top pt-10">Productos — Novias: Batas</h2>
+            <p class="text-muted text-xs mb-5">Catálogo independiente, dentro de la página Novias.</p>
+            <button onclick="abrirFormProducto(null, 'novias_batas')" class="btn-solid mb-8">
+                <i class="fa-solid fa-plus"></i> Nueva Bata
+            </button>
+            <div id="lista-admin-novias_batas" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16"></div>
+
             <h2 class="font-display text-lg mb-1 hairline-top pt-10">Imágenes del Sitio</h2>
             <p class="text-muted text-xs mb-5">Logo, paneles, módulos y bloques editoriales de todas las páginas. Puedes subir varias fotos por espacio — el sitio las rota automáticamente.</p>
 
-            <div id="lista-imagenes-sitio" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+            <div id="lista-imagenes-sitio" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16"></div>
+
+            <h2 class="font-display text-lg mb-1 hairline-top pt-10">Ajustes del Sitio</h2>
+            <p class="text-muted text-xs mb-5">Número de WhatsApp, textos de la barra superior y mensajes iniciales de cada sección — se aplican en todas las páginas públicas sin tocar código.</p>
+            <div class="surface p-5 space-y-5 mb-16">
+                <div>
+                    <label class="text-[10px] text-muted font-bold uppercase ml-1">Número de WhatsApp (formato internacional, sin +)</label>
+                    <input type="text" id="cfg-whatsapp_numero" placeholder="584121234567" class="field w-full p-2.5 text-sm mt-1">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] text-muted font-bold uppercase ml-1">Barra superior — texto izquierdo</label>
+                        <input type="text" id="cfg-utility_bar_texto_izq" placeholder="32 años de trayectoria" class="field w-full p-2.5 text-sm mt-1">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-muted font-bold uppercase ml-1">Barra superior — texto derecho</label>
+                        <input type="text" id="cfg-utility_bar_texto_der" placeholder="Ropa por encargo · Entrega en toda Caracas" class="field w-full p-2.5 text-sm mt-1">
+                    </div>
+                </div>
+                <div>
+                    <p class="text-xs font-semibold mb-3 hairline-top pt-4">Mensajes iniciales de WhatsApp por sección</p>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[10px] text-muted font-bold uppercase ml-1">General (Inicio, Marketplace, Nosotros)</label>
+                            <textarea id="cfg-mensaje_wa_general" rows="2" class="field w-full p-2.5 text-sm mt-1"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-muted font-bold uppercase ml-1">Corporativo</label>
+                            <textarea id="cfg-mensaje_wa_corporativo" rows="2" class="field w-full p-2.5 text-sm mt-1"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-muted font-bold uppercase ml-1">Emprendedores</label>
+                            <textarea id="cfg-mensaje_wa_emprendedores" rows="2" class="field w-full p-2.5 text-sm mt-1"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-muted font-bold uppercase ml-1">Novias</label>
+                            <textarea id="cfg-mensaje_wa_novias" rows="2" class="field w-full p-2.5 text-sm mt-1"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="guardarConfiguracionSitio()" class="btn-solid">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Ajustes
+                </button>
+                <p id="cfg-status" class="text-[11px] text-muted"></p>
+            </div>
+
+            <h2 class="font-display text-lg mb-1 hairline-top pt-10">Estadísticas</h2>
+            <p class="text-muted text-xs mb-5">
+                Las visitas del sitio se miden con Google Analytics. Si todavía no conectaste tu cuenta,
+                dile a Claude el ID de medición (G-XXXXXXXXXX) de tu propiedad de GA4 y lo agrega al código —
+                mientras tanto este acceso te lleva directo a Analytics.
+            </p>
+            <a href="https://analytics.google.com/" target="_blank" rel="noopener" class="btn-line">
+                Ver Estadísticas en Google Analytics <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i>
+            </a>
         </main>
     </div>
 
@@ -134,6 +233,9 @@
                         <select id="f-seccion" onchange="renderSelectCategoriaForm()" class="field w-full p-2.5 text-sm mt-1">
                             <option value="marketplace">Marketplace</option>
                             <option value="corporativo">Corporativo</option>
+                            <option value="novias_vestidos">Novias — Vestidos de Novia</option>
+                            <option value="novias_damas">Novias — Damas de Honor</option>
+                            <option value="novias_batas">Novias — Batas</option>
                         </select>
                     </div>
                     <div>

@@ -6,6 +6,31 @@
     <title>Chela | Ropa por Encargo</title>
     <meta name="description" content="Ropa por encargo: uniformes deportivos y escolares, uniformes corporativos, confección al mayor con tu propia marca, y vestidos de novia hechos a tu medida.">
     <link rel="icon" href="assets/logo.png">
+    <link rel="canonical" href="https://appchela.vercel.app/chela-web/index.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Chela">
+    <meta property="og:title" content="Chela | Ropa por Encargo">
+    <meta property="og:description" content="Ropa por encargo: uniformes deportivos y escolares, uniformes corporativos, confección al mayor con tu propia marca, y vestidos de novia hechos a tu medida.">
+    <meta property="og:url" content="https://appchela.vercel.app/chela-web/index.html">
+    <meta property="og:image" content="https://placehold.co/1200x630/F4F1E9/111111?text=Chela">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Chela | Ropa por Encargo">
+    <meta name="twitter:description" content="Ropa por encargo: uniformes deportivos y escolares, uniformes corporativos, confección al mayor con tu propia marca, y vestidos de novia hechos a tu medida.">
+    <meta name="twitter:image" content="https://placehold.co/1200x630/F4F1E9/111111?text=Chela">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "ClothingStore",
+        "name": "Chela",
+        "description": "Ropa por encargo: uniformes escolares y deportivos, uniformes corporativos, confección al mayor con marca propia, y vestidos de novia hechos a la medida.",
+        "url": "https://appchela.vercel.app/chela-web/index.html",
+        "image": "https://appchela.vercel.app/chela-web/assets/logo.png",
+        "telephone": "+584122969255",
+        "areaServed": { "@type": "City", "name": "Caracas, Venezuela" }
+    }
+    </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,13 +42,13 @@
 
     <div class="utility-bar">
         <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-2 flex items-center justify-between">
-            <span>32 años de trayectoria</span>
-            <span class="hidden sm:inline">Ropa por encargo · Entrega en toda Caracas</span>
+            <span id="utility-bar-izq">32 años de trayectoria</span>
+            <span id="utility-bar-der" class="hidden sm:inline">Ropa por encargo · Entrega en toda Caracas</span>
         </div>
     </div>
 
-    <!-- HEADER: delgado, transparente sobre el hero, sólido al hacer scroll -->
-    <header id="site-header" class="site-header transparent">
+    <!-- HEADER: delgado, sólido desde el inicio (el Lookbook es la apertura) -->
+    <header id="site-header" class="site-header">
         <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-5 flex items-center justify-between">
             <button id="btn-menu-movil" class="md:hidden w-8 h-8 flex items-center justify-center">
                 <i class="fa-solid fa-bars text-base"></i>
@@ -38,7 +63,6 @@
 
             <a href="index.html" class="shrink-0">
                 <img src="assets/logo-transparente.png" alt="Chela" class="h-7 md:h-8 w-auto object-contain" data-img-slot="logo"
-                     style="filter: drop-shadow(0 1px 4px rgba(0,0,0,0.35));"
                      onerror="this.onerror=null; this.src='assets/logo.png';">
             </a>
 
@@ -62,79 +86,56 @@
         </div>
     </header>
 
-    <!-- HERO: video a sangre completa, texto pequeño anclado abajo -->
-    <section class="hero-wrap">
-        <video class="hero-video" autoplay muted loop playsinline data-img-slot="hero_poster"
-               poster="https://placehold.co/1600x1000/EFEBE1/57534A?text=Chela"
-               onerror="this.style.display='none';">
-            <source src="assets/hero-video.mp4" type="video/mp4">
-        </video>
-        <div class="hero-overlay"></div>
+    <!-- APERTURA: hero partido en dos fotos (Para Él / Para Ella) con un
+         titular grande superpuesto en el centro, a modo de portada. -->
+    <section class="split-hero hero-enter">
+        <a href="marketplace.html?genero=hombre" class="split-hero-panel" data-img-slot="panel_para_el"
+           style="background-image: url('https://placehold.co/1200x1400/57534A/EFEBE1?text=Para%20%C3%89l'); background-size: cover; background-position: center;">
+            <div class="split-hero-sombra"></div>
+            <span class="split-hero-etiqueta">Para Él</span>
+        </a>
+        <a href="marketplace.html?genero=mujer" class="split-hero-panel" data-img-slot="panel_para_ella"
+           style="background-image: url('https://placehold.co/1200x1400/3F3B33/EFEBE1?text=Para+Ella'); background-size: cover; background-position: center;">
+            <div class="split-hero-sombra"></div>
+            <span class="split-hero-etiqueta">Para Ella</span>
+        </a>
 
-        <div class="relative z-10 w-full px-6 md:px-10 pb-10 md:pb-16 flex items-end justify-between gap-6">
-            <div>
-                <p class="text-white text-sm md:text-base font-light" style="text-shadow: 0 2px 14px rgba(0,0,0,0.45);">
-                    Ropa por encargo
-                </p>
-                <p class="text-white/70 text-[9px] uppercase tracking-[0.2em] mt-1">32 años de trayectoria</p>
-            </div>
-            <a href="marketplace.html" class="text-white text-[10px] font-medium uppercase tracking-[0.14em] border-b pb-1 shrink-0 transition-colors"
-               style="border-color: rgba(255,255,255,0.5);"
-               onmouseover="this.style.borderColor='#fff'" onmouseout="this.style.borderColor='rgba(255,255,255,0.5)'">
-                Descubrir <i class="fa-solid fa-arrow-right ml-1"></i>
-            </a>
+        <div class="split-hero-centro">
+            <img src="assets/logo-transparente.png" alt="Chela" class="split-hero-logo" data-img-slot="logo"
+                 onerror="this.onerror=null; this.src='assets/logo.png';">
+            <h1 class="font-display split-hero-titulo">Tu estilo,<br>a tu medida</h1>
+            <p class="split-hero-sub">Ropa por encargo, con 32 años de trayectoria.</p>
+            <a href="marketplace.html" class="btn-solid">Ver Catálogo</a>
         </div>
     </section>
 
-    <!-- PARA ÉL / PARA ELLA -->
-    <section class="grid grid-cols-1 md:grid-cols-2 hairline-top">
-        <a href="marketplace.html?categoria=Para%20Ella" class="group relative flex items-end p-8 md:p-14 overflow-hidden" data-img-slot="panel_para_ella"
-           style="aspect-ratio: 4/3; background-image: url('https://placehold.co/1200x900/EFEBE1/57534A?text=Para+Ella'); background-size: cover; background-position: center; border-bottom: 1px solid var(--line);">
-            <div class="absolute inset-0 transition-colors group-hover:bg-black/10"></div>
-            <div class="relative">
-                <p class="eyebrow mb-2">Catálogo</p>
-                <p class="text-3xl md:text-4xl font-light mb-4">Para Ella</p>
-                <span class="btn-text">Ver colección</span>
-            </div>
-        </a>
-        <a href="marketplace.html?categoria=Para%20%C3%89l" class="group relative flex items-end p-8 md:p-14 overflow-hidden" data-img-slot="panel_para_el"
-           style="aspect-ratio: 4/3; background-image: url('https://placehold.co/1200x900/E7E1D2/57534A?text=Para%20%C3%89l'); background-size: cover; background-position: center; border-bottom: 1px solid var(--line);">
-            <div class="absolute inset-0 transition-colors group-hover:bg-black/10"></div>
-            <div class="relative">
-                <p class="eyebrow mb-2">Catálogo</p>
-                <p class="text-3xl md:text-4xl font-light mb-4">Para Él</p>
-                <span class="btn-text">Ver colección</span>
-            </div>
-        </a>
-    </section>
-
     <!-- MÓDULOS: grid editorial simétrico, sin bloques gráficos pesados -->
-    <section class="px-6 md:px-10 py-20 md:py-28">
+    <section class="seccion-explorar hairline-top px-6 md:px-10 py-20 md:py-28">
         <div class="max-w-[1600px] mx-auto">
-            <div class="text-center mb-14">
+            <div class="text-center mb-14" data-reveal>
                 <span class="eyebrow">Explorar</span>
                 <h2 class="text-2xl md:text-3xl font-light mt-3">Nuestro mundo</h2>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-14">
-                <a href="marketplace.html" class="group block">
+                <a href="marketplace.html" class="group block" data-reveal>
                     <div class="editorial-media mb-5" data-img-slot="modulo_marketplace" style="background-image: url('https://placehold.co/900x1200/EFEBE1/57534A?text=Marketplace'); background-size: cover; background-position: center;"></div>
                     <p class="text-sm font-medium mb-1">Marketplace</p>
                     <p class="text-muted text-xs leading-relaxed mb-3">Explora el catálogo, elige tu talla y encarga por WhatsApp.</p>
                     <span class="btn-text">Ver catálogo</span>
                 </a>
-                <a href="corporativo.html" class="group block">
+                <a href="corporativo.html" class="group block" data-reveal>
                     <div class="editorial-media mb-5" data-img-slot="modulo_corporativo" style="background-image: url('https://placehold.co/900x1200/E7E1D2/57534A?text=Corporativo'); background-size: cover; background-position: center;"></div>
                     <p class="text-sm font-medium mb-1">Corporativo</p>
                     <p class="text-muted text-xs leading-relaxed mb-3">Impulsa la imagen de tu empresa con uniformes propios.</p>
                     <span class="btn-text">Cotizar</span>
                 </a>
-                <a href="emprendedores.html" class="group block">
+                <a href="emprendedores.html" class="group block" data-reveal>
                     <div class="editorial-media mb-5" data-img-slot="modulo_emprendedores" style="background-image: url('https://placehold.co/900x1200/EFEBE1/57534A?text=Emprendedores'); background-size: cover; background-position: center;"></div>
                     <p class="text-sm font-medium mb-1">Emprendedores</p>
                     <p class="text-muted text-xs leading-relaxed mb-3">Confeccionamos al mayor y colocamos tu marca.</p>
                     <span class="btn-text">Cotizar producción</span>
                 </a>
-                <a href="novias.html" class="group block">
+                <a href="novias.html" class="group block" data-reveal>
                     <div class="editorial-media mb-5" data-img-slot="modulo_novias" style="background-image: url('https://placehold.co/900x1200/E7E1D2/57534A?text=Novias'); background-size: cover; background-position: center;"></div>
                     <p class="text-sm font-medium mb-1">Novias</p>
                     <p class="text-muted text-xs leading-relaxed mb-3">Vestidos de novia hechos completamente a tu medida.</p>
@@ -147,8 +148,8 @@
     <!-- BLOQUE EDITORIAL: Novias, el único lugar donde sí es "a la medida" -->
     <section class="hairline-top">
         <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-20 md:py-28 grid md:grid-cols-2 gap-12 md:gap-20 items-center">
-            <div class="editorial-media order-2 md:order-1" data-img-slot="editorial_novias_home" style="background-image: url('https://placehold.co/900x1200/E7E1D2/57534A?text=Vestido+de+Novia'); background-size: cover; background-position: center;"></div>
-            <div class="order-1 md:order-2">
+            <div class="editorial-media order-2 md:order-1" data-reveal data-img-slot="editorial_novias_home" style="background-image: url('https://placehold.co/900x1200/E7E1D2/57534A?text=Vestido+de+Novia'); background-size: cover; background-position: center;"></div>
+            <div class="order-1 md:order-2" data-reveal>
                 <span class="eyebrow">Vestidos de Novia</span>
                 <h2 class="text-3xl md:text-4xl font-light mt-3 mb-6">Hecho a tu medida</h2>
                 <p class="text-muted text-sm leading-relaxed mb-8 max-w-md">
@@ -163,22 +164,22 @@
     <!-- TRUST BAR -->
     <section class="hairline-top">
         <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-14 grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
+            <div data-reveal>
                 <i class="fa-solid fa-clipboard-list mb-3 text-base text-muted"></i>
                 <p class="text-xs font-medium">Por encargo</p>
                 <p class="text-muted text-[11px] mt-1">Cada pieza, hecha al pedir</p>
             </div>
-            <div>
+            <div data-reveal>
                 <i class="fa-solid fa-people-group mb-3 text-base text-muted"></i>
                 <p class="text-xs font-medium">32 años</p>
                 <p class="text-muted text-[11px] mt-1">De trayectoria familiar</p>
             </div>
-            <div>
+            <div data-reveal>
                 <i class="fa-solid fa-tag mb-3 text-base text-muted"></i>
                 <p class="text-xs font-medium">Tu marca</p>
                 <p class="text-muted text-[11px] mt-1">Producción al mayor</p>
             </div>
-            <div>
+            <div data-reveal>
                 <i class="fa-brands fa-whatsapp mb-3 text-base text-muted"></i>
                 <p class="text-xs font-medium">Trato directo</p>
                 <p class="text-muted text-[11px] mt-1">Encargo por WhatsApp</p>

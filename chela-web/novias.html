@@ -3,9 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vestidos de Novia | Chela</title>
-    <meta name="description" content="Vestidos de novia hechos a tu medida, confeccionados a mano para tu día especial.">
+    <title>Novias | Chela</title>
+    <meta name="description" content="Vestidos de novia, damas de honor y batas para el día de tu boda, hechos a tu medida.">
     <link rel="icon" href="assets/logo.png">
+    <link rel="canonical" href="https://appchela.vercel.app/chela-web/novias.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Chela">
+    <meta property="og:title" content="Novias | Chela">
+    <meta property="og:description" content="Vestidos de novia, damas de honor y batas para el día de tu boda, hechos a tu medida.">
+    <meta property="og:url" content="https://appchela.vercel.app/chela-web/novias.html">
+    <meta property="og:image" content="https://placehold.co/1200x630/F4F1E9/111111?text=Chela+Novias">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Novias | Chela">
+    <meta name="twitter:description" content="Vestidos de novia, damas de honor y batas para el día de tu boda, hechos a tu medida.">
+    <meta name="twitter:image" content="https://placehold.co/1200x630/F4F1E9/111111?text=Chela+Novias">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,8 +29,8 @@
 
     <div class="utility-bar">
         <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-2 flex items-center justify-between">
-            <span>32 años de trayectoria</span>
-            <span class="hidden sm:inline">Ropa por encargo · Entrega en toda Caracas</span>
+            <span id="utility-bar-izq">32 años de trayectoria</span>
+            <span id="utility-bar-der" class="hidden sm:inline">Ropa por encargo · Entrega en toda Caracas</span>
         </div>
     </div>
 
@@ -60,15 +72,15 @@
         </div>
     </header>
 
-    <section class="max-w-[1600px] mx-auto px-6 md:px-10 py-16 md:py-24 grid md:grid-cols-2 gap-12 md:gap-20 items-center">
-        <div class="editorial-media order-2 md:order-1" data-img-slot="editorial_novias_page" style="background-image: url('https://placehold.co/900x1200/E7E1D2/57534A?text=Vestido+de+Novia'); background-size: cover; background-position: center;"></div>
-        <div class="order-1 md:order-2">
-            <span class="eyebrow">Vestidos de Novia</span>
+    <section class="max-w-[1600px] mx-auto px-6 md:px-10 py-14 md:py-20 grid md:grid-cols-2 gap-12 md:gap-20 items-center">
+        <div class="editorial-media order-2 md:order-1" data-reveal data-img-slot="editorial_novias_page" style="background-image: url('https://placehold.co/900x1200/E7E1D2/57534A?text=Vestido+de+Novia'); background-size: cover; background-position: center;"></div>
+        <div class="order-1 md:order-2" data-reveal>
+            <span class="eyebrow">Novias</span>
             <h1 class="text-3xl md:text-5xl font-light mt-4 mb-6">Hecho a tu medida,<br>para tu día especial</h1>
             <p class="text-muted text-sm leading-relaxed mb-8 max-w-md">
-                A diferencia del resto de nuestro catálogo, los vestidos de novia sí los confeccionamos completamente
-                a la medida: tomamos tus medidas, definimos el diseño contigo y ajustamos cada detalle para que el
-                vestido sea único, tal como tú lo imaginas.
+                A diferencia del resto de nuestro catálogo, todo lo que ves aquí —vestidos de novia, de damas de honor
+                y batas— lo confeccionamos a la medida: tomamos tus medidas, definimos el diseño contigo y ajustamos
+                cada detalle para que sea único, tal como lo imaginas.
             </p>
             <ul class="space-y-3 mb-9 text-sm text-muted">
                 <li class="flex items-start gap-3"><i class="fa-solid fa-check mt-1"></i> Toma de medidas y ajuste personalizado</li>
@@ -78,6 +90,66 @@
             <a data-wa="novias" href="#" target="_blank" rel="noopener" class="btn-solid">
                 <i class="fa-brands fa-whatsapp"></i> Consultar mi Vestido
             </a>
+        </div>
+    </section>
+
+    <!-- Salto rápido entre los tres catálogos separados de Novias -->
+    <nav class="seccion-novias hairline-top">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-6 flex items-center gap-8 flex-wrap">
+            <a href="#vestidos-de-novia" class="nav-link">Vestidos de Novia</a>
+            <a href="#damas-de-honor" class="nav-link">Damas de Honor</a>
+            <a href="#batas" class="nav-link">Batas</a>
+        </div>
+    </nav>
+
+    <!-- CATÁLOGO: Vestidos de Novia (independiente de los otros dos) -->
+    <section id="vestidos-de-novia" class="seccion-novias hairline-top">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-10 pb-14 md:pb-20">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+                <div>
+                    <span class="eyebrow">Catálogo</span>
+                    <h2 class="text-3xl md:text-4xl font-light mt-3">Vestidos de Novia</h2>
+                </div>
+                <p class="text-muted text-xs max-w-xs">
+                    Los precios son de referencia — cada pieza se confecciona a tu medida, y confirmamos el precio final por WhatsApp según tela, diseño y ajustes.
+                </p>
+            </div>
+            <div id="filtros-vestidos" class="flex items-center gap-6 mb-12 flex-wrap" style="border-bottom: 1px solid var(--line);"></div>
+            <div id="grid-vestidos" class="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12"></div>
+        </div>
+    </section>
+
+    <!-- CATÁLOGO: Damas de Honor (independiente de los otros dos) -->
+    <section id="damas-de-honor" class="hairline-top">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-14 md:py-20">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+                <div>
+                    <span class="eyebrow">Catálogo</span>
+                    <h2 class="text-3xl md:text-4xl font-light mt-3">Damas de Honor</h2>
+                </div>
+                <p class="text-muted text-xs max-w-xs">
+                    Vestidos para tu cortejo, confeccionados a la medida de cada dama — mismo diseño, ajustado a cada cuerpo.
+                </p>
+            </div>
+            <div id="filtros-damas" class="flex items-center gap-6 mb-12 flex-wrap" style="border-bottom: 1px solid var(--line);"></div>
+            <div id="grid-damas" class="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12"></div>
+        </div>
+    </section>
+
+    <!-- CATÁLOGO: Batas (independiente de los otros dos) -->
+    <section id="batas" class="seccion-novias hairline-top">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-14 md:py-20">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+                <div>
+                    <span class="eyebrow">Catálogo</span>
+                    <h2 class="text-3xl md:text-4xl font-light mt-3">Batas</h2>
+                </div>
+                <p class="text-muted text-xs max-w-xs">
+                    Para usar mientras te arreglas y te maquillas el día de la boda — a juego con tu cortejo si así lo quieres.
+                </p>
+            </div>
+            <div id="filtros-batas" class="flex items-center gap-6 mb-12 flex-wrap" style="border-bottom: 1px solid var(--line);"></div>
+            <div id="grid-batas" class="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12"></div>
         </div>
     </section>
 
@@ -100,5 +172,13 @@
 
     <script src="supabase-client.js"></script>
     <script src="common.js"></script>
+    <script src="catalogo.js"></script>
+    <script>
+        // Tres catálogos separados: cada uno con su propia sección en Supabase,
+        // sus propias categorías y su propio parámetro de categoría en la URL.
+        iniciarCatalogo({ seccion: 'novias_vestidos', idFiltros: 'filtros-vestidos', idGrid: 'grid-vestidos', parametroCategoria: 'catVestidos' });
+        iniciarCatalogo({ seccion: 'novias_damas', idFiltros: 'filtros-damas', idGrid: 'grid-damas', parametroCategoria: 'catDamas' });
+        iniciarCatalogo({ seccion: 'novias_batas', idFiltros: 'filtros-batas', idGrid: 'grid-batas', parametroCategoria: 'catBatas' });
+    </script>
 </body>
 </html>

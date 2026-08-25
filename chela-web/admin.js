@@ -84,7 +84,7 @@ window.onload = async () => {
 
     mostrarPantalla('app-content');
     await cargarCategoriasAdmin();
-    await Promise.all([cargarProductosAdmin(), cargarImagenesSitio()]);
+    await Promise.all([cargarProductosAdmin(), cargarImagenesSitio(), cargarConfiguracionSitio()]);
 };
 
 // ==========================================================
@@ -92,19 +92,21 @@ window.onload = async () => {
 // Se usan como filtros en el catálogo público y como opciones al crear/editar
 // un producto. Cada sección tiene su propia lista, totalmente independiente.
 // ==========================================================
-let categoriasAdmin = { marketplace: [], corporativo: [] };
+const SECCIONES_CATALOGO = ['marketplace', 'corporativo', 'novias_vestidos', 'novias_damas', 'novias_batas'];
+let categoriasAdmin = {};
 
 async function cargarCategoriasAdmin() {
     const { data, error } = await _sb.from('chela_web_categorias').select('*').order('orden', { ascending: true });
     if (error) { console.error('Error al cargar categorías:', error); return; }
-    categoriasAdmin = { marketplace: [], corporativo: [] };
+    categoriasAdmin = {};
+    SECCIONES_CATALOGO.forEach(s => { categoriasAdmin[s] = []; });
     (data || []).forEach(c => { if (categoriasAdmin[c.seccion]) categoriasAdmin[c.seccion].push(c); });
     renderCategoriasAdmin();
     renderSelectCategoriaForm();
 }
 
 function renderCategoriasAdmin() {
-    ['marketplace', 'corporativo'].forEach(seccion => {
+    SECCIONES_CATALOGO.forEach(seccion => {
         const cont = document.getElementById(`categorias-${seccion}`);
         if (!cont) return;
         const items = categoriasAdmin[seccion];
@@ -158,7 +160,6 @@ window.renderSelectCategoriaForm = function () {
 // ==========================================================
 const SLOTS_IMAGENES_SITIO = [
     { clave: 'logo', descripcion: 'Logo (encabezado, todas las páginas)' },
-    { clave: 'hero_poster', descripcion: 'Portada del video de Inicio' },
     { clave: 'panel_para_ella', descripcion: 'Panel "Para Ella" (Inicio)' },
     { clave: 'panel_para_el', descripcion: 'Panel "Para Él" (Inicio)' },
     { clave: 'modulo_marketplace', descripcion: 'Módulo Marketplace (Inicio)' },
@@ -269,6 +270,42 @@ window.eliminarImagenSitio = async function (id, clave) {
     await cargarImagenesSitio();
 };
 
+// ==========================================================
+// AJUSTES DEL SITIO (chela_web_config: clave/valor)
+// Número de WhatsApp, textos de la barra superior y mensajes iniciales de
+// WhatsApp por sección. El sitio público (common.js) lee esta misma tabla;
+// si una clave no existe todavía, sigue usando su valor de respaldo.
+// ==========================================================
+const CLAVES_CONFIG_SITIO = [
+    'whatsapp_numero', 'utility_bar_texto_izq', 'utility_bar_texto_der',
+    'mensaje_wa_general', 'mensaje_wa_corporativo', 'mensaje_wa_emprendedores', 'mensaje_wa_novias'
+];
+
+async function cargarConfiguracionSitio() {
+    const { data, error } = await _sb.from('chela_web_config').select('clave, valor');
+    if (error) { console.error('Error al cargar ajustes del sitio:', error); return; }
+
+    const config = {};
+    (data || []).forEach(row => { config[row.clave] = row.valor; });
+    CLAVES_CONFIG_SITIO.forEach(clave => {
+        const input = document.getElementById(`cfg-${clave}`);
+        if (input) input.value = config[clave] || '';
+    });
+}
+
+window.guardarConfiguracionSitio = async function () {
+    const status = document.getElementById('cfg-status');
+    status.innerText = 'Guardando...';
+
+    const filas = CLAVES_CONFIG_SITIO.map(clave => ({
+        clave,
+        valor: (document.getElementById(`cfg-${clave}`).value || '').trim()
+    }));
+
+    const { error } = await _sb.from('chela_web_config').upsert(filas, { onConflict: 'clave' });
+    status.innerText = error ? 'Error al guardar: ' + error.message : 'Ajustes guardados.';
+};
+
 function mostrarPantalla(id) {
     ['auth-screen', 'denegado-screen', 'app-content'].forEach(s => {
         document.getElementById(s).classList.toggle('hidden', s !== id);
@@ -304,8 +341,8 @@ window.handleLogout = function () {
 async function cargarProductosAdmin() {
     const { data, error } = await _sb.from('chela_web_productos').select('*').order('orden', { ascending: true });
     if (error) {
-        ['lista-admin-marketplace', 'lista-admin-corporativo'].forEach(id => {
-            const el = document.getElementById(id);
+        SECCIONES_CATALOGO.forEach(seccion => {
+            const el = document.getElementById(`lista-admin-${seccion}`);
             if (el) el.innerHTML = `<p class="text-red-600 text-xs col-span-full">Error al cargar: ${error.message}</p>`;
         });
         return;
@@ -315,7 +352,7 @@ async function cargarProductosAdmin() {
 }
 
 function renderListaAdmin() {
-    ['marketplace', 'corporativo'].forEach(seccion => {
+    SECCIONES_CATALOGO.forEach(seccion => {
         const cont = document.getElementById(`lista-admin-${seccion}`);
         if (!cont) return;
 

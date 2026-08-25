@@ -6,6 +6,18 @@
     <title>Sobre Nosotros | Chela</title>
     <meta name="description" content="32 años de trayectoria confeccionando ropa por encargo.">
     <link rel="icon" href="assets/logo.png">
+    <link rel="canonical" href="https://appchela.vercel.app/chela-web/nosotros.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Chela">
+    <meta property="og:title" content="Sobre Nosotros | Chela">
+    <meta property="og:description" content="32 años de trayectoria confeccionando ropa por encargo.">
+    <meta property="og:url" content="https://appchela.vercel.app/chela-web/nosotros.html">
+    <meta property="og:image" content="https://placehold.co/1200x630/F4F1E9/111111?text=Chela">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Sobre Nosotros | Chela">
+    <meta name="twitter:description" content="32 años de trayectoria confeccionando ropa por encargo.">
+    <meta name="twitter:image" content="https://placehold.co/1200x630/F4F1E9/111111?text=Chela">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,8 +29,8 @@
 
     <div class="utility-bar">
         <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-2 flex items-center justify-between">
-            <span>32 años de trayectoria</span>
-            <span class="hidden sm:inline">Ropa por encargo · Entrega en toda Caracas</span>
+            <span id="utility-bar-izq">32 años de trayectoria</span>
+            <span id="utility-bar-der" class="hidden sm:inline">Ropa por encargo · Entrega en toda Caracas</span>
         </div>
     </div>
 
@@ -60,7 +72,7 @@
         </div>
     </header>
 
-    <section class="max-w-[1600px] mx-auto px-6 md:px-10 py-16 md:py-24 text-center">
+    <section class="max-w-[1600px] mx-auto px-6 md:px-10 py-16 md:py-24 text-center" data-reveal>
         <span class="eyebrow">Sobre Nosotros</span>
         <h1 class="text-4xl md:text-6xl font-light mt-4 mb-8 max-w-3xl mx-auto">32 años confeccionando con oficio</h1>
         <p class="text-muted text-sm md:text-base leading-relaxed max-w-2xl mx-auto">
@@ -73,16 +85,16 @@
 
     <section class="hairline-top">
         <div class="max-w-[1600px] mx-auto grid sm:grid-cols-3">
-            <div class="p-10 text-center border-r-0 sm:border-r" style="border-color: var(--line);">
-                <p class="text-4xl font-light">32</p>
+            <div class="p-10 text-center border-r-0 sm:border-r" style="border-color: var(--line);" data-reveal>
+                <p class="text-4xl font-light font-display">32</p>
                 <p class="eyebrow mt-3">Años de trayectoria</p>
             </div>
-            <div class="p-10 text-center border-r-0 sm:border-r hairline-top sm:border-t-0" style="border-color: var(--line);">
-                <p class="text-4xl font-light">100%</p>
+            <div class="p-10 text-center border-r-0 sm:border-r hairline-top sm:border-t-0" style="border-color: var(--line);" data-reveal>
+                <p class="text-4xl font-light font-display">100%</p>
                 <p class="eyebrow mt-3">Confeccionado por encargo</p>
             </div>
-            <div class="p-10 text-center hairline-top sm:border-t-0" style="border-color: var(--line);">
-                <p class="text-4xl font-light">4</p>
+            <div class="p-10 text-center hairline-top sm:border-t-0" style="border-color: var(--line);" data-reveal>
+                <p class="text-4xl font-light font-display">4</p>
                 <p class="eyebrow mt-3">Líneas: escolar, corporativo, marca propia y novias</p>
             </div>
         </div>

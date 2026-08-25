@@ -1,17 +1,26 @@
 // common.js - Lógica compartida por todas las páginas de Chela (header, menú móvil, WhatsApp, footer).
 
-const WHATSAPP_NUMERO = '584122969255'; // 0412-2969255 en formato internacional
-
-function linkWhatsApp(mensaje) {
-    return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
-}
-
-const MENSAJES_WHATSAPP = {
+// Valores de respaldo: el sitio funciona con estos incluso antes de que
+// cargue la configuración real desde Supabase (chela_web_config), o si no
+// hay conexión. Editables desde admin.html → Ajustes del Sitio, sin tocar código.
+const WHATSAPP_NUMERO_DEFECTO = '584122969255'; // 0412-2969255 en formato internacional
+const MENSAJES_WHATSAPP_DEFECTO = {
     general: 'Hola, quiero hacer un pedido de ropa por encargo.',
     corporativo: 'Hola, quisiera cotizar uniformes para impulsar la imagen de mi empresa.',
     emprendedores: 'Hola, tengo mi propia marca y quiero cotizar producción al mayor con mi etiqueta.',
     novias: 'Hola, quiero consultar sobre un vestido de novia hecho a la medida.'
 };
+const UTILITY_BAR_DEFECTO = {
+    izquierda: '32 años de trayectoria',
+    derecha: 'Ropa por encargo · Entrega en toda Caracas'
+};
+
+let WHATSAPP_NUMERO = WHATSAPP_NUMERO_DEFECTO;
+let MENSAJES_WHATSAPP = { ...MENSAJES_WHATSAPP_DEFECTO };
+
+function linkWhatsApp(mensaje) {
+    return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
+}
 
 function inicializarWhatsAppLinks() {
     document.querySelectorAll('[data-wa]').forEach(el => {
@@ -20,12 +29,55 @@ function inicializarWhatsAppLinks() {
     });
 }
 
+// Trae la configuración editable del admin (número de WhatsApp, textos de la
+// barra superior, mensajes iniciales por sección) y la aplica al sitio. Si
+// una clave no existe todavía en la tabla, se queda con el valor de respaldo
+// de arriba — nunca se rompe nada por configuración incompleta.
+async function aplicarConfiguracionSitio() {
+    if (typeof _sb === 'undefined') return;
+
+    const { data, error } = await _sb.from('chela_web_config').select('clave, valor');
+    if (error || !data) return;
+
+    const config = {};
+    data.forEach(row => { if (row.valor) config[row.clave] = row.valor; });
+
+    if (config.whatsapp_numero) WHATSAPP_NUMERO = config.whatsapp_numero;
+    ['general', 'corporativo', 'emprendedores', 'novias'].forEach(tipo => {
+        if (config[`mensaje_wa_${tipo}`]) MENSAJES_WHATSAPP[tipo] = config[`mensaje_wa_${tipo}`];
+    });
+    inicializarWhatsAppLinks(); // reaplica: ya se había aplicado una vez con los valores de respaldo
+
+    const barIzq = document.getElementById('utility-bar-izq');
+    const barDer = document.getElementById('utility-bar-der');
+    if (barIzq) barIzq.textContent = config.utility_bar_texto_izq || UTILITY_BAR_DEFECTO.izquierda;
+    if (barDer) barDer.textContent = config.utility_bar_texto_der || UTILITY_BAR_DEFECTO.derecha;
+}
+
+// El menú móvil queda en el DOM oculto (Tailwind "hidden") y se despliega con
+// una transición de altura: se quita "hidden" y, un frame después, se añade
+// "abierto" para que la transición CSS tenga de dónde partir. Al cerrar se
+// hace a la inversa, esperando a que termine la transición antes de volver
+// a "hidden" (si no, el contenido se recorta antes de tiempo).
 function inicializarMenuMovil() {
     const btnMenu = document.getElementById('btn-menu-movil');
     const menuMovil = document.getElementById('menu-movil');
     if (!btnMenu || !menuMovil) return;
-    btnMenu.addEventListener('click', () => menuMovil.classList.toggle('hidden'));
-    menuMovil.querySelectorAll('a').forEach(a => a.addEventListener('click', () => menuMovil.classList.add('hidden')));
+
+    const abrir = () => {
+        menuMovil.classList.remove('hidden');
+        requestAnimationFrame(() => menuMovil.classList.add('abierto'));
+    };
+    const cerrar = () => {
+        menuMovil.classList.remove('abierto');
+        setTimeout(() => menuMovil.classList.add('hidden'), 360);
+    };
+
+    btnMenu.addEventListener('click', () => {
+        if (menuMovil.classList.contains('abierto')) cerrar();
+        else abrir();
+    });
+    menuMovil.querySelectorAll('a').forEach(a => a.addEventListener('click', cerrar));
 }
 
 function inicializarAnioFooter() {
@@ -52,9 +104,14 @@ function inicializarHeaderScroll() {
 // fotos reales de ESE catálogo/categoría — así cada sección siempre muestra lo
 // que realmente vende, nunca una foto de otra sección. Emprendedores/Novias no
 // tienen catálogo propio, así que esos espacios se quedan solo con lo manual.
+//
+// Los paneles "Para Él"/"Para Ella" del hero son distintos: SIEMPRE deben
+// mostrar fotos reales del Marketplace por género (siempreCatalogo: true),
+// aunque exista alguna foto manual vieja cargada para ese espacio — para
+// que nunca queden desincronizados de lo que de verdad hay en el catálogo.
 const CATALOGO_POR_SLOT = {
-    panel_para_ella: { seccion: 'marketplace', categoria: 'Para Ella' },
-    panel_para_el: { seccion: 'marketplace', categoria: 'Para Él' },
+    panel_para_ella: { seccion: 'marketplace', genero: 'mujer', siempreCatalogo: true },
+    panel_para_el: { seccion: 'marketplace', genero: 'hombre', siempreCatalogo: true },
     modulo_marketplace: { seccion: 'marketplace' },
     modulo_corporativo: { seccion: 'corporativo' }
 };
@@ -67,6 +124,7 @@ async function obtenerFotosDeCatalogo(filtro) {
         .order('orden', { ascending: true })
         .limit(6);
     if (filtro.categoria) consulta = consulta.eq('categoria', filtro.categoria);
+    if (filtro.genero) consulta = consulta.eq('genero', filtro.genero);
 
     const { data, error } = await consulta;
     if (error || !data) return [];
@@ -91,8 +149,9 @@ async function aplicarImagenesSitio() {
 
     // Completa con fotos reales del catálogo los espacios que no tienen foto manual
     // (solo si ese espacio existe de verdad en esta página, para no consultar de más).
+    // Los marcados con siempreCatalogo ignoran la foto manual y siempre traen del catálogo.
     await Promise.all(Object.entries(CATALOGO_POR_SLOT).map(async ([clave, filtro]) => {
-        if (porClave[clave] && porClave[clave].length > 0) return;
+        if (!filtro.siempreCatalogo && porClave[clave] && porClave[clave].length > 0) return;
         if (!document.querySelector(`[data-img-slot="${clave}"]`)) return;
         const fotos = await obtenerFotosDeCatalogo(filtro);
         if (fotos.length > 0) porClave[clave] = fotos;
@@ -115,21 +174,83 @@ function iniciarRotacionImagen(el, urls) {
     aplicarImagenAElemento(el, urls[0]);
     if (urls.length <= 1) return;
 
+    const esFondo = el.tagName !== 'IMG' && el.tagName !== 'VIDEO';
+    // El hero de Inicio (.split-hero-panel) ya garantiza overflow:hidden,
+    // así que ahí el cambio de foto se ve con fundido + un acercamiento que
+    // se deshace despacio (clases .rotacion-*, definidas en styles.css). En
+    // el resto del sitio se mantiene el fundido simple de siempre.
+    const conAcercamiento = esFondo && el.classList.contains('split-hero-panel');
+    if (conAcercamiento) {
+        // Arranca en 1.06 sin transición (para no animar el estado inicial)
+        // y recién después activa la transición y suelta hacia 1 en 6s —
+        // así la primera foto se comporta igual que cada rotación siguiente.
+        el.classList.add('rotacion-acercando');
+        void el.offsetWidth;
+        el.classList.add('rotacion-fondo');
+        requestAnimationFrame(() => el.classList.remove('rotacion-acercando'));
+    }
+
     setInterval(() => {
         i = (i + 1) % urls.length;
-        const esFondo = el.tagName !== 'IMG' && el.tagName !== 'VIDEO';
-        if (esFondo) {
+        if (!esFondo) {
+            aplicarImagenAElemento(el, urls[i]);
+            return;
+        }
+        if (conAcercamiento) {
+            el.classList.add('rotacion-oculta');
+            setTimeout(() => {
+                aplicarImagenAElemento(el, urls[i]);
+                el.style.transition = 'none';
+                el.classList.add('rotacion-acercando');
+                void el.offsetWidth; // fuerza reflow: el salto a 1.06 no debe animarse
+                el.style.transition = '';
+                el.classList.remove('rotacion-oculta');
+                el.classList.remove('rotacion-acercando');
+            }, 900);
+        } else {
             el.style.transition = 'opacity 0.6s ease';
             el.style.opacity = '0';
             setTimeout(() => {
                 aplicarImagenAElemento(el, urls[i]);
                 el.style.opacity = '1';
             }, 600);
-        } else {
-            aplicarImagenAElemento(el, urls[i]);
         }
     }, 6000);
 }
+
+// Anima la entrada de cualquier elemento [data-reveal] cuando entra en pantalla
+// (fade + subida). Se puede volver a llamar tras inyectar contenido dinámico
+// (p.ej. el grid del catálogo) para que también revele lo nuevo. Los elementos
+// ya animados se marcan con "reveal-listo" para no observarlos dos veces.
+function inicializarRevelado(raiz) {
+    const contenedor = raiz || document;
+    const elementos = contenedor.querySelectorAll('[data-reveal]:not(.reveal-listo)');
+    if (elementos.length === 0) return;
+
+    if (!('IntersectionObserver' in window)) {
+        elementos.forEach(el => el.classList.add('is-visible', 'reveal-listo'));
+        return;
+    }
+
+    const indicePorPadre = new Map();
+    elementos.forEach(el => {
+        el.classList.add('reveal-listo');
+        const indice = indicePorPadre.get(el.parentElement) || 0;
+        el.style.transitionDelay = `${Math.min(indice, 5) * 70}ms`;
+        indicePorPadre.set(el.parentElement, indice + 1);
+    });
+
+    const observador = new IntersectionObserver((entradas) => {
+        entradas.forEach(entrada => {
+            if (!entrada.isIntersecting) return;
+            entrada.target.classList.add('is-visible');
+            observador.unobserve(entrada.target);
+        });
+    }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+
+    elementos.forEach(el => observador.observe(el));
+}
+window.inicializarRevelado = inicializarRevelado;
 
 document.addEventListener('DOMContentLoaded', () => {
     inicializarWhatsAppLinks();
@@ -137,4 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
     inicializarAnioFooter();
     inicializarHeaderScroll();
     aplicarImagenesSitio();
+    aplicarConfiguracionSitio();
+    inicializarRevelado();
 });

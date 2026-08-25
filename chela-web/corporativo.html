@@ -6,6 +6,18 @@
     <title>Corporativo | Chela</title>
     <meta name="description" content="Vestimos a tu empresa: uniformes y prendas que impulsan la imagen de tu marca.">
     <link rel="icon" href="assets/logo.png">
+    <link rel="canonical" href="https://appchela.vercel.app/chela-web/corporativo.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Chela">
+    <meta property="og:title" content="Corporativo | Chela">
+    <meta property="og:description" content="Vestimos a tu empresa: uniformes y prendas que impulsan la imagen de tu marca.">
+    <meta property="og:url" content="https://appchela.vercel.app/chela-web/corporativo.html">
+    <meta property="og:image" content="https://placehold.co/1200x630/F4F1E9/111111?text=Chela+Corporativo">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Corporativo | Chela">
+    <meta name="twitter:description" content="Vestimos a tu empresa: uniformes y prendas que impulsan la imagen de tu marca.">
+    <meta name="twitter:image" content="https://placehold.co/1200x630/F4F1E9/111111?text=Chela+Corporativo">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,8 +29,8 @@
 
     <div class="utility-bar">
         <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-2 flex items-center justify-between">
-            <span>32 años de trayectoria</span>
-            <span class="hidden sm:inline">Ropa por encargo · Entrega en toda Caracas</span>
+            <span id="utility-bar-izq">32 años de trayectoria</span>
+            <span id="utility-bar-der" class="hidden sm:inline">Ropa por encargo · Entrega en toda Caracas</span>
         </div>
     </div>
 
@@ -61,7 +73,7 @@
     </header>
 
     <section class="max-w-[1600px] mx-auto px-6 md:px-10 py-16 md:py-24 grid md:grid-cols-2 gap-12 md:gap-20 items-center">
-        <div>
+        <div data-reveal>
             <span class="eyebrow">Empresas y Negocios</span>
             <h1 class="text-3xl md:text-5xl font-light mt-4 mb-6">Impulsa la imagen<br>de tu marca</h1>
             <p class="text-muted text-sm leading-relaxed mb-8 max-w-md">
@@ -77,12 +89,12 @@
                 <i class="fa-brands fa-whatsapp"></i> Cotizar Uniformes
             </a>
         </div>
-        <div class="editorial-media" data-img-slot="editorial_corporativo" style="background-image: url('https://placehold.co/900x1200/E7E1D2/57534A?text=Uniformes+Corporativos'); background-size: cover; background-position: center;"></div>
+        <div class="editorial-media" data-reveal data-img-slot="editorial_corporativo" style="background-image: url('https://placehold.co/900x1200/E7E1D2/57534A?text=Uniformes+Corporativos'); background-size: cover; background-position: center;"></div>
     </section>
 
     <!-- CATÁLOGO CORPORATIVO -->
     <section class="hairline-top max-w-[1600px] mx-auto px-6 md:px-10 py-14 md:py-20">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10" data-reveal>
             <div>
                 <span class="eyebrow">Catálogo</span>
                 <h2 class="text-3xl md:text-4xl font-light mt-3">Uniformes para tu equipo</h2>
@@ -116,7 +128,7 @@
 
     <script src="supabase-client.js"></script>
     <script src="common.js"></script>
-    <script>window.SECCION_CATALOGO = 'corporativo';</script>
     <script src="catalogo.js"></script>
+    <script>iniciarCatalogo({ seccion: 'corporativo', idFiltros: 'filtros-categoria', idGrid: 'grid-catalogo' });</script>
 </body>
 </html>

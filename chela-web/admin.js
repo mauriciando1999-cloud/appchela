@@ -36,12 +36,18 @@ async function comprimirImagen(file, maxDim = 1400, calidad = 0.82, formato = 'i
     return new Promise(resolve => canvas.toBlob(resolve, formato, formato === 'image/png' ? undefined : calidad));
 }
 
+// Se guarda el último archivo elegido/pegado para el producto, así
+// "Analizar foto con IA" puede reusarlo sin tener que volver a pedirlo.
+let ultimoArchivoProducto = null;
+
 // Lógica compartida entre "elegir archivo" y "pegar con Ctrl+V" — ambos
 // caminos terminan aquí con un File/Blob ya en mano.
 async function procesarYSubirImagenProducto(file) {
     const status = document.getElementById('f-imagen-status');
     const errorValidacion = validarArchivoImagen(file);
     if (errorValidacion) { status.innerText = errorValidacion; return; }
+
+    ultimoArchivoProducto = file;
 
     try {
         status.innerText = 'Comprimiendo...';
@@ -86,31 +92,17 @@ window.actualizarPreviewImagen = function () {
 };
 
 // ==========================================================
-// GENERAR FOTO CON IA (cambiar modelo / fondo)
-// Llama a /api/generar-imagen (función serverless de Vercel), que a su vez
-// llama a Gemini del lado del servidor — la clave nunca toca el navegador.
-// El endpoint exige el token de la sesión actual, así que esto solo
-// funciona logueado como uno de los correos admin.
+// ANALIZAR FOTO CON IA (sugerir nombre / descripción / género)
+// Llama a /api/analizar-imagen (función serverless de Vercel), que a su vez
+// llama a Gemini (visión + texto) del lado del servidor — la clave nunca
+// toca el navegador. El endpoint exige el token de la sesión actual, así
+// que esto solo funciona logueado como uno de los correos admin.
 //
-// El prompt base es siempre el mismo (no hay que redactarlo cada vez); el
-// campo de texto del panel es solo para detalles extra, opcionales. Además
-// del prompt le pedimos a la IA un nombre y una descripción cortos para el
-// producto, y se usan para llenar el formulario solos.
+// No genera ni edita ninguna imagen (eso requiere un modelo de imágenes con
+// facturación activada en Google) — solo mira la foto que ya subiste/pegaste
+// para el producto y sugiere los datos, para llenar el formulario más rápido.
 // ==========================================================
-const PROMPT_IA_BASE = `Edita esta foto de una prenda de ropa para el catálogo de una tienda online.
-Instrucciones para la imagen:
-- Conserva la prenda de ropa exactamente igual: mismo diseño, color, estampado y tela.
-- Cambia a la persona que la lleva puesta por un modelo distinto.
-- Usa un fondo de estudio profesional, limpio, neutro y con buena iluminación.
-- El resultado debe verse como una foto de catálogo de e-commerce.
-
-Además, en tu respuesta de texto (antes de la imagen), incluye exactamente estas dos líneas y nada más de texto:
-NOMBRE: (nombre corto y atractivo para este producto, en español)
-DESCRIPCION: (una sola oración describiéndolo, en español)`;
-
-let iaArchivoBase = null;
-let iaResultado = null; // { base64, mimeType, nombreSugerido, descripcionSugerida }
-let zonaPegadoActiva = null; // 'producto' | 'ia' — qué recuadro recibe el próximo Ctrl+V
+let zonaPegadoActiva = false; // ¿el recuadro de la foto está "activado" para recibir Ctrl+V?
 
 function blobABase64(blob) {
     return new Promise((resolve, reject) => {
@@ -121,36 +113,11 @@ function blobABase64(blob) {
     });
 }
 
-function manejarArchivoBaseIA(file) {
-    const errorValidacion = validarArchivoImagen(file);
-    if (errorValidacion) {
-        document.getElementById('ia-status').innerText = errorValidacion;
-        return;
-    }
-    iaArchivoBase = file;
-    document.getElementById('ia-foto-base-nombre').innerText = file.name || 'Imagen pegada';
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-    const toggleBtn = document.getElementById('ia-toggle');
-    const inputBase = document.getElementById('ia-foto-base');
-    if (toggleBtn) toggleBtn.addEventListener('click', () => document.getElementById('ia-panel').classList.toggle('hidden'));
-    if (inputBase) {
-        inputBase.addEventListener('change', () => {
-            const file = inputBase.files[0];
-            if (file) manejarArchivoBaseIA(file);
-            inputBase.value = '';
-        });
-    }
-
-    // Pegar imágenes con Ctrl+V: hace clic en uno de los dos recuadros (foto
-    // de producto o foto base de la IA) para "activarlo", y lo que pegues
-    // después va a ese recuadro. Sin esto, Ctrl+V no sabría a cuál de los
-    // dos ir, porque ambos conviven en el mismo formulario.
+    // Pegar una imagen con Ctrl+V: clic en el recuadro de la foto para
+    // "activarlo", y lo que pegues después se sube como foto del producto.
     const zonaProducto = document.getElementById('f-imagen-preview-wrap');
-    const zonaIA = document.getElementById('ia-foto-base-zona');
-    if (zonaProducto) zonaProducto.addEventListener('click', () => { zonaPegadoActiva = 'producto'; });
-    if (zonaIA) zonaIA.addEventListener('click', () => { zonaPegadoActiva = 'ia'; });
+    if (zonaProducto) zonaProducto.addEventListener('click', () => { zonaPegadoActiva = true; });
 
     document.addEventListener('paste', (e) => {
         if (!zonaPegadoActiva) return;
@@ -161,93 +128,63 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = item.getAsFile();
         if (!file) return;
         e.preventDefault();
-
-        if (zonaPegadoActiva === 'producto') procesarYSubirImagenProducto(file);
-        else if (zonaPegadoActiva === 'ia') manejarArchivoBaseIA(file);
+        procesarYSubirImagenProducto(file);
     });
 });
 
-window.generarFotoConIA = async function () {
+window.analizarFotoConIA = async function () {
     const status = document.getElementById('ia-status');
-    const detalleExtra = document.getElementById('ia-prompt').value.trim();
-    const prompt = detalleExtra ? `${PROMPT_IA_BASE}\n\nDetalles adicionales pedidos por el administrador: ${detalleExtra}` : PROMPT_IA_BASE;
 
-    if (!iaArchivoBase) { status.innerText = 'Elige o pega primero una foto base (tuya).'; return; }
+    // Si no elegiste/pegaste una foto nueva en esta sesión, se usa la que ya
+    // tiene el producto (útil al editar uno existente, no solo al crear).
+    let archivoParaAnalizar = ultimoArchivoProducto;
+    if (!archivoParaAnalizar) {
+        const url = document.getElementById('f-imagen').value.trim();
+        if (!url) { status.innerText = 'Sube o pega primero una foto del producto arriba.'; return; }
+        try {
+            archivoParaAnalizar = await (await fetch(url)).blob();
+        } catch {
+            status.innerText = 'No se pudo leer la foto actual del producto.';
+            return;
+        }
+    }
 
-    const btn = document.getElementById('ia-generar-btn');
+    const btn = document.getElementById('ia-analizar-btn');
     btn.disabled = true;
-    status.innerText = 'Generando... puede tardar unos segundos.';
-    document.getElementById('ia-resultado-wrap').classList.add('hidden');
+    status.innerText = 'Analizando... puede tardar unos segundos.';
 
     try {
         // Se comprime igual que cualquier otra subida, así el pedido a la API
         // pesa poco y no choca con el límite de tamaño de la función serverless.
-        const blobComprimido = await comprimirImagen(iaArchivoBase, 1400, 0.85, 'image/jpeg');
+        const blobComprimido = await comprimirImagen(archivoParaAnalizar, 1400, 0.85, 'image/jpeg');
         const base64 = await blobABase64(blobComprimido);
 
         const { data: { session } } = await _sb.auth.getSession();
         if (!session) throw new Error('Tu sesión expiró — vuelve a iniciar sesión.');
 
-        const resp = await fetch('/api/generar-imagen', {
+        const resp = await fetch('/api/analizar-imagen', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-            body: JSON.stringify({ imagenBase64: base64, mimeType: 'image/jpeg', prompt })
+            body: JSON.stringify({ imagenBase64: base64, mimeType: 'image/jpeg' })
         });
         const datos = await resp.json();
-        if (!resp.ok) throw new Error(datos.error || 'Error al generar la imagen.');
+        if (!resp.ok) throw new Error(datos.error || 'Error al analizar la imagen.');
 
-        iaResultado = {
-            base64: datos.imagenBase64,
-            mimeType: datos.mimeType,
-            nombreSugerido: datos.nombreSugerido || '',
-            descripcionSugerida: datos.descripcionSugerida || ''
-        };
-        document.getElementById('ia-resultado-img').src = `data:${datos.mimeType};base64,${datos.imagenBase64}`;
-        document.getElementById('ia-sugerencia').innerText = iaResultado.nombreSugerido
-            ? `Sugerencia: "${iaResultado.nombreSugerido}" — ${iaResultado.descripcionSugerida}`
-            : '';
-        document.getElementById('ia-resultado-wrap').classList.remove('hidden');
-        status.innerText = '';
+        // Llena nombre, descripción y género, pero solo los campos que sigan
+        // vacíos — si el admin ya escribió algo, se respeta y no se pisa.
+        const campoNombre = document.getElementById('f-nombre');
+        const campoDescripcion = document.getElementById('f-descripcion');
+        const campoGenero = document.getElementById('f-genero');
+        let algoLleno = false;
+        if (datos.nombreSugerido && !campoNombre.value.trim()) { campoNombre.value = datos.nombreSugerido; algoLleno = true; }
+        if (datos.descripcionSugerida && !campoDescripcion.value.trim()) { campoDescripcion.value = datos.descripcionSugerida; algoLleno = true; }
+        if (datos.generoSugerido) { campoGenero.value = datos.generoSugerido; algoLleno = true; }
+
+        status.innerText = algoLleno ? 'Listo — revisa los datos sugeridos antes de guardar.' : 'La IA no encontró nada nuevo que sugerir.';
     } catch (err) {
         status.innerText = 'Error: ' + err.message;
     } finally {
         btn.disabled = false;
-    }
-};
-
-window.usarImagenGenerada = async function () {
-    if (!iaResultado) return;
-    const status = document.getElementById('ia-status');
-    status.innerText = 'Subiendo...';
-
-    try {
-        const respuesta = await fetch(`data:${iaResultado.mimeType};base64,${iaResultado.base64}`);
-        const blob = await respuesta.blob();
-        const extension = iaResultado.mimeType === 'image/png' ? 'png' : 'jpg';
-        const nombreArchivo = `ia-${Date.now()}-${Math.random().toString(16).slice(2)}.${extension}`;
-
-        const { error } = await _sb.storage.from(BUCKET_PRODUCTOS).upload(nombreArchivo, blob, {
-            contentType: iaResultado.mimeType,
-            cacheControl: '31536000'
-        });
-        if (error) throw error;
-
-        const { data } = _sb.storage.from(BUCKET_PRODUCTOS).getPublicUrl(nombreArchivo);
-        document.getElementById('f-imagen').value = data.publicUrl;
-        actualizarPreviewImagen();
-
-        // Llena el nombre y la descripción del producto con lo que sugirió la
-        // IA, pero solo si esos campos todavía están vacíos — si el admin ya
-        // escribió algo, se respeta y no se pisa.
-        const campoNombre = document.getElementById('f-nombre');
-        const campoDescripcion = document.getElementById('f-descripcion');
-        if (iaResultado.nombreSugerido && !campoNombre.value.trim()) campoNombre.value = iaResultado.nombreSugerido;
-        if (iaResultado.descripcionSugerida && !campoDescripcion.value.trim()) campoDescripcion.value = iaResultado.descripcionSugerida;
-
-        document.getElementById('ia-panel').classList.add('hidden');
-        status.innerText = 'Foto y datos sugeridos listos — revisa todo antes de guardar el producto.';
-    } catch (err) {
-        status.innerText = 'Error al subir: ' + err.message;
     }
 };
 
@@ -585,17 +522,10 @@ window.abrirFormProducto = function (id, seccionPreseleccionada) {
     document.getElementById('f-imagen-status').innerText = '';
     actualizarPreviewImagen();
 
-    // Resetea el panel de IA para que no quede la foto/prompt del producto anterior.
-    iaArchivoBase = null;
-    iaResultado = null;
-    zonaPegadoActiva = null;
-    document.getElementById('ia-panel').classList.add('hidden');
-    document.getElementById('ia-resultado-wrap').classList.add('hidden');
-    document.getElementById('ia-foto-base-nombre').innerText = '';
-    document.getElementById('ia-sugerencia').innerText = '';
-    document.getElementById('ia-prompt').value = '';
+    // Resetea el estado de "Analizar con IA" para que no quede nada del producto anterior.
+    ultimoArchivoProducto = null;
+    zonaPegadoActiva = false;
     document.getElementById('ia-status').innerText = '';
-    document.getElementById('ia-foto-base').value = '';
 
     document.getElementById('modal-producto').classList.remove('hidden');
 };

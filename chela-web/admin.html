@@ -276,45 +276,14 @@
                     <p class="text-[10px] text-muted mt-2 leading-relaxed">La foto se redimensiona y comprime automáticamente en tu navegador antes de subirse. Haz clic en el recuadro de la izquierda y pega una imagen con Ctrl+V (copiada de otra parte) en vez de subir un archivo, si prefieres.</p>
 
                     <div class="hairline-top pt-4 mt-4">
-                        <button type="button" id="ia-toggle" class="btn-line text-[10px] py-2 px-4 w-full">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Generar foto con IA (cambiar modelo / fondo)
+                        <button type="button" id="ia-analizar-btn" onclick="analizarFotoConIA()" class="btn-line text-[10px] py-2 px-4 w-full">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Analizar foto con IA (sugerir nombre y descripción)
                         </button>
-
-                        <div id="ia-panel" class="hidden mt-4 space-y-3">
-                            <p class="text-[10px] text-muted leading-relaxed">
-                                Sube (o pega) una foto <strong>tuya</strong> de la prenda — nunca de otra tienda o marca. La IA
-                                siempre cambia el modelo y el fondo con el mismo criterio (foto de catálogo profesional) y
-                                además te sugiere nombre y descripción para el producto.
-                            </p>
-                            <div id="ia-foto-base-zona" tabindex="0" class="field w-full p-3 text-center cursor-pointer" title="Clic y luego Ctrl+V para pegar una imagen">
-                                <input type="file" id="ia-foto-base" accept="image/*" class="hidden">
-                                <button type="button" onclick="document.getElementById('ia-foto-base').click()" class="btn-line text-[10px] py-2 px-4">
-                                    <i class="fa-solid fa-image"></i> Elegir foto base
-                                </button>
-                                <p class="text-[10px] text-muted mt-1.5">o haz clic aquí y pega una imagen con Ctrl+V</p>
-                                <span id="ia-foto-base-nombre" class="text-[10px] font-semibold block mt-1"></span>
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-muted font-bold uppercase ml-1">Detalles adicionales (opcional)</label>
-                                <textarea id="ia-prompt" rows="2" placeholder="Ej: que el modelo sea un hombre joven de piel morena" class="field w-full p-2.5 text-sm mt-1"></textarea>
-                                <p class="text-[10px] text-muted mt-1">Si lo dejas vacío, igual se genera con el criterio de siempre.</p>
-                            </div>
-                            <button type="button" id="ia-generar-btn" onclick="generarFotoConIA()" class="btn-solid w-full text-[10px] py-2.5">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> Generar
-                            </button>
-                            <p id="ia-status" class="text-[10px] text-muted"></p>
-
-                            <div id="ia-resultado-wrap" class="hidden">
-                                <div class="w-full aspect-square overflow-hidden mb-2" style="border: 1px solid var(--line);">
-                                    <img id="ia-resultado-img" class="w-full h-full object-cover" alt="Resultado generado por IA">
-                                </div>
-                                <p id="ia-sugerencia" class="text-[10px] text-muted mb-2"></p>
-                                <div class="flex gap-2">
-                                    <button type="button" onclick="usarImagenGenerada()" class="btn-solid flex-1 text-[10px] py-2">Usar esta foto</button>
-                                    <button type="button" onclick="generarFotoConIA()" class="btn-line flex-1 text-[10px] py-2">Generar otra</button>
-                                </div>
-                            </div>
-                        </div>
+                        <p class="text-[10px] text-muted mt-2 leading-relaxed">
+                            Sube o pega primero la foto de arriba, y luego presiona este botón — la IA la mira y sugiere
+                            nombre, descripción y género, sin pisar lo que ya hayas escrito.
+                        </p>
+                        <p id="ia-status" class="text-[10px] text-muted mt-1"></p>
                     </div>
                 </div>
                 <div>

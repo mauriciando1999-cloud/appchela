@@ -7,6 +7,7 @@
 // directamente en el chat — el formulario nunca lo deja sin poder escribir.
 
 const BUCKET_COTIZACIONES = 'chela-cotizaciones';
+const COTIZAR_TAMANO_MAXIMO = 15 * 1024 * 1024; // 15 MB antes de comprimir
 let cotizarArchivoSeleccionado = null;
 
 async function comprimirImagenCotizacion(file, maxDim = 1400, calidad = 0.82) {
@@ -39,6 +40,22 @@ function inicializarCotizarDiseno() {
     inputFoto.addEventListener('change', () => {
         const file = inputFoto.files[0];
         if (!file) return;
+
+        // El atributo accept="image/*" del input es solo una sugerencia del
+        // selector de archivos — cualquiera puede elegir otra cosa igual, así
+        // que se valida tipo y tamaño acá antes de aceptar el archivo.
+        if (!file.type.startsWith('image/')) {
+            status.innerText = 'Ese archivo no es una imagen — elige una foto (JPG, PNG, etc).';
+            inputFoto.value = '';
+            return;
+        }
+        if (file.size > COTIZAR_TAMANO_MAXIMO) {
+            status.innerText = 'La foto pesa demasiado (máximo 15 MB) — prueba con otra.';
+            inputFoto.value = '';
+            return;
+        }
+
+        status.innerText = '';
         cotizarArchivoSeleccionado = file;
         previewImg.src = URL.createObjectURL(file);
         previewImg.classList.remove('hidden');

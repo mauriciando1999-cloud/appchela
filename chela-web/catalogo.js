@@ -67,7 +67,7 @@ function iniciarCatalogo({ seccion, idFiltros, idGrid, idFiltroTalla, parametroC
         filtroCategoriaActivo = leerCategoriaDesdeUrl();
 
         const chips = [{ nombre: 'Todos', valor: 'todos' }, ...categoriasCatalogo.map(c => ({ nombre: c.nombre, valor: c.nombre }))];
-        cont.innerHTML = chips.map(c => `<button type="button" data-categoria="${c.valor}" class="filtro-genero">${c.nombre}</button>`).join('');
+        cont.innerHTML = chips.map(c => `<button type="button" data-categoria="${escaparHtml(c.valor)}" class="filtro-genero">${escaparHtml(c.nombre)}</button>`).join('');
 
         cont.querySelectorAll('.filtro-genero').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.categoria === filtroCategoriaActivo);
@@ -99,7 +99,7 @@ function iniciarCatalogo({ seccion, idFiltros, idGrid, idFiltroTalla, parametroC
 
         const chips = [{ nombre: 'Todas', valor: 'todas' }, ...tallasUnicas.map(t => ({ nombre: t, valor: t }))];
         cont.innerHTML = `<span class="eyebrow filtro-talla-label">Tu talla</span>` +
-            chips.map(c => `<button type="button" data-talla="${c.valor}" class="filtro-genero">${c.nombre}</button>`).join('');
+            chips.map(c => `<button type="button" data-talla="${escaparHtml(c.valor)}" class="filtro-genero">${escaparHtml(c.nombre)}</button>`).join('');
 
         cont.querySelectorAll('.filtro-genero').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.talla === filtroTallaActivo);
@@ -203,30 +203,30 @@ function iniciarCatalogo({ seccion, idFiltros, idGrid, idFiltroTalla, parametroC
             const indiceActual = Math.max(0, tallas.indexOf(seleccionTalla[p.slug]));
 
             const dialTalla = tallas.length <= 1
-                ? `<p class="producto-talla-unica">Talla ${tallas[0]}</p>`
+                ? `<p class="producto-talla-unica">Talla ${escaparHtml(tallas[0])}</p>`
                 : `
                     <div class="producto-talla-dial">
-                        <div class="producto-talla-valor tick" data-talla-valor>${tallas[indiceActual]}</div>
+                        <div class="producto-talla-valor tick" data-talla-valor>${escaparHtml(tallas[indiceActual])}</div>
                         <input type="range" class="producto-talla-slider" data-accion="talla-slider"
                                min="0" max="${tallas.length - 1}" step="1" value="${indiceActual}"
                                aria-label="Deslizar para elegir talla">
                         <div class="producto-talla-ticks">
-                            ${tallas.map((t, i) => `<span data-tick class="${i === indiceActual ? 'activo' : ''}">${t}</span>`).join('')}
+                            ${tallas.map((t, i) => `<span data-tick class="${i === indiceActual ? 'activo' : ''}">${escaparHtml(t)}</span>`).join('')}
                         </div>
                     </div>`;
 
             return `
-            <div class="product" data-reveal data-slug="${p.slug}">
+            <div class="product" data-reveal data-slug="${escaparHtml(p.slug)}">
                 <div class="product-media mb-4">
-                    <img src="${rutaImagen}" alt="${p.nombre}"
+                    <img src="${escaparHtml(rutaImagen)}" alt="${escaparHtml(p.nombre)}"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div style="display:none;" class="w-full h-full items-center justify-center absolute inset-0">
-                        <i class="fa-solid ${p.icono || 'fa-shirt'} text-4xl" style="color: rgba(17,17,16,0.25);"></i>
+                        <i class="fa-solid ${escaparHtml(p.icono || 'fa-shirt')} text-4xl" style="color: rgba(17,17,16,0.25);"></i>
                     </div>
                 </div>
 
                 <div class="producto-info">
-                    <h3 class="producto-nombre">${p.nombre}</h3>
+                    <h3 class="producto-nombre">${escaparHtml(p.nombre)}</h3>
                     <p class="producto-precio">Desde $${Number(p.precio_desde).toFixed(2)}</p>
 
                     ${dialTalla}

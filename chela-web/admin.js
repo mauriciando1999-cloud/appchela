@@ -1,7 +1,16 @@
 // admin.js - Panel de administración del catálogo de Chela (chela_web_productos).
 
 const BUCKET_PRODUCTOS = 'chela-productos';
+const IMAGEN_TAMANO_MAXIMO = 15 * 1024 * 1024; // 15 MB antes de comprimir
 let productosAdmin = [];
+
+// El atributo accept="image/*" del <input> es solo una sugerencia del
+// selector de archivos — se valida tipo y tamaño acá antes de procesar nada.
+function validarArchivoImagen(file) {
+    if (!file.type.startsWith('image/')) return 'Ese archivo no es una imagen.';
+    if (file.size > IMAGEN_TAMANO_MAXIMO) return 'La imagen pesa demasiado (máximo 15 MB).';
+    return null;
+}
 
 function rutaStorageDesdeUrl(url) {
     const marcador = `/storage/v1/object/public/${BUCKET_PRODUCTOS}/`;
@@ -31,6 +40,9 @@ window.subirImagenProducto = async function (event) {
     const file = event.target.files[0];
     if (!file) return;
     const status = document.getElementById('f-imagen-status');
+
+    const errorValidacion = validarArchivoImagen(file);
+    if (errorValidacion) { status.innerText = errorValidacion; event.target.value = ''; return; }
 
     try {
         status.innerText = 'Comprimiendo...';
@@ -77,7 +89,7 @@ window.onload = async () => {
         return;
     }
 
-    if (user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    if (!ADMIN_EMAILS.some(correo => correo.toLowerCase() === user.email.toLowerCase())) {
         mostrarPantalla('denegado-screen');
         return;
     }
@@ -114,8 +126,8 @@ function renderCategoriasAdmin() {
             ? `<p class="text-muted text-xs">Sin categorías todavía.</p>`
             : items.map(c => `
                 <span class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase px-2.5 py-1.5 mr-1.5 mb-1.5" style="border: 1px solid var(--line-strong);">
-                    ${c.nombre}
-                    <button onclick="eliminarCategoria('${c.id}')" class="text-red-600"><i class="fa-solid fa-xmark"></i></button>
+                    ${escaparHtml(c.nombre)}
+                    <button onclick="eliminarCategoria('${escaparHtml(c.id)}')" class="text-red-600"><i class="fa-solid fa-xmark"></i></button>
                 </span>`).join('');
     });
 }
@@ -149,7 +161,7 @@ window.renderSelectCategoriaForm = function () {
     const valorActual = categoriaSelect.value;
     const opciones = categoriasAdmin[seccion] || [];
     categoriaSelect.innerHTML = `<option value="">Sin categoría</option>` +
-        opciones.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('');
+        opciones.map(c => `<option value="${escaparHtml(c.nombre)}">${escaparHtml(c.nombre)}</option>`).join('');
     if (opciones.some(c => c.nombre === valorActual)) categoriaSelect.value = valorActual;
 };
 
@@ -212,8 +224,8 @@ function renderImagenesSitio() {
             <div class="flex flex-wrap gap-2">
                 ${fotos.map(f => `
                     <div class="relative w-16 h-16 flex-shrink-0" style="border: 1px solid var(--line);">
-                        <img src="${f.url}" class="w-full h-full object-cover">
-                        <button onclick="eliminarImagenSitio('${f.id}', '${s.clave}')" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-600 text-white text-[10px] flex items-center justify-center leading-none">
+                        <img src="${escaparHtml(f.url)}" class="w-full h-full object-cover">
+                        <button onclick="eliminarImagenSitio('${escaparHtml(f.id)}', '${s.clave}')" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-600 text-white text-[10px] flex items-center justify-center leading-none">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>`).join('')}
@@ -227,6 +239,9 @@ window.subirImagenSitio = async function (clave, event) {
     const file = event.target.files[0];
     if (!file) return;
     const status = document.getElementById(`status-${clave}`);
+
+    const errorValidacion = validarArchivoImagen(file);
+    if (errorValidacion) { status.innerText = errorValidacion; event.target.value = ''; return; }
 
     try {
         status.innerText = 'Comprimiendo...';
@@ -343,7 +358,7 @@ async function cargarProductosAdmin() {
     if (error) {
         SECCIONES_CATALOGO.forEach(seccion => {
             const el = document.getElementById(`lista-admin-${seccion}`);
-            if (el) el.innerHTML = `<p class="text-red-600 text-xs col-span-full">Error al cargar: ${error.message}</p>`;
+            if (el) el.innerHTML = `<p class="text-red-600 text-xs col-span-full">Error al cargar: ${escaparHtml(error.message)}</p>`;
         });
         return;
     }
@@ -365,16 +380,16 @@ function renderListaAdmin() {
         cont.innerHTML = items.map(p => `
             <div class="surface p-4 flex gap-3 ${p.activo ? '' : 'opacity-50'}">
                 <div class="w-16 h-16 overflow-hidden flex-shrink-0 flex items-center justify-center" style="background: var(--bg); border: 1px solid var(--line);">
-                    <i class="fa-solid ${p.icono || 'fa-shirt'} text-2xl" style="color: var(--ink-muted);"></i>
+                    <i class="fa-solid ${escaparHtml(p.icono || 'fa-shirt')} text-2xl" style="color: var(--ink-muted);"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold truncate">${p.nombre}</p>
+                    <p class="text-sm font-semibold truncate">${escaparHtml(p.nombre)}</p>
                     <p class="text-[10px] text-muted uppercase font-bold mt-0.5">Desde $${Number(p.precio_desde).toFixed(2)} · orden ${p.orden}</p>
-                    <p class="text-[10px] text-muted mt-0.5">${p.categoria || 'Sin categoría'} · ${p.activo ? 'Visible' : 'Oculto'}</p>
+                    <p class="text-[10px] text-muted mt-0.5">${escaparHtml(p.categoria || 'Sin categoría')} · ${p.activo ? 'Visible' : 'Oculto'}</p>
                     <div class="flex gap-2 mt-2">
-                        <button onclick="abrirFormProducto('${p.id}')" class="text-[10px] font-bold uppercase px-3 py-1.5" style="border: 1px solid var(--line-strong);">Editar</button>
-                        <button onclick="toggleActivo('${p.id}', ${!p.activo})" class="text-[10px] font-bold uppercase px-3 py-1.5" style="border: 1px solid var(--line);">${p.activo ? 'Ocultar' : 'Mostrar'}</button>
-                        <button onclick="eliminarProducto('${p.id}')" class="text-[10px] font-bold uppercase px-3 py-1.5 bg-red-100 text-red-700">Eliminar</button>
+                        <button onclick="abrirFormProducto('${escaparHtml(p.id)}')" class="text-[10px] font-bold uppercase px-3 py-1.5" style="border: 1px solid var(--line-strong);">Editar</button>
+                        <button onclick="toggleActivo('${escaparHtml(p.id)}', ${!p.activo})" class="text-[10px] font-bold uppercase px-3 py-1.5" style="border: 1px solid var(--line);">${p.activo ? 'Ocultar' : 'Mostrar'}</button>
+                        <button onclick="eliminarProducto('${escaparHtml(p.id)}')" class="text-[10px] font-bold uppercase px-3 py-1.5 bg-red-100 text-red-700">Eliminar</button>
                     </div>
                 </div>
             </div>`).join('');

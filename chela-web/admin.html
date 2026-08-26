@@ -274,6 +274,41 @@
                     </div>
                     <input type="text" id="f-imagen" placeholder="o pega una URL externa" class="field w-full p-2.5 text-sm mt-3" oninput="actualizarPreviewImagen()">
                     <p class="text-[10px] text-muted mt-2 leading-relaxed">La foto se redimensiona y comprime automáticamente en tu navegador antes de subirse, así casi no ocupa espacio de almacenamiento.</p>
+
+                    <div class="hairline-top pt-4 mt-4">
+                        <button type="button" id="ia-toggle" class="btn-line text-[10px] py-2 px-4 w-full">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Generar foto con IA (cambiar modelo / fondo)
+                        </button>
+
+                        <div id="ia-panel" class="hidden mt-4 space-y-3">
+                            <p class="text-[10px] text-muted leading-relaxed">
+                                Sube una foto <strong>tuya</strong> de la prenda (nunca de otra tienda o marca) y describe qué
+                                quieres que cambie la IA — el modelo, el fondo, la pose. La prenda en sí se mantiene.
+                            </p>
+                            <div>
+                                <input type="file" id="ia-foto-base" accept="image/*" class="hidden">
+                                <button type="button" onclick="document.getElementById('ia-foto-base').click()" class="btn-line text-[10px] py-2 px-4">
+                                    <i class="fa-solid fa-image"></i> Elegir foto base
+                                </button>
+                                <span id="ia-foto-base-nombre" class="text-[10px] text-muted ml-2"></span>
+                            </div>
+                            <textarea id="ia-prompt" rows="2" placeholder="Ej: cambia el modelo por una mujer joven de cabello castaño, fondo de estudio blanco liso" class="field w-full p-2.5 text-sm"></textarea>
+                            <button type="button" id="ia-generar-btn" onclick="generarFotoConIA()" class="btn-solid w-full text-[10px] py-2.5">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Generar
+                            </button>
+                            <p id="ia-status" class="text-[10px] text-muted"></p>
+
+                            <div id="ia-resultado-wrap" class="hidden">
+                                <div class="w-full aspect-square overflow-hidden mb-2" style="border: 1px solid var(--line);">
+                                    <img id="ia-resultado-img" class="w-full h-full object-cover" alt="Resultado generado por IA">
+                                </div>
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="usarImagenGenerada()" class="btn-solid flex-1 text-[10px] py-2">Usar esta foto</button>
+                                    <button type="button" onclick="generarFotoConIA()" class="btn-line flex-1 text-[10px] py-2">Generar otra</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <label class="text-[10px] text-muted font-bold uppercase ml-1">Ícono de respaldo (Font Awesome, si no hay foto)</label>

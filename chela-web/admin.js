@@ -81,6 +81,112 @@ window.actualizarPreviewImagen = function () {
     }
 };
 
+// ==========================================================
+// GENERAR FOTO CON IA (cambiar modelo / fondo)
+// Llama a /api/generar-imagen (función serverless de Vercel), que a su vez
+// llama a Gemini del lado del servidor — la clave nunca toca el navegador.
+// El endpoint exige el token de la sesión actual, así que esto solo
+// funciona logueado como uno de los correos admin.
+// ==========================================================
+let iaArchivoBase = null;
+let iaResultado = null; // { base64, mimeType } de la última imagen generada
+
+function blobABase64(blob) {
+    return new Promise((resolve, reject) => {
+        const lector = new FileReader();
+        lector.onload = () => resolve(lector.result.split(',')[1]);
+        lector.onerror = reject;
+        lector.readAsDataURL(blob);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('ia-toggle');
+    const inputBase = document.getElementById('ia-foto-base');
+    if (toggleBtn) toggleBtn.addEventListener('click', () => document.getElementById('ia-panel').classList.toggle('hidden'));
+    if (inputBase) {
+        inputBase.addEventListener('change', () => {
+            const file = inputBase.files[0];
+            if (!file) return;
+            const errorValidacion = validarArchivoImagen(file);
+            if (errorValidacion) {
+                document.getElementById('ia-status').innerText = errorValidacion;
+                inputBase.value = '';
+                return;
+            }
+            iaArchivoBase = file;
+            document.getElementById('ia-foto-base-nombre').innerText = file.name;
+        });
+    }
+});
+
+window.generarFotoConIA = async function () {
+    const status = document.getElementById('ia-status');
+    const prompt = document.getElementById('ia-prompt').value.trim();
+
+    if (!iaArchivoBase) { status.innerText = 'Elige primero una foto base (tuya).'; return; }
+    if (!prompt) { status.innerText = 'Describe qué quieres cambiar (modelo, fondo, etc).'; return; }
+
+    const btn = document.getElementById('ia-generar-btn');
+    btn.disabled = true;
+    status.innerText = 'Generando... puede tardar unos segundos.';
+    document.getElementById('ia-resultado-wrap').classList.add('hidden');
+
+    try {
+        // Se comprime igual que cualquier otra subida, así el pedido a la API
+        // pesa poco y no choca con el límite de tamaño de la función serverless.
+        const blobComprimido = await comprimirImagen(iaArchivoBase, 1400, 0.85, 'image/jpeg');
+        const base64 = await blobABase64(blobComprimido);
+
+        const { data: { session } } = await _sb.auth.getSession();
+        if (!session) throw new Error('Tu sesión expiró — vuelve a iniciar sesión.');
+
+        const resp = await fetch('/api/generar-imagen', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+            body: JSON.stringify({ imagenBase64: base64, mimeType: 'image/jpeg', prompt })
+        });
+        const datos = await resp.json();
+        if (!resp.ok) throw new Error(datos.error || 'Error al generar la imagen.');
+
+        iaResultado = { base64: datos.imagenBase64, mimeType: datos.mimeType };
+        document.getElementById('ia-resultado-img').src = `data:${datos.mimeType};base64,${datos.imagenBase64}`;
+        document.getElementById('ia-resultado-wrap').classList.remove('hidden');
+        status.innerText = '';
+    } catch (err) {
+        status.innerText = 'Error: ' + err.message;
+    } finally {
+        btn.disabled = false;
+    }
+};
+
+window.usarImagenGenerada = async function () {
+    if (!iaResultado) return;
+    const status = document.getElementById('ia-status');
+    status.innerText = 'Subiendo...';
+
+    try {
+        const respuesta = await fetch(`data:${iaResultado.mimeType};base64,${iaResultado.base64}`);
+        const blob = await respuesta.blob();
+        const extension = iaResultado.mimeType === 'image/png' ? 'png' : 'jpg';
+        const nombreArchivo = `ia-${Date.now()}-${Math.random().toString(16).slice(2)}.${extension}`;
+
+        const { error } = await _sb.storage.from(BUCKET_PRODUCTOS).upload(nombreArchivo, blob, {
+            contentType: iaResultado.mimeType,
+            cacheControl: '31536000'
+        });
+        if (error) throw error;
+
+        const { data } = _sb.storage.from(BUCKET_PRODUCTOS).getPublicUrl(nombreArchivo);
+        document.getElementById('f-imagen').value = data.publicUrl;
+        actualizarPreviewImagen();
+        document.getElementById('ia-panel').classList.add('hidden');
+        status.innerText = 'Foto generada y lista — revisa la vista previa arriba antes de guardar el producto.';
+    } catch (err) {
+        status.innerText = 'Error al subir: ' + err.message;
+    }
+};
+
 window.onload = async () => {
     const { data: { user } } = await _sb.auth.getUser();
 
@@ -414,6 +520,17 @@ window.abrirFormProducto = function (id, seccionPreseleccionada) {
     document.getElementById('f-activo').checked = p ? p.activo : true;
     document.getElementById('f-imagen-status').innerText = '';
     actualizarPreviewImagen();
+
+    // Resetea el panel de IA para que no quede la foto/prompt del producto anterior.
+    iaArchivoBase = null;
+    iaResultado = null;
+    document.getElementById('ia-panel').classList.add('hidden');
+    document.getElementById('ia-resultado-wrap').classList.add('hidden');
+    document.getElementById('ia-foto-base-nombre').innerText = '';
+    document.getElementById('ia-prompt').value = '';
+    document.getElementById('ia-status').innerText = '';
+    document.getElementById('ia-foto-base').value = '';
+
     document.getElementById('modal-producto').classList.remove('hidden');
 };
 

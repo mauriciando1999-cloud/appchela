@@ -3,7 +3,7 @@
 // Valores de respaldo: el sitio funciona con estos incluso antes de que
 // cargue la configuración real desde Supabase (chela_web_config), o si no
 // hay conexión. Editables desde admin.html → Ajustes del Sitio, sin tocar código.
-const WHATSAPP_NUMERO_DEFECTO = '584122969255'; // 0412-2969255 en formato internacional
+const WHATSAPP_NUMERO_DEFECTO = '584224046532'; // 0422-4046532 en formato internacional
 const MENSAJES_WHATSAPP_DEFECTO = {
     general: 'Hola, quiero hacer un pedido de ropa por encargo.',
     corporativo: 'Hola, quisiera cotizar uniformes para impulsar la imagen de mi empresa.',

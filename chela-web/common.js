@@ -22,10 +22,22 @@ function linkWhatsApp(mensaje) {
     return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
 }
 
+// Todo envío de WhatsApp del sitio (links [data-wa], "Encargar" del catálogo,
+// "Cotiza tu diseño") pasa primero por el modal de Términos y Condiciones —
+// no se abre WhatsApp hasta que el usuario marca el check de verificación.
+// El link real queda en el href (accesible, se puede copiar/clic-derecho),
+// pero el clic normal siempre lo intercepta el modal.
 function inicializarWhatsAppLinks() {
     document.querySelectorAll('[data-wa]').forEach(el => {
         const tipo = el.getAttribute('data-wa') || 'general';
         el.href = linkWhatsApp(MENSAJES_WHATSAPP[tipo] || MENSAJES_WHATSAPP.general);
+        if (!el.dataset.waListo) {
+            el.dataset.waListo = '1';
+            el.addEventListener('click', e => {
+                e.preventDefault();
+                abrirWhatsAppConTerminos(el.href);
+            });
+        }
     });
 }
 
@@ -97,6 +109,22 @@ function inicializarHeaderScroll() {
     };
     window.addEventListener('scroll', alScroll, { passive: true });
     alScroll();
+}
+
+// Quita la clase "entrada" del hero partido (Inicio) apenas termina su
+// secuencia de aparición en cascada. Es necesario: si se dejara puesta, la
+// animación (con fill "forwards") seguiría fijando la opacidad de los
+// paneles por encima de las transiciones que después usa la rotación de
+// fotos, y el cambio de foto dejaría de verse.
+function inicializarEntradaHero() {
+    const panelesConEntrada = document.querySelectorAll('.split-hero-panel.entrada');
+    const centro = document.querySelector('.split-hero-centro.entrada');
+    if (panelesConEntrada.length === 0 && !centro) return;
+
+    setTimeout(() => {
+        panelesConEntrada.forEach(el => el.classList.remove('entrada'));
+        if (centro) centro.classList.remove('entrada');
+    }, 1900);
 }
 
 // Espacios de Inicio que representan un catálogo concreto: si el admin no subió
@@ -252,12 +280,133 @@ function inicializarRevelado(raiz) {
 }
 window.inicializarRevelado = inicializarRevelado;
 
+// ==========================================================
+// MODAL DE TÉRMINOS Y CONDICIONES antes de abrir WhatsApp
+// Se inyecta una sola vez por página. abrirWhatsAppConTerminos(url) es el
+// único punto de entrada — lo usan los links [data-wa], el "Encargar" del
+// catálogo (catalogo.js) y "Cotiza tu diseño" (cotizar.js). El botón de
+// continuar queda deshabilitado hasta marcar el checkbox.
+// ==========================================================
+const TEXTO_TERMINOS_MODAL = `
+    <h4>Naturaleza del servicio</h4>
+    <p>Chela confecciona <strong>por encargo</strong>: la mayoría de las prendas se elaboran una vez confirmado el
+    pedido, no como stock listo para despacho inmediato. Los vestidos de novia, de damas de honor, las batas y
+    cualquier pedido de "Cotiza tu propio diseño" se confeccionan además completamente <strong>a la medida</strong>
+    del cliente. Precios, telas y tiempos de entrega del catálogo son referenciales y se confirman por WhatsApp
+    antes de iniciar la confección.</p>
+
+    <h4>Sistema de pago</h4>
+    <p><strong>50% de adelanto</strong> al confirmar el pedido (cubre materiales e inicio de producción) y
+    <strong>50% restante contra la entrega</strong> del producto terminado. Un pedido no entra en producción hasta
+    confirmarse la recepción del adelanto. El método de pago se coordina por WhatsApp.</p>
+
+    <h4>Devoluciones y cambios</h4>
+    <p>Por ser prendas hechas por encargo o a la medida —que no pueden reintegrarse al inventario ni revenderse—
+    <strong>no se aceptan devoluciones por cambio de opinión</strong>. Sí se corrige o repone sin costo cuando hay
+    un defecto de fabricación, o cuando la prenda no corresponde a lo acordado por WhatsApp, si se reporta dentro
+    de los 5 días hábiles siguientes a la entrega, con fotos.</p>
+
+    <h4>Garantía</h4>
+    <p>15 días desde la entrega, exclusivamente sobre defectos de fabricación (costuras, materiales). No cubre
+    desgaste normal, mal uso, lavado inadecuado ni modificaciones hechas por terceros.</p>
+
+    <h4>Fotos de referencia que envías</h4>
+    <p>Al enviarnos una foto de referencia (por WhatsApp o por "Cotiza tu diseño"), declaras tener derecho a
+    compartirla y nos autorizas a usarla únicamente para confeccionar tu pedido. Podemos rechazar un diseño si
+    infringe derechos de terceros o su contenido es inapropiado.</p>
+
+    <h4>Datos personales</h4>
+    <p>Tus datos (nombre, teléfono, medidas, dirección) se usan solo para gestionar tu pedido y su entrega — no se
+    venden ni comparten con terceros salvo lo estrictamente necesario para despachar el pedido.</p>
+
+    <h4>Ley aplicable</h4>
+    <p>Estos términos se rigen por las leyes de la República Bolivariana de Venezuela y la normativa de protección
+    al consumidor vigente. Cualquier controversia se intenta resolver primero de forma directa; de no ser posible,
+    ante la SUNDDE o los tribunales competentes.</p>
+
+    <p style="margin-top:1rem;">Este resumen no reemplaza el documento completo — puedes leerlo entero en
+    <a href="terminos.html" target="_blank" rel="noopener">Términos y Condiciones</a>.</p>
+`;
+
+function inicializarModalTerminos() {
+    if (document.getElementById('modal-terminos')) return;
+
+    const modal = document.createElement('div');
+    modal.id = 'modal-terminos';
+    modal.className = 'fixed inset-0 z-[60] hidden flex items-center justify-center p-4';
+    modal.innerHTML = `
+        <div id="modal-terminos-fondo" class="modal-terminos-fondo"></div>
+        <div class="modal-terminos-caja surface">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div>
+                    <span class="eyebrow">Antes de continuar</span>
+                    <h3 class="font-display text-xl mt-1">Términos y Condiciones</h3>
+                </div>
+                <button type="button" id="modal-terminos-cerrar" class="w-8 h-8 flex items-center justify-center shrink-0" style="border: 1px solid var(--line);" aria-label="Cerrar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="legal-doc-mini">${TEXTO_TERMINOS_MODAL}</div>
+
+            <label class="modal-terminos-check">
+                <input type="checkbox" id="modal-terminos-checkbox">
+                <span>He leído y acepto los <a href="terminos.html" target="_blank" rel="noopener">Términos y Condiciones</a>, incluyendo la política de pago (50% adelanto / 50% contra entrega) y de devoluciones.</span>
+            </label>
+
+            <button type="button" id="modal-terminos-continuar" class="btn-solid w-full" disabled>
+                <i class="fa-brands fa-whatsapp"></i> Continuar a WhatsApp
+            </button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const checkbox = modal.querySelector('#modal-terminos-checkbox');
+    const continuar = modal.querySelector('#modal-terminos-continuar');
+
+    checkbox.addEventListener('change', () => { continuar.disabled = !checkbox.checked; });
+
+    continuar.addEventListener('click', () => {
+        if (!checkbox.checked || !modal.dataset.urlPendiente) return;
+        window.open(modal.dataset.urlPendiente, '_blank', 'noopener');
+        cerrarModalTerminos();
+    });
+
+    modal.querySelector('#modal-terminos-cerrar').addEventListener('click', cerrarModalTerminos);
+    modal.querySelector('#modal-terminos-fondo').addEventListener('click', cerrarModalTerminos);
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) cerrarModalTerminos();
+    });
+}
+
+function cerrarModalTerminos() {
+    const modal = document.getElementById('modal-terminos');
+    if (!modal) return;
+    modal.classList.remove('visible');
+    setTimeout(() => modal.classList.add('hidden'), 220);
+}
+
+function abrirWhatsAppConTerminos(url) {
+    inicializarModalTerminos();
+    const modal = document.getElementById('modal-terminos');
+    const checkbox = document.getElementById('modal-terminos-checkbox');
+    modal.dataset.urlPendiente = url;
+    checkbox.checked = false;
+    document.getElementById('modal-terminos-continuar').disabled = true;
+    modal.querySelector('.modal-terminos-caja').scrollTop = 0;
+    modal.classList.remove('hidden');
+    requestAnimationFrame(() => modal.classList.add('visible'));
+}
+window.abrirWhatsAppConTerminos = abrirWhatsAppConTerminos;
+
 document.addEventListener('DOMContentLoaded', () => {
     inicializarWhatsAppLinks();
     inicializarMenuMovil();
     inicializarAnioFooter();
     inicializarHeaderScroll();
+    inicializarEntradaHero();
     aplicarImagenesSitio();
     aplicarConfiguracionSitio();
+    inicializarModalTerminos();
     inicializarRevelado();
 });

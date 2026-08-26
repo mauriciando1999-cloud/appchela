@@ -6,20 +6,22 @@
 // uno con sus propios productos y categorías en Supabase).
 //
 // Uso: <script src="catalogo.js"></script>
-//      <script>iniciarCatalogo({ seccion: 'marketplace', idFiltros: 'filtros-categoria', idGrid: 'grid-catalogo' });</script>
+//      <script>iniciarCatalogo({ seccion: 'marketplace', idFiltros: 'filtros-categoria', idGrid: 'grid-catalogo', idFiltroTalla: 'filtros-talla' });</script>
 //
-// Si una página tiene más de un catálogo, cada uno necesita su propio
-// idFiltros/idGrid (ids de contenedor distintos) y, si además quieres que
-// el filtro de categoría de cada uno viva en su propio parámetro de URL,
-// pásale un "parametroCategoria" distinto (por defecto usa "categoria").
+// Si una página tiene más de un catálogo, cada uno necesita sus propios ids
+// de contenedor (idFiltros/idGrid/idFiltroTalla, este último opcional) y,
+// si además quieres que el filtro de categoría de cada uno viva en su
+// propio parámetro de URL, pásale un "parametroCategoria" distinto (por
+// defecto usa "categoria").
 
-function iniciarCatalogo({ seccion, idFiltros, idGrid, parametroCategoria }) {
+function iniciarCatalogo({ seccion, idFiltros, idGrid, idFiltroTalla, parametroCategoria }) {
     const seleccionTalla = {};
     const seleccionCantidad = {};
     let productosCatalogo = [];
     let categoriasCatalogo = [];
     let filtroCategoriaActivo = 'todos';
     let filtroGeneroActivo = 'todos';
+    let filtroTallaActivo = 'todas';
     const claveCategoriaUrl = parametroCategoria || 'categoria';
 
     function leerCategoriaDesdeUrl() {
@@ -73,6 +75,38 @@ function iniciarCatalogo({ seccion, idFiltros, idGrid, parametroCategoria }) {
         });
     }
 
+    // "Tu talla": filtro opcional arriba del catálogo. Junta todas las tallas
+    // distintas que existan entre los productos cargados y las muestra como
+    // chips — al elegir una, la grilla solo muestra productos que la tengan.
+    function filtrarPorTalla(talla) {
+        filtroTallaActivo = talla;
+        const cont = document.getElementById(idFiltroTalla);
+        if (cont) {
+            cont.querySelectorAll('.filtro-genero').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.talla === talla);
+            });
+        }
+        renderCatalogo();
+    }
+
+    function renderFiltroTalla() {
+        if (!idFiltroTalla) return;
+        const cont = document.getElementById(idFiltroTalla);
+        if (!cont) return;
+
+        const tallasUnicas = [...new Set(productosCatalogo.flatMap(p => (p.tallas && p.tallas.length > 0) ? p.tallas : ['Única']))];
+        if (tallasUnicas.length <= 1) { cont.innerHTML = ''; return; }
+
+        const chips = [{ nombre: 'Todas', valor: 'todas' }, ...tallasUnicas.map(t => ({ nombre: t, valor: t }))];
+        cont.innerHTML = `<span class="eyebrow filtro-talla-label">Tu talla</span>` +
+            chips.map(c => `<button type="button" data-talla="${c.valor}" class="filtro-genero">${c.nombre}</button>`).join('');
+
+        cont.querySelectorAll('.filtro-genero').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.talla === filtroTallaActivo);
+            btn.addEventListener('click', () => filtrarPorTalla(btn.dataset.talla));
+        });
+    }
+
     async function cargarCatalogo() {
         const grid = document.getElementById(idGrid);
         if (!grid) return;
@@ -93,6 +127,7 @@ function iniciarCatalogo({ seccion, idFiltros, idGrid, parametroCategoria }) {
         productosCatalogo = data || [];
         filtroGeneroActivo = leerGeneroDesdeUrl();
         await cargarCategorias();
+        renderFiltroTalla();
         renderCatalogo();
     }
 
@@ -105,6 +140,29 @@ function iniciarCatalogo({ seccion, idFiltros, idGrid, parametroCategoria }) {
         tarjeta.querySelector('[data-cantidad]').innerText = seleccionCantidad[slug];
     }
 
+    // Dial de talla: se arrastra el slider y el número grande va cambiando en
+    // vivo, como un contador. El "tick" (rebote chico del número) solo se
+    // dispara cuando el valor snapeado realmente cambia, no en cada pixel de
+    // arrastre — y se retira/repone con un reflow forzado para poder
+    // repetirse aunque el valor caiga dos veces seguidas en el mismo tick.
+    function actualizarTalla(slug, tallas, indice, tarjeta) {
+        const valorAnterior = seleccionTalla[slug];
+        const nuevoValor = tallas[indice];
+        seleccionTalla[slug] = nuevoValor;
+
+        const display = tarjeta.querySelector('[data-talla-valor]');
+        if (display && valorAnterior !== nuevoValor) {
+            display.textContent = nuevoValor;
+            display.classList.remove('tick');
+            void display.offsetWidth;
+            display.classList.add('tick');
+        }
+
+        tarjeta.querySelectorAll('[data-tick]').forEach((t, i) => {
+            t.classList.toggle('activo', i === indice);
+        });
+    }
+
     function encargar(slug) {
         const p = productosCatalogo.find(x => x.slug === slug);
         if (!p) return;
@@ -115,29 +173,47 @@ function iniciarCatalogo({ seccion, idFiltros, idGrid, parametroCategoria }) {
             `Talla: ${talla}\n` +
             `Cantidad: ${cantidad}\n\n` +
             `¿Me confirman precio final y tiempo de entrega?`;
-        window.open(linkWhatsApp(mensaje), '_blank', 'noopener');
+        window.abrirWhatsAppConTerminos(linkWhatsApp(mensaje));
     }
 
     function renderCatalogo() {
         const grid = document.getElementById(idGrid);
         if (!grid) return;
 
-        const productosFiltrados = productosCatalogo.filter(p =>
-            (filtroCategoriaActivo === 'todos' || p.categoria === filtroCategoriaActivo) &&
-            (filtroGeneroActivo === 'todos' || p.genero === filtroGeneroActivo || p.genero === 'unisex')
-        );
+        const productosFiltrados = productosCatalogo.filter(p => {
+            const tallasProducto = (p.tallas && p.tallas.length > 0) ? p.tallas : ['Única'];
+            return (filtroCategoriaActivo === 'todos' || p.categoria === filtroCategoriaActivo) &&
+                (filtroGeneroActivo === 'todos' || p.genero === filtroGeneroActivo || p.genero === 'unisex') &&
+                (filtroTallaActivo === 'todas' || tallasProducto.includes(filtroTallaActivo));
+        });
 
         if (productosFiltrados.length === 0) {
-            grid.innerHTML = `<p class="text-center text-muted text-xs col-span-full py-10">Todavía no hay productos en esta categoría.</p>`;
+            grid.innerHTML = `<p class="text-center text-muted text-xs col-span-full py-10">Ningún producto coincide con tu talla en esta categoría todavía.</p>`;
             return;
         }
 
         grid.innerHTML = productosFiltrados.map(p => {
-            if (seleccionTalla[p.slug] === undefined) seleccionTalla[p.slug] = (p.tallas && p.tallas[0]) || 'Única';
+            const tallas = (p.tallas && p.tallas.length > 0) ? p.tallas : ['Única'];
+            if (seleccionTalla[p.slug] === undefined) {
+                seleccionTalla[p.slug] = (filtroTallaActivo !== 'todas' && tallas.includes(filtroTallaActivo)) ? filtroTallaActivo : tallas[0];
+            }
             if (seleccionCantidad[p.slug] === undefined) seleccionCantidad[p.slug] = 1;
 
             const rutaImagen = /^https?:\/\//.test(p.imagen || '') ? p.imagen : `assets/productos/${p.imagen || ''}`;
-            const tallas = (p.tallas && p.tallas.length > 0) ? p.tallas : ['Única'];
+            const indiceActual = Math.max(0, tallas.indexOf(seleccionTalla[p.slug]));
+
+            const dialTalla = tallas.length <= 1
+                ? `<p class="producto-talla-unica">Talla ${tallas[0]}</p>`
+                : `
+                    <div class="producto-talla-dial">
+                        <div class="producto-talla-valor tick" data-talla-valor>${tallas[indiceActual]}</div>
+                        <input type="range" class="producto-talla-slider" data-accion="talla-slider"
+                               min="0" max="${tallas.length - 1}" step="1" value="${indiceActual}"
+                               aria-label="Deslizar para elegir talla">
+                        <div class="producto-talla-ticks">
+                            ${tallas.map((t, i) => `<span data-tick class="${i === indiceActual ? 'activo' : ''}">${t}</span>`).join('')}
+                        </div>
+                    </div>`;
 
             return `
             <div class="product" data-reveal data-slug="${p.slug}">
@@ -153,10 +229,10 @@ function iniciarCatalogo({ seccion, idFiltros, idGrid, parametroCategoria }) {
                     <h3 class="producto-nombre">${p.nombre}</h3>
                     <p class="producto-precio">Desde $${Number(p.precio_desde).toFixed(2)}</p>
 
-                    <div class="producto-opciones">
-                        <select data-accion="talla" class="producto-talla">
-                            ${tallas.map(t => `<option value="${t}" ${t === seleccionTalla[p.slug] ? 'selected' : ''}>Talla ${t}</option>`).join('')}
-                        </select>
+                    ${dialTalla}
+
+                    <div class="producto-cantidad-fila">
+                        <span class="producto-cantidad-label">Cantidad</span>
                         <div class="producto-cantidad">
                             <button type="button" data-accion="restar" aria-label="Restar cantidad">−</button>
                             <span data-cantidad>${seleccionCantidad[p.slug]}</span>
@@ -173,7 +249,20 @@ function iniciarCatalogo({ seccion, idFiltros, idGrid, parametroCategoria }) {
 
         grid.querySelectorAll('.product').forEach(tarjeta => {
             const slug = tarjeta.dataset.slug;
-            tarjeta.querySelector('[data-accion="talla"]').addEventListener('change', e => { seleccionTalla[slug] = e.target.value; });
+            const producto = productosCatalogo.find(x => x.slug === slug);
+            const tallas = (producto.tallas && producto.tallas.length > 0) ? producto.tallas : ['Única'];
+
+            const slider = tarjeta.querySelector('[data-accion="talla-slider"]');
+            if (slider) {
+                slider.addEventListener('input', () => actualizarTalla(slug, tallas, Number(slider.value), tarjeta));
+            }
+            tarjeta.querySelectorAll('[data-tick]').forEach((tick, i) => {
+                tick.addEventListener('click', () => {
+                    if (slider) slider.value = i;
+                    actualizarTalla(slug, tallas, i, tarjeta);
+                });
+            });
+
             tarjeta.querySelector('[data-accion="restar"]').addEventListener('click', () => cambiarCantidad(slug, -1, tarjeta));
             tarjeta.querySelector('[data-accion="sumar"]').addEventListener('click', () => cambiarCantidad(slug, 1, tarjeta));
             tarjeta.querySelector('[data-accion="encargar"]').addEventListener('click', () => encargar(slug));

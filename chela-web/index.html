@@ -88,23 +88,24 @@
 
     <!-- APERTURA: hero partido en dos fotos (Para Él / Para Ella) con un
          titular grande superpuesto en el centro, a modo de portada. -->
-    <section class="split-hero hero-enter">
-        <a href="marketplace.html?genero=hombre" class="split-hero-panel" data-img-slot="panel_para_el"
+    <section class="split-hero">
+        <a href="marketplace.html?genero=hombre" class="split-hero-panel entrada" data-img-slot="panel_para_el"
            style="background-image: url('https://placehold.co/1200x1400/57534A/EFEBE1?text=Para%20%C3%89l'); background-size: cover; background-position: center;">
             <div class="split-hero-sombra"></div>
             <span class="split-hero-etiqueta">Para Él</span>
         </a>
-        <a href="marketplace.html?genero=mujer" class="split-hero-panel" data-img-slot="panel_para_ella"
+        <a href="marketplace.html?genero=mujer" class="split-hero-panel entrada" data-img-slot="panel_para_ella"
            style="background-image: url('https://placehold.co/1200x1400/3F3B33/EFEBE1?text=Para+Ella'); background-size: cover; background-position: center;">
             <div class="split-hero-sombra"></div>
             <span class="split-hero-etiqueta">Para Ella</span>
         </a>
 
-        <div class="split-hero-centro">
+        <div class="split-hero-centro entrada">
             <img src="assets/logo-transparente.png" alt="Chela" class="split-hero-logo" data-img-slot="logo"
                  onerror="this.onerror=null; this.src='assets/logo.png';">
             <h1 class="font-display split-hero-titulo">Tu estilo,<br>a tu medida</h1>
-            <p class="split-hero-sub">Ropa por encargo, con 32 años de trayectoria.</p>
+            <p class="split-hero-sub">Ropa por encargo, uniformes corporativos, producción al mayor con tu marca
+                y vestidos de novia hechos a la medida — todo con 32 años de trayectoria.</p>
             <a href="marketplace.html" class="btn-solid">Ver Catálogo</a>
         </div>
     </section>
@@ -157,6 +158,50 @@
                     medidas, definimos el diseño contigo y ajustamos cada detalle para tu día especial.
                 </p>
                 <a href="novias.html" class="btn-text">Conocer el servicio</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- COTIZA TU DISEÑO: el cliente sube una foto de referencia (se comprime
+         y sube a Supabase Storage) y la envía por WhatsApp junto a su idea. -->
+    <section id="cotiza" class="hairline-top">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-20 md:py-28 grid md:grid-cols-2 gap-12 md:gap-20 items-start">
+            <div data-reveal>
+                <span class="eyebrow">Diseño Personalizado</span>
+                <h2 class="font-display text-3xl md:text-4xl font-light mt-3 mb-6">Cotiza tu propio diseño</h2>
+                <p class="text-muted text-sm leading-relaxed mb-8 max-w-md">
+                    ¿Tienes en mente una prenda que no está en el catálogo? Envíanos una foto de referencia y
+                    cuéntanos qué quieres — la confeccionamos a tu medida y te cotizamos por WhatsApp.
+                </p>
+                <ul class="space-y-3 text-sm text-muted">
+                    <li class="flex items-start gap-3"><i class="fa-solid fa-check mt-1"></i> 50% de adelanto para iniciar, 50% al recibir la prenda</li>
+                    <li class="flex items-start gap-3"><i class="fa-solid fa-check mt-1"></i> Al ser una prenda hecha a tu pedido, no aplica devolución por cambio de opinión</li>
+                    <li class="flex items-start gap-3"><i class="fa-solid fa-check mt-1"></i> Sí cubrimos cualquier defecto de fabricación</li>
+                </ul>
+                <a href="terminos.html" class="btn-text mt-6">Ver términos y condiciones completos</a>
+            </div>
+
+            <div class="surface p-6 md:p-8" data-reveal>
+                <label class="eyebrow block mb-2">Foto de referencia (opcional)</label>
+                <div class="product-media mb-4" style="aspect-ratio: 4/3;">
+                    <div id="cotizar-preview-vacio" class="w-full h-full flex flex-col items-center justify-center text-center gap-2 absolute inset-0">
+                        <i class="fa-solid fa-camera text-2xl" style="color: var(--ink-muted);"></i>
+                        <span class="text-muted text-xs px-4">Sube una foto de lo que quieres</span>
+                    </div>
+                    <img id="cotizar-preview-img" class="hidden" alt="Vista previa del diseño de referencia">
+                </div>
+                <input type="file" id="cotizar-foto" accept="image/*" class="hidden">
+                <button type="button" id="cotizar-elegir-foto" class="btn-line w-full mb-5">
+                    <i class="fa-solid fa-upload"></i> Elegir Foto
+                </button>
+
+                <label class="eyebrow block mb-2">Cuéntanos qué quieres</label>
+                <textarea id="cotizar-descripcion" rows="3" placeholder="Ej: Un vestido como este pero en azul, talla M..." class="field w-full p-3 text-sm mb-6"></textarea>
+
+                <button type="button" id="cotizar-enviar" class="btn-solid w-full">
+                    <i class="fa-brands fa-whatsapp"></i> Enviar Cotización
+                </button>
+                <p id="cotizar-status" class="text-[11px] text-muted mt-3"></p>
             </div>
         </div>
     </section>
@@ -214,13 +259,15 @@
                     </div>
                 </div>
             </div>
-            <div class="hairline-top pt-6 text-[9px] font-medium uppercase tracking-widest text-muted">
-                &copy; <span id="anio-actual"></span> Chela. Todos los derechos reservados.
+            <div class="hairline-top pt-6 text-[9px] font-medium uppercase tracking-widest text-muted flex flex-wrap gap-x-4 gap-y-2">
+                <span>&copy; <span id="anio-actual"></span> Chela. Todos los derechos reservados.</span>
+                <a href="terminos.html" class="nav-link">Términos y Condiciones</a>
             </div>
         </div>
     </footer>
 
     <script src="supabase-client.js"></script>
     <script src="common.js"></script>
+    <script src="cotizar.js"></script>
 </body>
 </html>

@@ -114,6 +114,7 @@
                     Los precios son de referencia — cada pieza se confecciona a tu medida, y confirmamos el precio final por WhatsApp según tela, diseño y ajustes.
                 </p>
             </div>
+            <div id="filtros-talla-vestidos" class="flex items-center gap-4 mb-4 flex-wrap"></div>
             <div id="filtros-vestidos" class="flex items-center gap-6 mb-12 flex-wrap" style="border-bottom: 1px solid var(--line);"></div>
             <div id="grid-vestidos" class="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12"></div>
         </div>
@@ -131,6 +132,7 @@
                     Vestidos para tu cortejo, confeccionados a la medida de cada dama — mismo diseño, ajustado a cada cuerpo.
                 </p>
             </div>
+            <div id="filtros-talla-damas" class="flex items-center gap-4 mb-4 flex-wrap"></div>
             <div id="filtros-damas" class="flex items-center gap-6 mb-12 flex-wrap" style="border-bottom: 1px solid var(--line);"></div>
             <div id="grid-damas" class="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12"></div>
         </div>
@@ -148,6 +150,7 @@
                     Para usar mientras te arreglas y te maquillas el día de la boda — a juego con tu cortejo si así lo quieres.
                 </p>
             </div>
+            <div id="filtros-talla-batas" class="flex items-center gap-4 mb-4 flex-wrap"></div>
             <div id="filtros-batas" class="flex items-center gap-6 mb-12 flex-wrap" style="border-bottom: 1px solid var(--line);"></div>
             <div id="grid-batas" class="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12"></div>
         </div>
@@ -164,8 +167,9 @@
                     <i class="fa-brands fa-whatsapp"></i> WhatsApp
                 </a>
             </div>
-            <div class="hairline-top pt-6 text-[9px] font-medium uppercase tracking-widest text-muted">
-                &copy; <span id="anio-actual"></span> Chela. Todos los derechos reservados.
+            <div class="hairline-top pt-6 text-[9px] font-medium uppercase tracking-widest text-muted flex flex-wrap gap-x-4 gap-y-2">
+                <span>&copy; <span id="anio-actual"></span> Chela. Todos los derechos reservados.</span>
+                <a href="terminos.html" class="nav-link">Términos y Condiciones</a>
             </div>
         </div>
     </footer>
@@ -176,9 +180,9 @@
     <script>
         // Tres catálogos separados: cada uno con su propia sección en Supabase,
         // sus propias categorías y su propio parámetro de categoría en la URL.
-        iniciarCatalogo({ seccion: 'novias_vestidos', idFiltros: 'filtros-vestidos', idGrid: 'grid-vestidos', parametroCategoria: 'catVestidos' });
-        iniciarCatalogo({ seccion: 'novias_damas', idFiltros: 'filtros-damas', idGrid: 'grid-damas', parametroCategoria: 'catDamas' });
-        iniciarCatalogo({ seccion: 'novias_batas', idFiltros: 'filtros-batas', idGrid: 'grid-batas', parametroCategoria: 'catBatas' });
+        iniciarCatalogo({ seccion: 'novias_vestidos', idFiltros: 'filtros-vestidos', idGrid: 'grid-vestidos', idFiltroTalla: 'filtros-talla-vestidos', parametroCategoria: 'catVestidos' });
+        iniciarCatalogo({ seccion: 'novias_damas', idFiltros: 'filtros-damas', idGrid: 'grid-damas', idFiltroTalla: 'filtros-talla-damas', parametroCategoria: 'catDamas' });
+        iniciarCatalogo({ seccion: 'novias_batas', idFiltros: 'filtros-batas', idGrid: 'grid-batas', idFiltroTalla: 'filtros-talla-batas', parametroCategoria: 'catBatas' });
     </script>
 </body>
 </html>

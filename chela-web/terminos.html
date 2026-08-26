@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Términos y Condiciones | Chela</title>
+    <meta name="description" content="Términos y condiciones, política de pagos, devoluciones y garantía de Chela — ropa por encargo en Venezuela.">
+    <link rel="icon" href="assets/logo.png">
+    <link rel="canonical" href="https://appchela.vercel.app/chela-web/terminos.html">
+    <meta name="robots" content="noindex, follow">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="selection:bg-black selection:text-white">
+
+    <div class="utility-bar">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-2 flex items-center justify-between">
+            <span id="utility-bar-izq">32 años de trayectoria</span>
+            <span id="utility-bar-der" class="hidden sm:inline">Ropa por encargo · Entrega en toda Caracas</span>
+        </div>
+    </div>
+
+    <header id="site-header" class="site-header">
+        <div class="max-w-[1600px] mx-auto px-6 md:px-10 py-5 flex items-center justify-between">
+            <button id="btn-menu-movil" class="md:hidden w-8 h-8 flex items-center justify-center">
+                <i class="fa-solid fa-bars text-base"></i>
+            </button>
+
+            <nav class="hidden md:flex items-center gap-8">
+                <a href="marketplace.html" class="nav-link">Marketplace</a>
+                <a href="corporativo.html" class="nav-link">Corporativo</a>
+                <a href="emprendedores.html" class="nav-link">Emprendedores</a>
+                <a href="novias.html" class="nav-link">Novias</a>
+            </nav>
+
+            <a href="index.html" class="shrink-0">
+                <img src="assets/logo-transparente.png" alt="Chela" class="h-7 md:h-8 w-auto object-contain" data-img-slot="logo"
+                     onerror="this.onerror=null; this.src='assets/logo.png';">
+            </a>
+
+            <div class="hidden md:flex items-center gap-6">
+                <a href="nosotros.html" class="nav-link">Nosotros</a>
+                <a data-wa="general" href="#" target="_blank" rel="noopener" class="nav-link"><i class="fa-brands fa-whatsapp"></i></a>
+            </div>
+            <div class="md:hidden w-8"></div>
+        </div>
+
+        <div id="menu-movil" class="hidden md:hidden px-6 py-4 space-y-4" style="background: var(--bg); border-top: 1px solid var(--line);">
+            <a href="index.html" class="block nav-link">Inicio</a>
+            <a href="marketplace.html" class="block nav-link">Marketplace</a>
+            <a href="corporativo.html" class="block nav-link">Corporativo</a>
+            <a href="emprendedores.html" class="block nav-link">Emprendedores</a>
+            <a href="novias.html" class="block nav-link">Novias</a>
+            <a href="nosotros.html" class="block nav-link">Nosotros</a>
+            <a data-wa="general" href="#" target="_blank" rel="noopener" class="btn-solid w-full mt-2">
+                <i class="fa-brands fa-whatsapp"></i> Escríbenos
+            </a>
+        </div>
+    </header>
+
+    <section class="max-w-[860px] mx-auto px-6 md:px-10 py-16 md:py-24">
+        <span class="eyebrow">Legal</span>
+        <h1 class="font-display text-3xl md:text-5xl font-light mt-4 mb-4">Términos y Condiciones</h1>
+        <p class="text-muted text-xs mb-16">Última actualización: <span id="fecha-actualizacion"></span> · Aplica a todos los pedidos realizados a través de este sitio o por WhatsApp con Chela.</p>
+
+        <div class="legal-doc">
+            <h2>1. Aceptación de estos términos</h2>
+            <p>
+                Al realizar un pedido con Chela —ya sea a través de este sitio web, por WhatsApp o en persona— aceptas
+                los términos y condiciones descritos en este documento. Si no estás de acuerdo con alguno de ellos,
+                te pedimos no continuar con tu pedido y contactarnos primero para resolver tus dudas.
+            </p>
+
+            <h2>2. Naturaleza del servicio</h2>
+            <p>
+                Chela es un taller de confección que trabaja principalmente <strong>por encargo</strong>: la mayoría
+                de las prendas se confeccionan una vez confirmado el pedido, no se mantienen en inventario listas
+                para despacho inmediato. Los vestidos de novia, de damas de honor y las prendas de la sección
+                "Cotiza tu propio diseño" se confeccionan además <strong>completamente a la medida</strong> del
+                cliente, según el diseño, tela y ajustes acordados por WhatsApp.
+            </p>
+            <p>
+                Las fotos, precios y descripciones del catálogo son referenciales. El precio, la tela, los tiempos de
+                entrega y cualquier detalle de personalización se confirman siempre por WhatsApp antes de iniciar la
+                confección, y es esa confirmación —no el catálogo— la que define los términos finales de tu pedido.
+            </p>
+
+            <h2>3. Sistema de pago</h2>
+            <p>Para iniciar la confección de cualquier pedido por encargo o a la medida, aplica el siguiente esquema:</p>
+            <ul>
+                <li><strong>50% de adelanto</strong> al confirmar el pedido, antes de iniciar la confección. Este
+                    adelanto cubre la compra de materiales y el inicio de la producción.</li>
+                <li><strong>50% restante</strong> contra la entrega del producto terminado, antes o al momento de
+                    recibirlo.</li>
+            </ul>
+            <p>
+                El método de pago (transferencia, pago móvil u otro) se coordina directamente por WhatsApp. Un pedido
+                no entra en producción hasta que se confirme la recepción del adelanto correspondiente.
+            </p>
+
+            <h2>4. Tiempos de entrega</h2>
+            <p>
+                Los tiempos de entrega son estimados y se confirman por WhatsApp según el tipo de prenda, la cantidad
+                pedida y la carga de trabajo del taller al momento del pedido. Pueden variar por disponibilidad de
+                telas, temporada (por ejemplo, temporada escolar o de bodas) o causas de fuerza mayor. Cualquier
+                cambio significativo en el tiempo estimado se comunicará al cliente tan pronto como se conozca.
+            </p>
+
+            <h2>5. Política de devoluciones y cambios</h2>
+            <p>
+                Debido a que las prendas se confeccionan por encargo o a la medida del cliente —y por lo tanto no
+                pueden reintegrarse al inventario ni revenderse a otra persona— <strong>no se aceptan devoluciones
+                por simple cambio de opinión</strong> una vez iniciada o finalizada la confección. Esta es una
+                práctica estándar para bienes personalizados hechos por encargo.
+            </p>
+            <p>Sí corregimos o reponemos la prenda, sin costo adicional, cuando:</p>
+            <ul>
+                <li>La prenda presenta un defecto de fabricación (costuras, materiales o acabados defectuosos).</li>
+                <li>La prenda entregada no corresponde a las medidas, diseño o especificaciones acordadas y
+                    confirmadas por WhatsApp antes de la confección.</li>
+            </ul>
+            <p>
+                Para hacer válido un reclamo por estos motivos, el cliente debe notificarlo por WhatsApp dentro de
+                los <strong>5 días hábiles</strong> siguientes a la entrega, describiendo el problema y adjuntando
+                fotos de la prenda. Pasado ese plazo, se entiende que la prenda fue recibida conforme.
+            </p>
+
+            <h2>6. Garantía de fabricación</h2>
+            <p>
+                Ofrecemos garantía de <strong>15 días</strong> contados desde la entrega, exclusivamente sobre
+                defectos de fabricación (costuras que cedan, materiales defectuosos de origen). Esta garantía no
+                cubre el desgaste normal, el mal uso, el lavado inadecuado, ni modificaciones o arreglos realizados
+                por un tercero ajeno a Chela.
+            </p>
+
+            <h2>7. Diseños y fotos de referencia enviadas por el cliente</h2>
+            <p>
+                Al usar la sección "Cotiza tu propio diseño" (o al enviarnos una foto de referencia por WhatsApp),
+                el cliente declara que tiene el derecho o la autorización para compartir esa imagen, y autoriza a
+                Chela a usarla <strong>únicamente</strong> como referencia para confeccionar su pedido. Chela no
+                reproduce, vende ni comparte esas fotos con fines distintos al pedido del cliente que las envió.
+            </p>
+            <p>
+                Chela se reserva el derecho de rechazar la confección de un diseño si tiene motivos razonables para
+                creer que infringe derechos de autor o de marca de un tercero, o si el contenido de la imagen es
+                inapropiado.
+            </p>
+
+            <h2>8. Protección de datos personales</h2>
+            <p>
+                Los datos que nos compartes (nombre, número de teléfono, medidas, dirección de entrega y fotos de
+                referencia) se usan exclusivamente para gestionar tu pedido y coordinar la entrega. No vendemos ni
+                compartimos tus datos con terceros, salvo cuando sea estrictamente necesario para completar la
+                entrega (por ejemplo, con un servicio de encomienda que tú mismo elijas).
+            </p>
+
+            <h2>9. Propiedad intelectual del sitio</h2>
+            <p>
+                El contenido de este sitio —textos, fotografías propias, logo y diseño— es propiedad de Chela o se
+                usa con la debida autorización. No está permitido reproducirlo con fines comerciales sin autorización
+                previa.
+            </p>
+
+            <h2>10. Limitación de responsabilidad</h2>
+            <p>
+                Chela no garantiza que el sitio web esté disponible de forma ininterrumpida o libre de errores. La
+                información del catálogo público es referencial y puede cambiar sin previo aviso; el precio y las
+                condiciones finales de cada pedido son las que se confirmen por WhatsApp.
+            </p>
+
+            <h2>11. Aceptación electrónica</h2>
+            <p>
+                Al marcar la casilla de verificación de estos términos antes de enviarnos tu pedido por WhatsApp, o
+                al confirmar tu pedido por ese mismo medio, dejas constancia expresa de haber leído y aceptado estos
+                términos y condiciones. Esa confirmación tiene la misma validez que una aceptación firmada de forma
+                manuscrita, a los efectos de este acuerdo entre tú y Chela.
+            </p>
+
+            <h2>12. Caso fortuito y fuerza mayor</h2>
+            <p>
+                Chela no será responsable por retrasos o incumplimientos causados por hechos fuera de su control
+                razonable —incluyendo fallas eléctricas o de telecomunicaciones, escasez de insumos, restricciones
+                gubernamentales, desastres naturales u otras causas de fuerza mayor. En estos casos, se informará al
+                cliente lo antes posible y se coordinará un nuevo tiempo estimado de entrega.
+            </p>
+
+            <h2>13. Divisibilidad de las cláusulas</h2>
+            <p>
+                Si alguna cláusula de estos términos fuera declarada inválida o inaplicable por una autoridad
+                competente, esa cláusula se separará del resto, que continuará vigente y con plena validez.
+            </p>
+
+            <h2>14. Ley aplicable y resolución de controversias</h2>
+            <p>
+                Estos términos se rigen por las leyes de la República Bolivariana de Venezuela, incluyendo la
+                normativa de protección al consumidor vigente. Cualquier controversia relacionada con un pedido se
+                intentará resolver primero de forma directa entre las partes; de no ser posible, podrá acudirse a
+                la Superintendencia Nacional para la Defensa de los Derechos Socioeconómicos (SUNDDE) o a los
+                tribunales competentes de la República Bolivariana de Venezuela.
+            </p>
+
+            <h2>15. Cambios a estos términos</h2>
+            <p>
+                Podemos actualizar estos términos ocasionalmente para reflejar cambios en cómo operamos. La fecha de
+                la última actualización siempre aparece al inicio de esta página. Los pedidos ya confirmados se
+                rigen por los términos vigentes al momento en que se confirmaron.
+            </p>
+
+            <h2>16. Contacto</h2>
+            <p>
+                ¿Dudas sobre estos términos o sobre un pedido? Escríbenos directamente por
+                <a data-wa="general" href="#" target="_blank" rel="noopener">WhatsApp</a>.
+            </p>
+        </div>
+    </section>
+
+    <footer class="site-footer hairline-top px-6 md:px-10 py-14">
+        <div class="max-w-[1600px] mx-auto">
+            <div class="flex flex-col md:flex-row justify-between gap-10 mb-12">
+                <div>
+                    <p class="brand-mark text-lg">CHELA</p>
+                    <p class="text-muted text-xs mt-2 max-w-xs">Ropa por encargo, uniformes corporativos y confección al mayor. Con 32 años de trayectoria.</p>
+                </div>
+                <a data-wa="general" href="#" target="_blank" rel="noopener" class="btn-line self-start">
+                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                </a>
+            </div>
+            <div class="hairline-top pt-6 text-[9px] font-medium uppercase tracking-widest text-muted flex flex-wrap gap-x-4 gap-y-2">
+                <span>&copy; <span id="anio-actual"></span> Chela. Todos los derechos reservados.</span>
+                <a href="terminos.html" class="nav-link">Términos y Condiciones</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('fecha-actualizacion').textContent = new Date('2026-08-26').toLocaleDateString('es-VE', { year: 'numeric', month: 'long', day: 'numeric' });
+    </script>
+    <script src="supabase-client.js"></script>
+    <script src="common.js"></script>
+</body>
+</html>

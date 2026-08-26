@@ -83,6 +83,8 @@
             </p>
         </div>
 
+        <div id="filtros-talla" class="flex items-center gap-4 mb-4 flex-wrap"></div>
+
         <div id="filtros-categoria" class="flex items-center gap-6 mb-12 flex-wrap" style="border-bottom: 1px solid var(--line);"></div>
 
         <div id="grid-catalogo" class="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12"></div>
@@ -99,8 +101,9 @@
                     <i class="fa-brands fa-whatsapp"></i> WhatsApp
                 </a>
             </div>
-            <div class="hairline-top pt-6 text-[9px] font-medium uppercase tracking-widest text-muted">
-                &copy; <span id="anio-actual"></span> Chela. Todos los derechos reservados.
+            <div class="hairline-top pt-6 text-[9px] font-medium uppercase tracking-widest text-muted flex flex-wrap gap-x-4 gap-y-2">
+                <span>&copy; <span id="anio-actual"></span> Chela. Todos los derechos reservados.</span>
+                <a href="terminos.html" class="nav-link">Términos y Condiciones</a>
             </div>
         </div>
     </footer>
@@ -108,6 +111,6 @@
     <script src="supabase-client.js"></script>
     <script src="common.js"></script>
     <script src="catalogo.js"></script>
-    <script>iniciarCatalogo({ seccion: 'marketplace', idFiltros: 'filtros-categoria', idGrid: 'grid-catalogo' });</script>
+    <script>iniciarCatalogo({ seccion: 'marketplace', idFiltros: 'filtros-categoria', idGrid: 'grid-catalogo', idFiltroTalla: 'filtros-talla' });</script>
 </body>
 </html>

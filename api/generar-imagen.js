@@ -83,9 +83,19 @@ module.exports = async (req, res) => {
             return;
         }
 
+        // El nombre/descripción sugeridos van en la parte de texto de la misma
+        // respuesta (se le pidió al modelo un formato fijo "NOMBRE: / DESCRIPCION:").
+        // Es opcional: si no vienen o no calzan con el formato, se ignora sin error.
+        const parteTexto = partes.find(p => typeof p.text === 'string' && p.text.trim());
+        const texto = parteTexto ? parteTexto.text : '';
+        const matchNombre = texto.match(/NOMBRE:\s*(.+)/i);
+        const matchDescripcion = texto.match(/DESCRIPCI[OÓ]N:\s*(.+)/i);
+
         res.status(200).json({
             imagenBase64: inline.data,
-            mimeType: inline.mimeType || inline.mime_type || 'image/png'
+            mimeType: inline.mimeType || inline.mime_type || 'image/png',
+            nombreSugerido: matchNombre ? matchNombre[1].trim() : '',
+            descripcionSugerida: matchDescripcion ? matchDescripcion[1].trim() : ''
         });
     } catch (err) {
         res.status(500).json({ error: 'Error al conectar con el servicio de IA: ' + err.message });

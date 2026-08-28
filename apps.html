@@ -10,6 +10,7 @@
     <link rel="apple-touch-icon" href="icon.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -46,11 +47,51 @@
         @media (hover: hover) and (pointer: fine) {
             .tarjeta-app:hover { border-color: rgba(99, 102, 241, 0.5); background-color: rgba(30, 41, 59, 0.7); }
         }
+        .campo-login {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            color: #f8fafc;
+            border-radius: 0.85rem;
+            padding: 0.8rem 1rem;
+            font-size: 13px;
+            transition: border-color 150ms ease;
+        }
+        .campo-login:focus { outline: none; border-color: #6366f1; }
     </style>
 </head>
 
 <body class="min-h-screen">
 
+    <!-- PANTALLA DE LOGIN: solo mauriciando1999@gmail.com puede entrar -->
+    <div id="auth-screen" class="min-h-screen flex items-center justify-center p-4">
+        <form id="form-login" class="w-full max-w-sm p-7 rounded-[2rem]" style="background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08);">
+            <div class="text-center mb-6">
+                <img src="icon.png" alt="Chela" class="w-14 h-14 rounded-2xl mx-auto mb-3 shadow-lg">
+                <h1 class="text-base font-black">Chela Apps</h1>
+                <p class="text-[11px] text-slate-400 font-medium mt-0.5">Acceso restringido</p>
+            </div>
+            <div class="space-y-3">
+                <input type="email" id="login-email" placeholder="Correo" required class="campo-login">
+                <input type="password" id="login-pass" placeholder="Contraseña" required class="campo-login">
+            </div>
+            <button type="submit" class="w-full mt-5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-black uppercase tracking-widest py-3 rounded-xl active:scale-95 transition-all">Ingresar</button>
+            <p id="login-error" class="hidden text-red-400 text-[11px] font-bold text-center mt-4"></p>
+        </form>
+    </div>
+
+    <!-- ACCESO DENEGADO: logueado, pero no es la cuenta permitida -->
+    <div id="denegado-screen" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-sm p-7 rounded-[2rem] text-center" style="background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08);">
+            <i class="fa-solid fa-lock text-2xl mb-3 text-red-400"></i>
+            <h1 class="text-sm font-black mb-1">Acceso restringido</h1>
+            <p class="text-[11px] text-slate-400 mb-5">Esta cuenta no tiene permiso para entrar acá.</p>
+            <button onclick="cerrarSesionApps()" class="w-full bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest py-3 rounded-xl active:scale-95 transition-all">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <!-- CONTENIDO DEL LAUNCHER: solo se muestra ya autenticado como el correo permitido -->
+    <div id="app-content" class="hidden">
     <div class="max-w-3xl mx-auto px-4 py-8 md:py-12">
         <header class="flex items-center justify-between gap-4 mb-8">
             <div class="flex items-center gap-3">
@@ -60,9 +101,14 @@
                     <p class="text-[11px] text-slate-400 font-medium">Acceso rápido a todas las herramientas</p>
                 </div>
             </div>
-            <button id="btn-instalar" class="hidden shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl active:scale-95 transition-all shadow-lg flex items-center gap-2">
-                <i class="fa-solid fa-download"></i> Instalar
-            </button>
+            <div class="flex items-center gap-2 shrink-0">
+                <button id="btn-instalar" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl active:scale-95 transition-all shadow-lg flex items-center gap-2">
+                    <i class="fa-solid fa-download"></i> Instalar
+                </button>
+                <button onclick="cerrarSesionApps()" class="w-10 h-10 bg-slate-900 border border-slate-800 rounded-xl flex justify-center items-center text-slate-400 active:scale-90 transition-all hover:text-red-400">
+                    <i class="fa-solid fa-right-from-bracket text-sm"></i>
+                </button>
+            </div>
         </header>
 
         <p id="mensaje-instalado" class="hidden text-[11px] text-emerald-400 font-bold uppercase tracking-widest mb-6 flex items-center gap-2">
@@ -145,10 +191,68 @@
             </section>
         </main>
     </div>
+    </div>
 
     <script>
+        // ==========================================================
+        // ACCESO RESTRINGIDO: solo mauriciando1999@gmail.com entra al
+        // launcher. Reusa el mismo proyecto de Supabase que el resto del
+        // sitio (chela-web/admin.html usa este mismo patrón de 3 pantallas).
+        // Ojo: esto es protección del lado del navegador — un archivo
+        // estático no se puede "ocultar" del todo sin infraestructura de
+        // servidor, así que esto evita accesos casuales, no es una bóveda.
+        // ==========================================================
+        const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
+        const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
+        const _sb = supabase.createClient(SB_URL, SB_KEY);
+        const CORREO_PERMITIDO = 'mauriciando1999@gmail.com';
+
+        function mostrarPantallaApps(id) {
+            ['auth-screen', 'denegado-screen', 'app-content'].forEach(s => {
+                document.getElementById(s).classList.toggle('hidden', s !== id);
+            });
+        }
+
+        window.cerrarSesionApps = function () {
+            _sb.auth.signOut().then(() => window.location.reload());
+        };
+
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const textoOriginal = btn.innerText;
+            btn.innerText = 'Ingresando...';
+            const errorBox = document.getElementById('login-error');
+            errorBox.classList.add('hidden');
+
+            const { error } = await _sb.auth.signInWithPassword({
+                email: document.getElementById('login-email').value,
+                password: document.getElementById('login-pass').value
+            });
+
+            if (error) {
+                errorBox.innerText = error.message;
+                errorBox.classList.remove('hidden');
+                btn.innerText = textoOriginal;
+            } else {
+                window.location.reload();
+            }
+        });
+
+        (async () => {
+            const { data: { user } } = await _sb.auth.getUser();
+
+            if (!user) { mostrarPantallaApps('auth-screen'); return; }
+            if (user.email.toLowerCase() !== CORREO_PERMITIDO.toLowerCase()) { mostrarPantallaApps('denegado-screen'); return; }
+
+            mostrarPantallaApps('app-content');
+            inicializarLauncher();
+        })();
+
         // Registro del service worker mínimo (necesario para que el
-        // navegador considere instalable esta página como app).
+        // navegador considere instalable esta página como app) y lógica del
+        // botón "Instalar" — solo arrancan si el login fue exitoso.
+        function inicializarLauncher() {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw-apps.js').catch(() => {});
         }
@@ -183,6 +287,7 @@
         // sentido mostrar el botón de instalar.
         if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
             btnInstalar.classList.add('hidden');
+        }
         }
     </script>
 </body>

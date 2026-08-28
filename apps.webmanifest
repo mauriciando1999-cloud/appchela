@@ -1,0 +1,17 @@
+{
+  "name": "Chela Apps",
+  "short_name": "Chela Apps",
+  "description": "Acceso rápido a todas las herramientas de Chela Sport, Envolvia y el sitio web de Chela.",
+  "start_url": "apps.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

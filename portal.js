@@ -320,16 +320,22 @@ async function dispararAlertaNativa(titulo, cuerpo) {
     try { new Notification(titulo, { body: cuerpo }); } catch(e) {}
 }
 
-// NUEVA FUNCIÓN PARA REDIRIGIR A PREVENTA
-window.irAPreventa = function() {
-    if(estudiantesCached.length === 0) return alert("Cargando datos, espera un momento...");
-    
+// REDIRIGE AL MARKETPLACE DEL COLEGIO (antes se llamaba "Preventa Escolar",
+// mismo destino de siempre — portal_preventa.html — solo cambió el nombre).
+window.irAMarketplace = function() {
+    if (estudiantesCached.length === 0) return alert("Cargando datos, espera un momento...");
+
     const rep = encodeURIComponent(estudiantesCached[0].representante);
     const tel = encodeURIComponent(estudiantesCached[0].phone);
-    // Tomamos el primer alumno por defecto, en preventa.html se podría hacer un select si hay varios
+    // Tomamos el primer alumno por defecto, en portal_preventa.html se podría hacer un select si hay varios
     const est = encodeURIComponent(estudiantesCached[0].name);
-    
+
     window.location.href = `portal_preventa.html?rep=${rep}&est=${est}&tel=${tel}`;
+}
+
+// ACCESO A LA WEB DE CHELA (sitio de marca, catálogo general, etc.)
+window.irAWebChela = function() {
+    window.location.href = 'chela-web/index.html';
 }
 
 window.abrirMenuPortal = async function() {

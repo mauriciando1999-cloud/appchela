@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chela Apps | Acceso Rápido</title>
+    <link rel="manifest" href="apps.webmanifest">
+    <meta name="theme-color" content="#020617">
+    <link rel="icon" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; overflow-x: hidden; }
+        .eyebrow-seccion {
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: #818cf8;
+            margin-bottom: 0.75rem;
+        }
+        .tarjeta-app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            padding: 1.1rem 0.5rem;
+            color: #e2e8f0;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.25;
+            transition: transform 150ms ease, border-color 150ms ease, background-color 150ms ease;
+        }
+        .tarjeta-app i { font-size: 20px; color: #818cf8; }
+        .tarjeta-app:active { transform: scale(0.97); }
+        @media (hover: hover) and (pointer: fine) {
+            .tarjeta-app:hover { border-color: rgba(99, 102, 241, 0.5); background-color: rgba(30, 41, 59, 0.7); }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+
+    <div class="max-w-3xl mx-auto px-4 py-8 md:py-12">
+        <header class="flex items-center justify-between gap-4 mb-8">
+            <div class="flex items-center gap-3">
+                <img src="icon.png" alt="Chela" class="w-11 h-11 rounded-2xl shadow-lg">
+                <div>
+                    <h1 class="text-lg font-black tracking-tight">Envolvia</h1>
+                    <p class="text-[11px] text-slate-400 font-medium">Acceso rápido a todas las herramientas</p>
+                </div>
+            </div>
+            <button id="btn-instalar" class="hidden shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl active:scale-95 transition-all shadow-lg flex items-center gap-2">
+                <i class="fa-solid fa-download"></i> Instalar
+            </button>
+        </header>
+
+        <p id="mensaje-instalado" class="hidden text-[11px] text-emerald-400 font-bold uppercase tracking-widest mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-circle-check"></i> App instalada — ya la tienes en tu pantalla de inicio
+        </p>
+
+        <main class="space-y-9 pb-16">
+            <section>
+                <h2 class="eyebrow-seccion">Chela Sport — Gestión</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <a href="index.html" class="tarjeta-app"><i class="fa-solid fa-cash-register"></i><span>Ventas POS</span></a>
+                    <a href="admin.html" class="tarjeta-app"><i class="fa-solid fa-chart-line"></i><span>ERP Gerencial</span></a>
+                    <a href="stock.html" class="tarjeta-app"><i class="fa-solid fa-boxes-stacked"></i><span>Inventario y Compras</span></a>
+                    <a href="cobranza.html" class="tarjeta-app"><i class="fa-solid fa-hand-holding-dollar"></i><span>Cobranzas</span></a>
+                    <a href="ventas.html" class="tarjeta-app"><i class="fa-solid fa-file-invoice"></i><span>Historial y Reportes</span></a>
+                    <a href="personal.html" class="tarjeta-app"><i class="fa-solid fa-users"></i><span>Personal</span></a>
+                    <a href="calculadora.html" class="tarjeta-app"><i class="fa-solid fa-calculator"></i><span>Calculadora BCV</span></a>
+                    <a href="vehiculos.html" class="tarjeta-app"><i class="fa-solid fa-car"></i><span>Arbitraje Vehicular</span></a>
+                    <a href="chelaia.html" class="tarjeta-app"><i class="fa-solid fa-robot"></i><span>ChelaIA</span></a>
+                    <a href="preventa-admin.html" class="tarjeta-app"><i class="fa-solid fa-tags"></i><span>Preventa Admin</span></a>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="eyebrow-seccion">Portal Familiar</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <a href="portal.html" class="tarjeta-app"><i class="fa-solid fa-house-user"></i><span>Portal Familiar</span></a>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="eyebrow-seccion">Envolvia</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <a href="contador.html" class="tarjeta-app"><i class="fa-solid fa-list-ol"></i><span>Contador PRO</span></a>
+                    <a href="verificacion.html" class="tarjeta-app"><i class="fa-solid fa-shield-check"></i><span>Verificador Pro</span></a>
+                    <a href="admin-inventario.html" class="tarjeta-app"><i class="fa-solid fa-truck-ramp-box"></i><span>Carga Forzada</span></a>
+                    <a href="https://envolvia.vercel.app/" target="_blank" rel="noopener" class="tarjeta-app"><i class="fa-solid fa-shop"></i><span>Envolvía Web</span></a>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="eyebrow-seccion">Chela Web — Sitio de Marca</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <a href="chela-web/index.html" class="tarjeta-app"><i class="fa-solid fa-house"></i><span>Inicio</span></a>
+                    <a href="chela-web/marketplace.html" class="tarjeta-app"><i class="fa-solid fa-bag-shopping"></i><span>Marketplace</span></a>
+                    <a href="chela-web/corporativo.html" class="tarjeta-app"><i class="fa-solid fa-building"></i><span>Corporativo</span></a>
+                    <a href="chela-web/emprendedores.html" class="tarjeta-app"><i class="fa-solid fa-industry"></i><span>Emprendedores</span></a>
+                    <a href="chela-web/novias.html" class="tarjeta-app"><i class="fa-solid fa-ring"></i><span>Novias</span></a>
+                    <a href="chela-web/nosotros.html" class="tarjeta-app"><i class="fa-solid fa-circle-info"></i><span>Nosotros</span></a>
+                    <a href="chela-web/admin.html" class="tarjeta-app"><i class="fa-solid fa-screwdriver-wrench"></i><span>Admin Catálogo</span></a>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="eyebrow-seccion">Multiamerica</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <a href="https://multiamerica-web.vercel.app" target="_blank" rel="noopener" class="tarjeta-app"><i class="fa-solid fa-mobile-screen-button"></i><span>App</span></a>
+                    <a href="https://multiapp-eta.vercel.app" target="_blank" rel="noopener" class="tarjeta-app"><i class="fa-solid fa-globe"></i><span>Web</span></a>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="eyebrow-seccion">Movement House</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <a href="https://movementhouse.vercel.app/index.html" target="_blank" rel="noopener" class="tarjeta-app"><i class="fa-solid fa-user-shield"></i><span>Admin</span></a>
+                    <a href="https://movementhouse.vercel.app/index-user.html?id=81be31f6-581a-4fce-9f1b-cd2023bfa51c" target="_blank" rel="noopener" class="tarjeta-app"><i class="fa-solid fa-user"></i><span>Usuario</span></a>
+                    <a href="https://movementhouse.vercel.app/preview-afiliados.html" target="_blank" rel="noopener" class="tarjeta-app"><i class="fa-solid fa-store"></i><span>Usuario con Market</span></a>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="eyebrow-seccion">Restenvolvia</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <a href="https://restenvolvia.vercel.app/login" target="_blank" rel="noopener" class="tarjeta-app"><i class="fa-solid fa-right-to-bracket"></i><span>Login</span></a>
+                    <a href="https://restenvolvia.vercel.app/" target="_blank" rel="noopener" class="tarjeta-app"><i class="fa-solid fa-cash-register"></i><span>POS</span></a>
+                    <a href="https://restenvolvia.vercel.app/plataforma" target="_blank" rel="noopener" class="tarjeta-app"><i class="fa-solid fa-layer-group"></i><span>Plataforma</span></a>
+                    <a href="https://restenvolvia.vercel.app/pedidos?tienda=envolvia-piloto" target="_blank" rel="noopener" class="tarjeta-app"><i class="fa-solid fa-receipt"></i><span>Pedidos</span></a>
+                    <a href="https://restenvolvia.vercel.app/cliente.html?tienda=envolvia-piloto&amp;mesa=1" target="_blank" rel="noopener" class="tarjeta-app"><i class="fa-solid fa-utensils"></i><span>Mesa 1</span></a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Registro del service worker mínimo (necesario para que el
+        // navegador considere instalable esta página como app).
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw-apps.js').catch(() => {});
+        }
+
+        // Botón "Instalar": Chrome/Android disparan beforeinstallprompt si la
+        // página cumple los requisitos (manifest + service worker + https).
+        // En iOS/Safari no existe ese evento — el botón se queda oculto y el
+        // usuario instala manualmente con "Compartir" → "Agregar a inicio".
+        let promptDeInstalacion = null;
+        const btnInstalar = document.getElementById('btn-instalar');
+
+        window.addEventListener('beforeinstallprompt', (evento) => {
+            evento.preventDefault();
+            promptDeInstalacion = evento;
+            btnInstalar.classList.remove('hidden');
+        });
+
+        btnInstalar.addEventListener('click', async () => {
+            if (!promptDeInstalacion) return;
+            promptDeInstalacion.prompt();
+            await promptDeInstalacion.userChoice;
+            promptDeInstalacion = null;
+            btnInstalar.classList.add('hidden');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            btnInstalar.classList.add('hidden');
+            document.getElementById('mensaje-instalado').classList.remove('hidden');
+        });
+
+        // Si ya se abrió como app instalada (modo standalone), no tiene
+        // sentido mostrar el botón de instalar.
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+            btnInstalar.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "directives": "TONO: Lujo silencioso, no ropa \"económica\" ni \"para todos\". Frases cortas, seguras, sin signos de exclamación ni superlativos (\"¡el mejor precio!\", \"¡calidad garantizada!\"). El respaldo es la trayectoria (32 años), no la promoción. Se comunica como una casa de oficio, no como una tienda.\n\nPALETA Y TIPOGRAFÍA (tomada del sitio real, styles.css):\n- Fondo cálido casi blanco #FAF9F5, tinta casi negra #111111, gris cálido #8C877D para texto secundario. Nada de colores saturados ni fondos de color plano — el sitio es deliberadamente monocromo.\n- Titulares en Fraunces (serif editorial, peso liviano). Cuerpo/UI en Inter. Todo el HTML de piezas de contenido debe usar estas mismas dos fuentes (Google Fonts) para que se vea del mismo sitio, no de un flyer genérico.\n- Mucho espacio en blanco, sin bloques gráficos grandes ni degradados. Un producto o una foto por composición, no collages.\n\nPÚBLICO: Son 4 audiencias distintas, nunca una sola pieza \"para todos\": 1) papás de colegio (uniformes escolares), 2) equipos/gimnasios (uniformes deportivos), 3) empresas (uniformes corporativos + fabricación de marca propia — la línea de mayor ticket y la menos comunicada), 4) novias (vestidos a medida). Cada pieza debe dejar clara a cuál le habla.\n\nEVITAR:\n- Nada de \"oferta\", \"descuento\", \"precio bajo\" — no es el eje de la marca.\n- Nada de emojis en el copy ni signos de exclamación seguidos.\n- No mezclar las 4 líneas de negocio en una misma pieza.\n- No mostrar prendas terminadas sin nada de proceso: el oficio (manos, tela, máquina) es el diferenciador real y siempre debería asomar.\n\nFORMATOS PREFERIDOS: proceso/detrás de cámara, series cortas (3-4 entregas) antes que posts sueltos, y siempre con una llamada a cotizar (el sitio ya tiene un cotizador en vivo, cotizar.html — el contenido debe llevar ahí).",
+  "frequency": "Semanal",
+  "proposals": [
+    {
+      "id": 1,
+      "text": "\"32 años en 30 segundos\" — Formato: reel de proceso (behind-the-scenes), tendencia de contenido de oficio/craft (ASMR de costura, manos trabajando, antes/después). Por qué: es el diferenciador real de Chela y nadie más lo tiene; construye confianza rápido con gente que no la conoce.",
+      "createdAt": "2026-08-31T14:51:59.000Z"
+    },
+    {
+      "id": 2,
+      "text": "\"De tu boceto a tu uniforme\" — Formato: mini-caso de un pedido corporativo o escolar real, boceto → tela → prenda terminada. Aprovecha el formato \"reveal\". Apunta a directores de colegio / dueños de empresa que dudan en encargar algo custom sin ver el proceso.",
+      "createdAt": "2026-08-31T14:51:59.000Z"
+    },
+    {
+      "id": 3,
+      "text": "\"Marca propia, hecho en Caracas\" — Contenido para emprendedores: mostrar el servicio de confección al mayor con marca propia como oportunidad de negocio. Es la línea menos visible del sitio y probablemente la de mayor ticket; casi no tiene competencia en Caracas que lo comunique bien.",
+      "createdAt": "2026-08-31T14:51:59.000Z"
+    },
+    {
+      "id": 4,
+      "text": "\"Prueba de vestido, semana a semana\" — Formato serie (3-4 entregas cortas) documentando un vestido de novia a lo largo de las semanas previas a la boda. Las series generan seguimiento activo, mejor alcance sostenido que posts sueltos.",
+      "createdAt": "2026-08-31T14:51:59.000Z"
+    },
+    {
+      "id": 5,
+      "text": "\"Cotiza en 1 minuto\" — Reel corto mostrando el cotizador del sitio (cotizar.html) en uso real, precio al instante. Convierte tráfico de redes en gente que ya sabe qué va a encontrar al entrar al sitio, baja la fricción de \"cuánto cuesta\".",
+      "createdAt": "2026-08-31T14:51:59.000Z"
+    }
+  ]
+}

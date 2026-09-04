@@ -374,6 +374,12 @@
             document.getElementById('panel-bitacora').classList.add('hidden');
         };
 
+        // Guarda una "firma" de lo último renderizado (ids + si cada uno está
+        // marcado done) para NO tocar el DOM si no cambió nada — antes se
+        // reescribía el HTML cada 6s aunque no hubiera mensajes nuevos, lo que
+        // cortaba cualquier selección de texto en curso (ej. copiando el SQL).
+        let _bitacoraFirmaRenderizada = '';
+
         async function cargarMensajesBitacora(scrollAbajo) {
             const { data, error } = await _sb
                 .from('gransabio_mensajes')
@@ -390,6 +396,16 @@
             document.getElementById('badge-bitacora').classList.toggle('hidden', !hayNoLeidos || panelAbierto);
             if (panelAbierto) localStorage.setItem('bitacoraUltimoVisto', String(_bitacoraUltimoId));
 
+            const firma = data.map((m) => m.id).join(',');
+            if (firma === _bitacoraFirmaRenderizada) {
+                if (scrollAbajo) {
+                    const lista = document.getElementById('lista-mensajes');
+                    lista.scrollTop = lista.scrollHeight;
+                }
+                return;
+            }
+            _bitacoraFirmaRenderizada = firma;
+
             const lista = document.getElementById('lista-mensajes');
             lista.innerHTML = data.map((m) => {
                 const esUsuario = m.role === 'user';
@@ -398,13 +414,26 @@
                     <div class="flex ${esUsuario ? 'justify-end' : 'justify-start'}">
                         <div class="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed whitespace-pre-wrap ${esUsuario ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-slate-800/80 text-slate-100 rounded-bl-sm'}">
                             ${escaparHtmlBitacora(m.text)}
-                            <div class="text-[9px] mt-1 opacity-60 font-semibold">${hora}</div>
+                            <div class="flex items-center gap-2 mt-1 opacity-60">
+                                <span class="text-[9px] font-semibold">${hora}</span>
+                                <button onclick="copiarMensajeBitacora(this, ${JSON.stringify(m.text)})" class="text-[9px] font-bold uppercase tracking-wide hover:opacity-100">
+                                    <i class="fa-regular fa-copy"></i> copiar
+                                </button>
+                            </div>
                         </div>
                     </div>`;
             }).join('');
 
             if (scrollAbajo) lista.scrollTop = lista.scrollHeight;
         }
+
+        window.copiarMensajeBitacora = function (btn, texto) {
+            navigator.clipboard.writeText(texto).then(() => {
+                const original = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> copiado';
+                setTimeout(() => { btn.innerHTML = original; }, 1500);
+            }).catch(() => alert('No se pudo copiar automáticamente — selecciona el texto manualmente.'));
+        };
 
         function escaparHtmlBitacora(s) {
             return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

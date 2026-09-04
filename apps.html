@@ -367,7 +367,9 @@
             });
 
             cargarMensajesBitacora(false);
-            _bitacoraPollTimer = setInterval(() => cargarMensajesBitacora(panel.classList.contains('hidden') === false), 6000);
+            // false acá: cargarMensajesBitacora decide solo si hace falta bajar
+            // el scroll (según si ya estabas al fondo), no lo fuerza cada 6s.
+            _bitacoraPollTimer = setInterval(() => cargarMensajesBitacora(false), 6000);
         }
 
         window.cerrarBitacora = function () {
@@ -396,22 +398,30 @@
             document.getElementById('badge-bitacora').classList.toggle('hidden', !hayNoLeidos || panelAbierto);
             if (panelAbierto) localStorage.setItem('bitacoraUltimoVisto', String(_bitacoraUltimoId));
 
+            const lista = document.getElementById('lista-mensajes');
+            // Solo se sigue bajando el scroll solo si ya estabas leyendo el
+            // final del chat — si te desplazaste hacia arriba a leer algo
+            // viejo, el refresco automático no debe sacarte de ahí.
+            const yaAbajo = lista.scrollTop + lista.clientHeight >= lista.scrollHeight - 60;
+
             const firma = data.map((m) => m.id).join(',');
             if (firma === _bitacoraFirmaRenderizada) {
-                if (scrollAbajo) {
-                    const lista = document.getElementById('lista-mensajes');
-                    lista.scrollTop = lista.scrollHeight;
-                }
+                if (scrollAbajo || yaAbajo) lista.scrollTop = lista.scrollHeight;
                 return;
             }
             _bitacoraFirmaRenderizada = firma;
 
-            const lista = document.getElementById('lista-mensajes');
-            lista.innerHTML = data.map((m) => {
+            lista.innerHTML = data.map((m, i) => {
                 const esUsuario = m.role === 'user';
+                const anterior = data[i - 1];
+                const mismoRemitente = anterior && anterior.role === m.role;
                 const hora = new Date(m.created_at).toLocaleString('es-VE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
                 return `
-                    <div class="flex ${esUsuario ? 'justify-end' : 'justify-start'}">
+                    <div class="flex flex-col ${esUsuario ? 'items-end' : 'items-start'} ${mismoRemitente ? 'mt-1' : 'mt-3'}">
+                        ${mismoRemitente ? '' : `
+                        <span class="text-[9.5px] font-black uppercase tracking-wider px-1 mb-1 flex items-center gap-1 ${esUsuario ? 'text-indigo-300' : 'text-emerald-300'}">
+                            ${esUsuario ? '' : '<i class="fa-solid fa-hat-wizard"></i>'} ${esUsuario ? 'Tú' : 'Gran Sabio'}
+                        </span>`}
                         <div class="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed whitespace-pre-wrap ${esUsuario ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-slate-800/80 text-slate-100 rounded-bl-sm'}">
                             ${escaparHtmlBitacora(m.text)}
                             <div class="flex items-center gap-2 mt-1 opacity-60">
@@ -424,7 +434,7 @@
                     </div>`;
             }).join('');
 
-            if (scrollAbajo) lista.scrollTop = lista.scrollHeight;
+            if (scrollAbajo || yaAbajo) lista.scrollTop = lista.scrollHeight;
         }
 
         window.copiarMensajeBitacora = function (btn, texto) {

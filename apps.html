@@ -111,6 +111,39 @@
             </div>
         </header>
 
+        <!-- BITÁCORA GRAN SABIO: botón flotante + panel de chat, para dejar
+             instrucciones y ver el reporte de lo que Gran Sabio va haciendo
+             mientras no estás delante de la PC. Usa la misma tabla
+             gransabio_mensajes en Supabase que lee/escribe Claude Code. -->
+        <button id="btn-bitacora" class="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 shadow-2xl flex items-center justify-center active:scale-90 transition-all">
+            <i class="fa-solid fa-hat-wizard text-lg"></i>
+            <span id="badge-bitacora" class="hidden absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center">•</span>
+        </button>
+
+        <div id="panel-bitacora" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style="background: rgba(2, 6, 23, 0.75); backdrop-filter: blur(4px);">
+            <div class="w-full sm:max-w-md h-[85vh] sm:h-[32rem] rounded-t-[1.75rem] sm:rounded-[1.75rem] flex flex-col overflow-hidden" style="background: rgba(15, 23, 42, 0.97); border: 1px solid rgba(255,255,255,0.08);">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-white/5 shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-hat-wizard text-indigo-400"></i>
+                        <div>
+                            <h2 class="text-sm font-black">Gran Sabio</h2>
+                            <p class="text-[10px] text-slate-500 font-semibold">Bitácora de trabajo</p>
+                        </div>
+                    </div>
+                    <button onclick="cerrarBitacora()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white active:scale-90 transition-all">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div id="lista-mensajes" class="flex-1 overflow-y-auto px-4 py-4 space-y-3"></div>
+                <form id="form-bitacora" class="flex items-end gap-2 p-3 border-t border-white/5 shrink-0">
+                    <textarea id="input-bitacora" rows="1" placeholder="Escribe una instrucción..." class="flex-1 resize-none campo-login text-[13px] py-2.5 max-h-24"></textarea>
+                    <button type="submit" class="w-10 h-10 shrink-0 rounded-xl bg-indigo-600 hover:bg-indigo-500 flex items-center justify-center active:scale-90 transition-all">
+                        <i class="fa-solid fa-paper-plane text-sm"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
         <p id="mensaje-instalado" class="hidden text-[11px] text-emerald-400 font-bold uppercase tracking-widest mb-6 flex items-center gap-2">
             <i class="fa-solid fa-circle-check"></i> App instalada — ya la tienes en tu pantalla de inicio
         </p>
@@ -247,6 +280,7 @@
 
             mostrarPantallaApps('app-content');
             inicializarLauncher();
+            inicializarBitacora();
         })();
 
         // Registro del service worker mínimo (necesario para que el
@@ -288,6 +322,92 @@
         if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
             btnInstalar.classList.add('hidden');
         }
+        }
+
+        // ==========================================================
+        // BITÁCORA GRAN SABIO: chat simple sobre la tabla gransabio_mensajes.
+        // Claude Code (Gran Sabio) lee/escribe la misma tabla por su cuenta
+        // desde la PC, así que esto es el "buzón" de ida y vuelta mientras
+        // no estás delante de la máquina.
+        // ==========================================================
+        let _bitacoraPollTimer = null;
+        let _bitacoraUltimoId = 0;
+
+        function inicializarBitacora() {
+            const btn = document.getElementById('btn-bitacora');
+            const panel = document.getElementById('panel-bitacora');
+            const form = document.getElementById('form-bitacora');
+            const input = document.getElementById('input-bitacora');
+
+            btn.addEventListener('click', () => {
+                panel.classList.remove('hidden');
+                document.getElementById('badge-bitacora').classList.add('hidden');
+                localStorage.setItem('bitacoraUltimoVisto', String(_bitacoraUltimoId));
+                cargarMensajesBitacora(true);
+                input.focus();
+            });
+
+            panel.addEventListener('click', (e) => { if (e.target === panel) cerrarBitacora(); });
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const texto = input.value.trim();
+                if (!texto) return;
+                input.value = '';
+                input.disabled = true;
+                const { error } = await _sb.from('gransabio_mensajes').insert([{ role: 'user', text: texto }]);
+                input.disabled = false;
+                input.focus();
+                if (error) { alert('No se pudo enviar: ' + error.message); return; }
+                cargarMensajesBitacora(true);
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+            });
+
+            cargarMensajesBitacora(false);
+            _bitacoraPollTimer = setInterval(() => cargarMensajesBitacora(panel.classList.contains('hidden') === false), 6000);
+        }
+
+        window.cerrarBitacora = function () {
+            document.getElementById('panel-bitacora').classList.add('hidden');
+        };
+
+        async function cargarMensajesBitacora(scrollAbajo) {
+            const { data, error } = await _sb
+                .from('gransabio_mensajes')
+                .select('*')
+                .order('created_at', { ascending: true })
+                .limit(200);
+            if (error || !data) return;
+
+            const ultimoVisto = Number(localStorage.getItem('bitacoraUltimoVisto') || 0);
+            const panelAbierto = !document.getElementById('panel-bitacora').classList.contains('hidden');
+            _bitacoraUltimoId = data.length ? data[data.length - 1].id : _bitacoraUltimoId;
+
+            const hayNoLeidos = data.some((m) => m.role === 'gransabio' && m.id > ultimoVisto);
+            document.getElementById('badge-bitacora').classList.toggle('hidden', !hayNoLeidos || panelAbierto);
+            if (panelAbierto) localStorage.setItem('bitacoraUltimoVisto', String(_bitacoraUltimoId));
+
+            const lista = document.getElementById('lista-mensajes');
+            lista.innerHTML = data.map((m) => {
+                const esUsuario = m.role === 'user';
+                const hora = new Date(m.created_at).toLocaleString('es-VE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+                return `
+                    <div class="flex ${esUsuario ? 'justify-end' : 'justify-start'}">
+                        <div class="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed whitespace-pre-wrap ${esUsuario ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-slate-800/80 text-slate-100 rounded-bl-sm'}">
+                            ${escaparHtmlBitacora(m.text)}
+                            <div class="text-[9px] mt-1 opacity-60 font-semibold">${hora}</div>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            if (scrollAbajo) lista.scrollTop = lista.scrollHeight;
+        }
+
+        function escaparHtmlBitacora(s) {
+            return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
     </script>
 </body>

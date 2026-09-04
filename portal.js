@@ -1,4 +1,4 @@
-// portal.js - Portal Familiar | Chela Sport 1972
+// portal.js - Portal Familiar | Chela
 const SB_URL = 'https://ekvzmfsdshyoeggudksm.supabase.co';
 const SB_KEY = 'sb_publishable_Go6ZDuD9pg1pC3k-s89jiQ_65TEYGnd';
 const _sb = supabase.createClient(SB_URL, SB_KEY);

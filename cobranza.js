@@ -1,4 +1,4 @@
-// cobranza.js - Módulo de Cobranzas | Chela Sport 1972
+// cobranza.js - Módulo de Cobranzas | Chela
 
 // Nota: Ya no declaramos SB_URL ni _sb aquí porque los hereda automáticamente de config.js
 

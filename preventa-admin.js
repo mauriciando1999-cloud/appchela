@@ -251,7 +251,7 @@ function renderProduccion() {
 // ==========================================
 // TAB: DIFUSIÓN WHATSAPP
 // ==========================================
-const DIFUSION_MENSAJE_DEFAULT = 'Hola {representante} 👋, te escribimos de *Chela Sport 1972* sobre {estudiante}.\n\nMonto: *${monto}*\n\n¡Gracias por confiar en nosotros!';
+const DIFUSION_MENSAJE_DEFAULT = 'Hola {representante} 👋, te escribimos de *Chela* sobre {estudiante}.\n\nMonto: *${monto}*\n\n¡Gracias por confiar en nosotros!';
 const DIFUSION_NUMERO_PRUEBA_KEY = 'difusion_numero_prueba';
 
 function difusionPlaceholders() {

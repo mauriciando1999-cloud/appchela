@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Historial y Reportes | Chela Sport 1972</title>
+    <title>Historial y Reportes | Chela</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -330,8 +330,8 @@
             else if (!phoneClean.startsWith('58') && phoneClean.length === 10) phoneClean = '58' + phoneClean;
 
             const saludo = cliente.tipo === 'estudiante' 
-                ? `Hola *${cliente.representante}*, te saludamos de la administración de *Chela Sport 1972*. 🎒\n\nTe compartimos el historial reciente de movimientos de tu representado *${cliente.nombre}*:\n`
-                : `Hola *${cliente.nombre}*, te saludamos de la administración de *Chela Sport 1972*. 💼\n\nTe compartimos tu historial reciente de movimientos:\n`;
+                ? `Hola *${cliente.representante}*, te saludamos de la administración de *Chela*. 🎒\n\nTe compartimos el historial reciente de movimientos de tu representado *${cliente.nombre}*:\n`
+                : `Hola *${cliente.nombre}*, te saludamos de la administración de *Chela*. 💼\n\nTe compartimos tu historial reciente de movimientos:\n`;
 
             let detalleVentas = '';
             
